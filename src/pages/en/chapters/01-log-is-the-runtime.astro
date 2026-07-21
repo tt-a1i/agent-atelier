@@ -1655,6 +1655,185 @@ Host does NOT own: tool-loop API · Permission UI op · full session CRUD · set
   </Section>
 
   <Section
+    id="execution-evidence"
+    label="§01 · Execution evidence"
+    title="Cross-ledger reference protocol: cite facts, invent no second ledger"
+    lede="ExecutionEvidenceRef answers which execution, log prefix, workspace, and target snapshot support a projection or evidence claim — it is not a new event stream."
+  >
+    <p>
+      Specimen: <code>packages/core/src/execution-evidence.ts</code> +
+      <code>docs/execution-evidence-spine.md</code>. Cross-links from §02 / §04 / §05 / §06 land here.
+      When docs disagree, <strong>code + contract tests win</strong>.
+    </p>
+    <blockquote class="pull">
+      Spine references authorities; it never copies their facts into a parallel truth.
+    </blockquote>
+
+    <h3 class="subhead">Two identity lanes + optional coverage</h3>
+    <p>
+      <code>schemaVersion</code> is fixed at <code>maka.execution_evidence_ref.v1</code>. At least one
+      lane is required:
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>execution</strong> — required <code>sessionId</code>; optional
+        <code>invocationId</code> / <code>agentRunId</code> / <code>turnId</code>.
+        <code>agentRunId</code> maps to <code>AgentRunHeader.runId</code> and
+        <code>RuntimeEvent.runId</code>; the longer name exists so it cannot be confused with
+        <code>taskRunId</code>.
+      </li>
+      <li>
+        <strong>task</strong> — required <code>taskRunId</code>; optional <code>attemptId</code> (meaningful
+        only inside an Attempt).
+      </li>
+      <li>
+        Optional: <code>runtimeCoverage</code> / <code>taskCoverage</code> /
+        <code>workspace</code> (<code>git_commit</code> · <code>workspace_snapshot</code> ·
+        <code>manifest</code> · <code>opaque</code>) / <code>target</code>.
+      </li>
+    </ul>
+    <p>
+      Production may assign the same string to <code>invocationId</code> and
+      <code>agentRunId</code> — consumers <strong>must not</strong> rely on that coincidence.
+    </p>
+
+    <h3 class="subhead">Cursors: comparable only inside one stream</h3>
+    <pre class="code-block" aria-label="ExecutionLogCursor">ledger: runtime_event | runtime_event_projection | task_event
+streamId: agentRunId | sessionId(+policy) | taskRunId
+sequence: zero-based append ordinal   # sole ordering field
+eventId?: audit / dedup pointer       # never orders</pre>
+    <div class="table-wrap" role="region" aria-label="cursor compare" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Compare</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Different ledger or streamId</td>
+            <td><code>incomparable</code></td>
+          </tr>
+          <tr>
+            <td>Same stream, sequence order</td>
+            <td><code>before</code> / <code>after</code> / <code>equal</code></td>
+          </tr>
+          <tr>
+            <td>Same sequence, conflicting explicit eventIds</td>
+            <td><code>conflict</code> (not an ordering result)</td>
+          </tr>
+          <tr>
+            <td>
+              <code>runtime_event_projection</code> vs canonical <code>runtime_event</code>
+            </td>
+            <td>
+              Always <code>incomparable</code> — even if boundary <code>eventId</code> values match;
+              projection cursors require
+              <code>maka.compactable_runtime_event_projection.v1</code> policy beside them
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Coverage is an inclusive range on one stream; <code>highWater</code> is required,
+      <code>lowWater</code> may be omitted; <code>eventCount</code> counts observed rows and need not
+      equal the ordinal span when gaps exist. If <code>execution.agentRunId</code> is set,
+      <code>runtimeCoverage.highWater.streamId</code> <strong>must</strong> match it (same for task) —
+      otherwise <code>validateExecutionEvidenceRef</code> fail-closes.
+    </p>
+
+    <h3 class="subhead">Delivery phases (honest boundary)</h3>
+    <div class="table-wrap" role="region" aria-label="spine phases" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Phase</th>
+            <th scope="col">What Current pins</th>
+            <th scope="col">Not claimed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">0</th>
+            <td>Shared contract + validation + cursor compare</td>
+            <td>No persistence change; no Self-check / Compaction / AHE attach</td>
+          </tr>
+          <tr>
+            <th scope="row">1</th>
+            <td>
+              Finished headless invocation → <code>task_attempt_execution_linked</code>; one Attempt
+              may link multiple AgentRuns (including heavy-task repair)
+            </td>
+            <td>Does not copy Runtime bodies into Task</td>
+          </tr>
+          <tr>
+            <th scope="row">2A</th>
+            <td>
+              Compact evidence provenance binds immutable
+              <code>function_call</code>/<code>function_response</code> ranges; missing response /
+              tool-name conflict → <strong>no</strong> provenance claim
+            </td>
+            <td>Does not invent Runtime sources for non-Runtime facts</td>
+          </tr>
+          <tr>
+            <th scope="row">2B</th>
+            <td>
+              Self-check freshness: <code>current</code> / <code>stale</code> /
+              <code>unknown</code>; explicitly stale rejects the completion gate
+            </td>
+            <td>Does not pretend legacy evidence is fresh</td>
+          </tr>
+          <tr>
+            <th scope="row">2C</th>
+            <td>
+              Compaction checkpoints bind <code>runtime_event_projection</code> cursors +
+              <code>sourceDigest</code>; see
+              <a href={localePath("en", "chapters/03-compaction-is-a-projection") + "#mid-turn"}
+                >§03 · #mid-turn</a
+              >
+            </td>
+            <td>
+              Source-bound checkpoints cannot replace/recover behind legacy V2 that cannot prove
+              cursor semantics
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">3A</th>
+            <td>
+              <code>maka eval task-run inspect</code> /
+              <code>packages/cli</code> <code>inspect-command</code>: lineage tree + structured
+              diagnostics; no raw model messages / tool args
+            </td>
+            <td>
+              General <code>maka inspect &lt;anyId&gt;</code> resolver, AHE lineage, and durable
+              recovery for ambiguous external side effects remain later work
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Read CLI inspect contracts with
+      <a href={localePath("en", "guides/cli") + "#inspect"}>/guides/cli · #inspect</a>; Harbor /
+      headless trust lives at
+      <a href={localePath("en", "chapters/04-the-durable-task-loop") + "#harbor-trust"}
+        >§04 · #harbor-trust</a
+      >.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        <code>packages/core</code> execution-evidence tests pin validate / compare; headless lineage +
+        TaskRun inspect contracts are in specimen
+        <code>docs/execution-evidence-spine.md</code>. dig v3 / #90: site-wide links pointed at
+        <code>#execution-evidence</code> with no body — this section closes that slogan hole.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="request-shape"
     label="§01 · Request shape"
     title="What the provider sees is not what the ledger stores as messages"

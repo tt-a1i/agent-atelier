@@ -220,6 +220,67 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     </Section>
 
     <Section
+      id="interaction-queue"
+      label="UI · Interaction queue"
+      title="Permission 与 user-question 同 FIFO"
+      lede="监督面一次只呈现队首；requestId 去重，禁止并行弹两张门。"
+    >
+      <p>
+        标本：<code>packages/ui/src/interaction-queue.ts</code>。每 session 一条
+        <code>ComposerInteraction[]</code>（<code>AnyPermissionRequestEvent</code> |
+        <code>UserQuestionRequestEvent</code>）：
+      </p>
+      <ul class="plain-list">
+        <li>
+          <code>enqueueInteraction</code> — 同 <code>requestId</code> 已在队列 → 原样返回（幂等）。
+        </li>
+        <li>
+          <code>activeInteractionFor</code> — 只取 <code>queues[sessionId][0]</code>；Composer 槽位只渲染队首。
+        </li>
+        <li>
+          出队按 <code>requestId</code> 或 <code>toolUseId</code>；<code>clearInteractions</code> 在切会话 /
+          终止时清空整队。
+        </li>
+      </ul>
+      <p>
+        与 <a href="#permission-ui">#permission-ui</a> 同读：槽位接管依赖「单 active」不变量；引擎侧 park
+        见 <a href={`${ch01}#park-remember`}>§01 · #park-remember</a>。
+      </p>
+    </Section>
+
+    <Section
+      id="composer-input"
+      label="UI · Composer input"
+      title="IME、mention 边界、文件拖入"
+      lede="chat-input-behavior 是纯函数合同——可单测钉死，不依赖 DOM 偶然态。"
+    >
+      <p>标本：<code>packages/ui/src/chat-input-behavior.ts</code>（与 mention popup 共用）。</p>
+      <ul class="plain-list">
+        <li>
+          <code>isChatInputComposing</code> — tracked composition /
+          <code>key === 'Process'</code> / <code>nativeEvent.isComposing</code> 任一为真 → 吞 Enter，避免 IME
+          确认误发。
+        </li>
+        <li>
+          <code>detectMentionTrigger</code> — 只认词边界 <code>@</code>/<code>/</code>；路径内
+          <code>/</code>、邮箱内 <code>@</code> 不是触发器。<code>@</code> 查询允单空格（文件名），双空格 /
+          换行作废；<code>/</code> 查询遇任何空白即结束。
+        </li>
+        <li>
+          <code>mentionQueryMatches</code> — 大小写无关 AND-of-substring；空 query 匹配全部。
+        </li>
+        <li>
+          <code>fileTransferContainsFiles</code> — <code>fileCount &gt; 0</code> 或 types 含
+          <code>Files</code>。
+        </li>
+      </ul>
+      <p>
+        Draft / history 跨 session 键与 <code>draftKey</code> 切换不丢草稿，由 composer hooks +
+        <code>composer-helpers.ts</code> 拥有——本页只钉输入触发合同。插入语义见下一节。
+      </p>
+    </Section>
+
+    <Section
       id="composer-mentions"
       label="UI · Composer mentions"
       title="@ 文件 / / 技能：纯文本 token，永不自动发送"

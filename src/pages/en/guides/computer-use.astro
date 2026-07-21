@@ -288,6 +288,104 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="backend-selection"
+      label="CU · Backend selection"
+      title="selectComputerUseBackend: honest none without a pinned binary"
+      lede="The packages/computer-use entry is not “always cua-driver” — platform and artifact preconditions decide backendId."
+    >
+      <p>
+        Specimen: <code>packages/computer-use/src/select-backend.ts</code>. Non-
+        <code>darwin</code>, missing <code>binaryPath</code> +
+        <code>expectedBinarySha256</code>, or backend construction throw →
+        <code>backendId: 'none'</code>: no disposable backend; tools expose empty
+        <code>sessionEvents</code> (all <code>unobserved</code>). Desktop must inject the pinned
+        artifact path + hash; missing pin ≠ silent fallback to compatibility CGEvent.
+      </p>
+      <ul class="plain-list">
+        <li>
+          Success path: <code>createCuaDriverBackend</code> →
+          <code>buildComputerUseTools(&#123; backend, overlay? &#125;)</code> →
+          <code>backendId: 'cua-driver'</code>.
+        </li>
+        <li>
+          <code>onSessionInvalidated</code> wires <code>tools.sessionEvents.reobserveRequired</code> —
+          service loss must force re-observe, not silently retarget windows.
+        </li>
+        <li>
+          <code>hostBundleId</code> defaults to <code>com.maka.desktop</code> (overridable via
+          <code>MAKA_CU_HOST_BUNDLE_ID</code> / explicit option).
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="cua-driver-lifecycle"
+      label="CU · cua-driver lifecycle"
+      title="Dual roles, generation, restart budget"
+      lede="Action and capture are two long-lived children; exit under unknown outcome → re-observe, never auto-replay."
+    >
+      <p>
+        Specimen: <code>cua-driver-service.ts</code> · <code>cua-driver-release.ts</code> ·
+        <code>cua-driver-result.ts</code>. Each <code>CuaDriverService</code> owns one
+        <code>role</code> (action / capture), JSON-RPC transport, a <code>generation</code> counter,
+        and <code>restartAttempts</code> (default max 3, 50ms backoff). Handshake / request timeouts
+        and stdout buffer caps are pinned; wrong identity (binary hash / server name / version /
+        protocol) is rejected at handshake.
+      </p>
+      <ul class="plain-list">
+        <li>
+          Spawn uses <code>--no-overlay</code>: the native executor does <strong>not</strong> paint UI;
+          presentation is a downstream overlay hook.
+        </li>
+        <li>
+          Release / dispose clears executor-local observations and keyboard ownership and advances the
+          Runtime session generation — every prior claim dies.
+        </li>
+        <li>
+          <code>normalizeCuaDriverOutcome</code>: forbids dressing foreground / compatibility dispatch
+          as a foundation success path; unknown child outcome → typed re-observe, not a retry of the
+          old fingerprint.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="snapshot-coordinates"
+      label="CU · Snapshot coordinates"
+      title="Logical screen point ↔ same-frame screenshot pixels"
+      lede="Coordinate authority lives inside the snapshot frame that produced it; malformed transforms fail closed."
+    >
+      <p>
+        Specimen: <code>cua-driver-snapshot.ts</code> · <code>display-snapshot.ts</code>.
+        <code>resolveWindowAtDeclaredPoint</code> scales the declared point with
+        <code>desktopFrameWidthPx / logicalDisplayWidth</code>, then picks a z-order hit inside window
+        bounds; non-finite positive width/height → undefined (reject). Multi-display uses
+        <code>resolveCuaDisplaySnapshots</code> — never smuggle one display’s logical coordinates onto
+        another’s pixels.
+      </p>
+      <p>
+        Read with foundation “Observation owns coordinates”: a model-declared point is dispatchable
+        only under the same <code>frameId + epoch</code> and matching geometry / scale / page identity.
+      </p>
+    </Section>
+
+    <Section
+      id="presentation-overlay"
+      label="CU · Presentation overlay"
+      title="createComputerUseOverlayHook: downstream cursor, not click backend"
+      lede="readyForInteraction may affect timing only; finished never blocks native dispatch."
+    >
+      <p>
+        Specimen: <code>computer-use-overlay-hook.ts</code>. The hook projects coordinate actions onto
+        an <code>OverlayCursorSink</code> (move / complete / cancel); actions without coordinates get a
+        resolved fence (immediately ready/finished). Presentation <strong>cannot</strong> choose
+        windows, rewrite execution coordinates, or act as approval. Contrast
+        <a href="#approval">#approval</a> / <a href="#cursor-contrast">#cursor-contrast</a>: the
+        virtual cursor is a visual layer.
+      </p>
+    </Section>
+
+    <Section
       id="artifact"
       label="CU · Artifact"
       title="Integrity check ≠ distribution-ready"

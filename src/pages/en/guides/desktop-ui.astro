@@ -243,6 +243,74 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     </Section>
 
     <Section
+      id="interaction-queue"
+      label="UI · Interaction queue"
+      title="Permission and user-question share one FIFO"
+      lede="The supervision surface shows only the queue head; requestId dedupes — never two gates at once."
+    >
+      <p>
+        Specimen: <code>packages/ui/src/interaction-queue.ts</code>. Per session one
+        <code>ComposerInteraction[]</code> (<code>AnyPermissionRequestEvent</code> |
+        <code>UserQuestionRequestEvent</code>):
+      </p>
+      <ul class="plain-list">
+        <li>
+          <code>enqueueInteraction</code> — same <code>requestId</code> already queued → return queues
+          unchanged (idempotent).
+        </li>
+        <li>
+          <code>activeInteractionFor</code> — only <code>queues[sessionId][0]</code>; the Composer slot
+          renders the head alone.
+        </li>
+        <li>
+          Dequeue by <code>requestId</code> or <code>toolUseId</code>;
+          <code>clearInteractions</code> empties the queue on session switch / stop.
+        </li>
+      </ul>
+      <p>
+        Read with <a href="#permission-ui">#permission-ui</a>: slot takeover assumes a single-active
+        invariant; engine park lives at
+        <a href={`${ch01}#park-remember`}>§01 · #park-remember</a>.
+      </p>
+    </Section>
+
+    <Section
+      id="composer-input"
+      label="UI · Composer input"
+      title="IME, mention boundaries, file drops"
+      lede="chat-input-behavior is a pure-function contract — unit-pinnable without accidental DOM state."
+    >
+      <p>
+        Specimen: <code>packages/ui/src/chat-input-behavior.ts</code> (shared with the mention popup).
+      </p>
+      <ul class="plain-list">
+        <li>
+          <code>isChatInputComposing</code> — tracked composition /
+          <code>key === 'Process'</code> / <code>nativeEvent.isComposing</code> → swallow Enter so IME
+          confirm does not send.
+        </li>
+        <li>
+          <code>detectMentionTrigger</code> — only word-boundary <code>@</code>/<code>/</code>; a
+          <code>/</code> inside a path or <code>@</code> inside an email is not a trigger.
+          <code>@</code> queries allow single spaces (filenames); double space / newline invalidates.
+          <code>/</code> queries end on any whitespace.
+        </li>
+        <li>
+          <code>mentionQueryMatches</code> — case-insensitive AND-of-substring; empty query matches all.
+        </li>
+        <li>
+          <code>fileTransferContainsFiles</code> — <code>fileCount &gt; 0</code> or types include
+          <code>Files</code>.
+        </li>
+      </ul>
+      <p>
+        Cross-session draft / history keys and <code>draftKey</code> switches that preserve drafts are
+        owned by composer hooks + <code>composer-helpers.ts</code> — this page pins the input-trigger
+        contract. Insert semantics follow in the next section.
+      </p>
+    </Section>
+
+    <Section
       id="composer-mentions"
       label="UI · Composer mentions"
       title="@ file / / skill: plain-text tokens, never auto-send"

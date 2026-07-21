@@ -1559,6 +1559,177 @@ Host does NOT own: tool loop API · Permission UI op · full session CRUD · set
   </Section>
 
   <Section
+    id="execution-evidence"
+    label="§01 · Execution evidence"
+    title="跨 ledger 引用协议：引用事实，不发明第二本账"
+    lede="ExecutionEvidenceRef 回答「哪条执行、哪段 log 前缀、哪份 workspace / target 支撑这条投影或证据声明」——不是新事件流。"
+  >
+    <p>
+      标本：<code>packages/core/src/execution-evidence.ts</code> +
+      <code>docs/execution-evidence-spine.md</code>。§02 / §04 / §05 / §06 的交叉链接指向本节。权威冲突时
+      <strong>code + contract tests 胜出</strong>。
+    </p>
+    <blockquote class="pull">
+      Spine references authorities; it never copies their facts into a parallel truth.
+    </blockquote>
+
+    <h3 class="subhead">两条身份车道 + 可选覆盖</h3>
+    <p>
+      <code>schemaVersion</code> 固定为 <code>maka.execution_evidence_ref.v1</code>。至少一条车道必填：
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>execution</strong> — <code>sessionId</code>（必填）→ 可选
+        <code>invocationId</code> / <code>agentRunId</code> / <code>turnId</code>。
+        <code>agentRunId</code> 映射 <code>AgentRunHeader.runId</code> 与
+        <code>RuntimeEvent.runId</code>；故意不用短名 <code>runId</code>，以免与
+        <code>taskRunId</code> 串味。
+      </li>
+      <li>
+        <strong>task</strong> — <code>taskRunId</code>（必填）→ 可选 <code>attemptId</code>（只在 Attempt 内有意义）。
+      </li>
+      <li>
+        可选：<code>runtimeCoverage</code> / <code>taskCoverage</code> /
+        <code>workspace</code>（<code>git_commit</code> · <code>workspace_snapshot</code> ·
+        <code>manifest</code> · <code>opaque</code>）/ <code>target</code>。
+      </li>
+    </ul>
+    <p>
+      生产路径可能把 <code>invocationId</code> 与 <code>agentRunId</code> 设成同一字符串——消费者
+      <strong>不得</strong>依赖该巧合。
+    </p>
+
+    <h3 class="subhead">Cursor：同流可比，跨流不可比</h3>
+    <pre class="code-block" aria-label="ExecutionLogCursor">ledger: runtime_event | runtime_event_projection | task_event
+streamId: agentRunId | sessionId(+policy) | taskRunId
+sequence: zero-based append ordinal   # 唯一排序字段
+eventId?: audit / dedup pointer       # 永不参与排序</pre>
+    <div class="table-wrap" role="region" aria-label="cursor compare" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">比较</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>不同 ledger 或 streamId</td>
+            <td><code>incomparable</code></td>
+          </tr>
+          <tr>
+            <td>同流、sequence 大小</td>
+            <td><code>before</code> / <code>after</code> / <code>equal</code></td>
+          </tr>
+          <tr>
+            <td>同 sequence 但双方显式 eventId 冲突</td>
+            <td><code>conflict</code>（不是排序结果）</td>
+          </tr>
+          <tr>
+            <td>
+              <code>runtime_event_projection</code> vs canonical <code>runtime_event</code>
+            </td>
+            <td>
+              永远 <code>incomparable</code>——即使边界 <code>eventId</code> 碰巧相同；投影 cursor 必须带
+              <code>maka.compactable_runtime_event_projection.v1</code> 政策
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Coverage 是同一流上的 inclusive 区间；<code>highWater</code> 必填，<code>lowWater</code> 可省略；
+      <code>eventCount</code> 数观测行，有 gap 时不必等于 ordinal 跨度。若声明了
+      <code>execution.agentRunId</code>，则 <code>runtimeCoverage.highWater.streamId</code>
+      <strong>必须</strong>与之相等（task 同理）——否则
+      <code>validateExecutionEvidenceRef</code> fail-closed。
+    </p>
+
+    <h3 class="subhead">交付相位（诚实边界）</h3>
+    <div class="table-wrap" role="region" aria-label="spine phases" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Phase</th>
+            <th scope="col">Current 钉什么</th>
+            <th scope="col">不宣称</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">0</th>
+            <td>共享合同 + 校验 + cursor 比较</td>
+            <td>不改任何持久化；不挂 Self-check / Compaction / AHE</td>
+          </tr>
+          <tr>
+            <th scope="row">1</th>
+            <td>
+              Headless 完成 invocation → <code>task_attempt_execution_linked</code>；Attempt 可链多个
+              AgentRun（含 heavy-task repair）
+            </td>
+            <td>不复制 Runtime 正文进 Task</td>
+          </tr>
+          <tr>
+            <th scope="row">2A</th>
+            <td>
+              紧凑证据 provenance 绑定 immutable <code>function_call</code>/<code>function_response</code>
+              区间；缺 response / 工具名冲突 → <strong>无</strong> provenance 声明
+            </td>
+            <td>不为无 Runtime 源的事实发明来源</td>
+          </tr>
+          <tr>
+            <th scope="row">2B</th>
+            <td>
+              Self-check freshness：<code>current</code> / <code>stale</code> /
+              <code>unknown</code>；显式 stale 拒 completion gate
+            </td>
+            <td>不把 legacy 证据假装新鲜</td>
+          </tr>
+          <tr>
+            <th scope="row">2C</th>
+            <td>
+              Compaction checkpoint 绑 <code>runtime_event_projection</code> cursor +
+              <code>sourceDigest</code>；见
+              <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection#mid-turn`}
+                >§03 · #mid-turn</a
+              >
+            </td>
+            <td>legacy V2 无 cursor 语义时不可被 source-bound checkpoint 倒退替换</td>
+          </tr>
+          <tr>
+            <th scope="row">3A</th>
+            <td>
+              <code>maka eval task-run inspect</code> /
+              <code>packages/cli</code> <code>inspect-command</code>：树状 lineage + 结构化诊断；不复制
+              raw 模型消息 / 工具参
+            </td>
+            <td>
+              通用 <code>maka inspect &lt;anyId&gt;</code> 解析器、AHE lineage、模糊副作用的耐久 recovery
+              建模仍是后续
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      CLI inspect 合同与
+      <a href={`${import.meta.env.BASE_URL}guides/cli#inspect`}>/guides/cli · #inspect</a> 同读；Harbor /
+      headless trust 见
+      <a href={`${import.meta.env.BASE_URL}chapters/04-the-durable-task-loop#harbor-trust`}
+        >§04 · #harbor-trust</a
+      >。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        <code>packages/core</code> execution-evidence 测试钉 validate / compare；headless lineage +
+        TaskRun inspect 合同见 specimen <code>docs/execution-evidence-spine.md</code>。dig v3 / #90：此前全站链到
+        <code>#execution-evidence</code> 却无正文——本节补齐，禁止「shipped」口号。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="request-shape"
     label="§01 · Request shape"
     title="Provider 看见的请求，不等于 ledger 里的消息"

@@ -265,6 +265,100 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="backend-selection"
+      label="CU · Backend selection"
+      title="selectComputerUseBackend：无 binary 就诚实 none"
+      lede="packages/computer-use 入口不是「永远有 cua-driver」——平台与产物前置条件决定 backendId。"
+    >
+      <p>
+        标本：<code>packages/computer-use/src/select-backend.ts</code>。非
+        <code>darwin</code>，或缺少 <code>binaryPath</code> +
+        <code>expectedBinarySha256</code>，或构造 backend 抛错 → 返回
+        <code>backendId: 'none'</code>：无 disposable backend，tools 带空
+        <code>sessionEvents</code>（一律 <code>unobserved</code>）。Desktop 必须把 pin 过的 artifact
+        路径与 hash 注入；缺 pin ≠ 静默降级到兼容 CGEvent。
+      </p>
+      <ul class="plain-list">
+        <li>
+          成功路径：<code>createCuaDriverBackend</code> →
+          <code>buildComputerUseTools(&#123; backend, overlay? &#125;)</code> →
+          <code>backendId: 'cua-driver'</code>。
+        </li>
+        <li>
+          <code>onSessionInvalidated</code> 接线 <code>tools.sessionEvents.reobserveRequired</code>——service
+          失效必须迫使再观察，不是悄悄换窗口。
+        </li>
+        <li>
+          <code>hostBundleId</code> 默认 <code>com.maka.desktop</code>（可
+          <code>MAKA_CU_HOST_BUNDLE_ID</code> / 显式覆盖）。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="cua-driver-lifecycle"
+      label="CU · cua-driver lifecycle"
+      title="双 role、generation、重启预算"
+      lede="action 与 capture 是两条长寿命 child；未知 outcome 下退出 → re-observe，禁止自动重放。"
+    >
+      <p>
+        标本：<code>cua-driver-service.ts</code> · <code>cua-driver-release.ts</code> ·
+        <code>cua-driver-result.ts</code>。每个 <code>CuaDriverService</code> 拥有一个
+        <code>role</code>（action / capture）、JSON-RPC transport、<code>generation</code> 计数与
+        <code>restartAttempts</code>（默认上限 3、backoff 50ms）。Handshake / request 超时与 stdout
+        buffer 上限由服务钉死；wrong identity（binary hash / server name / version / protocol）在
+        handshake 拒收。
+      </p>
+      <ul class="plain-list">
+        <li>
+          Spawn 带 <code>--no-overlay</code>：native executor <strong>不</strong>画 UI；presentation
+          走下游 overlay hook。
+        </li>
+        <li>
+          Release / dispose 清 executor-local observation 与 keyboard ownership，并推进 Runtime
+          session generation——旧 claim 全部失效。
+        </li>
+        <li>
+          <code>normalizeCuaDriverOutcome</code>：禁止把「前台/兼容 dispatch」伪装成 foundation
+          成功路径；未知 child outcome → typed re-observe，不是 retry 旧 fingerprint。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="snapshot-coordinates"
+      label="CU · Snapshot coordinates"
+      title="逻辑屏点 ↔ 同帧截图像素"
+      lede="坐标权威在产生它的 snapshot 帧内；malformed transform fail-closed。"
+    >
+      <p>
+        标本：<code>cua-driver-snapshot.ts</code> · <code>display-snapshot.ts</code>。
+        <code>resolveWindowAtDeclaredPoint</code> 用
+        <code>desktopFrameWidthPx / logicalDisplayWidth</code> 把声明点缩放为 screen point，再在窗口
+        bounds 内选 z-order 命中；宽高非有限正数 → undefined（拒绝）。多显示器走
+        <code>resolveCuaDisplaySnapshots</code>——不得把某一屏的逻辑坐标偷换成另一屏的像素。
+      </p>
+      <p>
+        与 foundation「Observation owns coordinates」同读：模型声明的点只有在同
+        <code>frameId + epoch</code>、同 geometry/scale/page identity 下才可 dispatch。
+      </p>
+    </Section>
+
+    <Section
+      id="presentation-overlay"
+      label="CU · Presentation overlay"
+      title="createComputerUseOverlayHook：下游光标，不是点击后端"
+      lede="readyForInteraction 最多影响时机；finished 永不阻塞 native dispatch。"
+    >
+      <p>
+        标本：<code>computer-use-overlay-hook.ts</code>。Hook 把 coordinate action 投影为
+        <code>OverlayCursorSink</code> 的 move/complete/cancel；缺坐标的动作拿 resolved fence（立即
+        ready/finished）。Presentation <strong>不能</strong>选择窗口、改写执行坐标、或充当 approval。与
+        <a href="#approval">#approval</a> / <a href="#cursor-contrast">#cursor-contrast</a> 对照：虚拟光标是视觉层。
+      </p>
+    </Section>
+
+    <Section
       id="artifact"
       label="CU · Artifact"
       title="完整性检查 ≠ 可分发"

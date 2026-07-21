@@ -1,0 +1,217 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/cli");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="CLI session 合同 · Agent Atelier"
+  description="packages/cli：session-driver、runtime-bootstrap、inspect lineage——配套研报，不是 TUI 皮肤说明。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v3 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">CLI session 合同</span>
+        <span class="masthead__title-en">CLI session contracts</span>
+      </h1>
+      <p class="masthead__sub">
+        <code>packages/cli</code> 不是「Desktop 的瘦客户端文案」——它编码 steer/queue、非破坏 rewind、与
+        Desktop 同构的 runtime bootstrap，以及执行证据 inspect。权威冲突时
+        <strong>code + contract tests 胜出</strong>。Harbor fake-only trust 仍以
+        <a href={`${ch04}#harbor-trust`}>§04 · #harbor-trust</a> 为准。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/cli</span>
+        <span>Map · #90</span>
+        <span>
+          <a href={localePath("en", "guides/cli")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="CLI · Scene"
+      title="为什么 CLI 需要独立教学面"
+      lede="散落在 §01 runtime-host / §04 continue 的一句指针，盖不住 session-driver 合同。"
+    >
+      <p>
+        dig v3 抽查：Top-15 把 headless trust 标成 shipped，但
+        <code>packages/cli/src</code> 的交互表面几乎无协议课。本页只挖
+        <strong>agent 合同</strong>（谁发送、谁分支、谁可续跑、inspect 输出什么），不教 ANSI /
+        picker 皮肤。
+      </p>
+    </Section>
+
+    <Section
+      id="session-driver"
+      label="CLI · Session driver"
+      title="MakaSessionRuntime：steer ≠ send"
+      lede="队列与转向不自动开 turn；rewind 是 branchBeforeTurn，不是 destructive truncate。"
+    >
+      <p>标本：<code>packages/cli/src/session-driver.ts</code>。</p>
+      <div class="table-wrap" role="region" aria-label="session runtime surface" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">表面</th>
+              <th scope="col">合同</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>sendMessage</code> / <code>preparePrompt</code></td>
+              <td>开 turn / 消费事件流；人可见 prompt 与可选 <code>modelText</code>（<code>displayText</code>）分离</td>
+            </tr>
+            <tr>
+              <td><code>steer</code> / <code>queueMessage</code></td>
+              <td>入队；<strong>不</strong>自动 send。outcome 为 <code>QueueEnqueueOutcome</code></td>
+            </tr>
+            <tr>
+              <td><code>drainFollowup</code> / <code>retractQueue</code></td>
+              <td>取出或撤回队列文本；不伪造已提交 RuntimeEvent</td>
+            </tr>
+            <tr>
+              <td><code>rewindToTurn</code></td>
+              <td>
+                先从原 session 读 full prompt，再 <code>branchBeforeTurn</code>——原 ledger 完整保留；编辑器回填
+                prompt 供重发
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>planLatestAuthoritativeSafeBoundaryContinuation</code> /
+                <code>resumeSafeBoundaryContinuation</code>
+              </td>
+              <td>
+                Phase1 安全续跑接线；与
+                <a href={`${ch01}#recovery`}>§01 · #recovery</a> 同族，不是 warm mid-tool resume
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>inspectSessionResumeAvailability</code>：无 cwd 或 cwd 已消失 →
+        <code>available: false</code> + 可读 reason；禁止假装可续。
+      </p>
+    </Section>
+
+    <Section
+      id="runtime-bootstrap"
+      label="CLI · Runtime bootstrap"
+      title="与 Desktop 同构的组装，不是另起 Runtime"
+      lede="sandbox、FS worker、SQLite persistence、default ContextBudgetPolicy、skills discovery 走同一套 runtime 积木。"
+    >
+      <p>
+        标本：<code>packages/cli/src/runtime-bootstrap.ts</code>。打开 interactive stores、装配
+        <code>SessionManager</code> / <code>PermissionEngine</code> / builtin + deferred tools、
+        <code>buildDefaultContextBudgetPolicy</code>、<code>resolveSkillDiscoveryPaths</code>、可选
+        FilesystemWorker。CLI system prompt / turn-tail（<code>cli-system-prompt.ts</code>）与 Desktop
+        文案不同，但 <strong>不</strong>另写一套 commit sink 或 recovery 权威。
+      </p>
+      <p>
+        Ready model 解析：<code>connection-target.ts</code> 的
+        <code>listReadyModelChoices</code> / <code>resolveSessionTargetForSlug</code>——未 ready 的
+        connection 不得 silently 开跑。
+      </p>
+      <p>
+        交叉：<a href={`${ch01}#runtime-host`}>§01 · #runtime-host</a>（CLI 可 bypass Host 四 op——诚实声明）·
+        <a href={`${ch01}#stores`}>#stores</a> ·
+        <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a>。
+      </p>
+    </Section>
+
+    <Section
+      id="inspect"
+      label="CLI · Inspect"
+      title="Lineage 可读，不复制 raw 工具参"
+      lede="inspect-command 与 execution-evidence spine Phase 3A 同族。"
+    >
+      <p>
+        标本：<code>packages/cli/src/inspect-command.ts</code>。解析
+        session / agent-run / task-run；歧义时返回
+        <code>maka.inspect_resolution.v1</code>（<code>not_found</code> /
+        <code>ambiguous</code> + candidates），不猜。树状输出携带 identities、cursors、counts、health
+        diagnostics——<strong>不</strong>复制 raw model messages、tool arguments、tool results。Tool Call
+        无 committed response → unknown outcome（外部副作用可能已发生），永不推断 success/failure。
+      </p>
+      <p>
+        协议总览：<a href={`${ch01}#execution-evidence`}>§01 · #execution-evidence</a>。
+      </p>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="CLI · Boundaries"
+      title="不是 Harbor 全文，也不是 Desktop UI"
+      lede="三页各有一份真相。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>本页</strong> — interactive CLI session / bootstrap / inspect 合同。
+        </li>
+        <li>
+          <strong><a href={`${ch04}#harbor-trust`}>§04 · #harbor-trust</a></strong> — headless eval
+          fake-only + RealBackendIsolation。
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a></strong> —
+          Electron 监督面投影；pi-tui 流式 cap（<code>bounded-chunk-buffer</code>）是展示预算，不是
+          Runtime 协议权威。
+        </li>
+      </ul>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

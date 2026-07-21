@@ -1,0 +1,226 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/cli");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="CLI session contracts · Agent Atelier"
+  description="packages/cli: session-driver, runtime-bootstrap, inspect lineage — companion report, not a TUI skin guide."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v3 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">CLI session 合同</span>
+        <span class="masthead__title-en">CLI session contracts</span>
+      </h1>
+      <p class="masthead__sub">
+        <code>packages/cli</code> is not “thin Desktop copy” — it encodes steer/queue, non-destructive
+        rewind, Desktop-isomorphic runtime bootstrap, and execution-evidence inspect. When docs
+        disagree, <strong>code + contract tests win</strong>. Harbor fake-only trust remains at
+        <a href={`${ch04}#harbor-trust`}>§04 · #harbor-trust</a>.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/cli</span>
+        <span>Map · #90</span>
+        <span>
+          <a href={localePath("zh", "guides/cli")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="CLI · Scene"
+      title="Why CLI needs its own teaching surface"
+      lede="One-liner pointers from §01 runtime-host / §04 continue do not cover the session-driver contract."
+    >
+      <p>
+        dig v3 spot-check: Top-15 marked headless trust shipped, but the interactive surface in
+        <code>packages/cli/src</code> had almost no protocol lesson. This page mines
+        <strong>agent contracts</strong> only (who sends, who branches, who may continue, what inspect
+        emits) — not ANSI / picker chrome.
+      </p>
+    </Section>
+
+    <Section
+      id="session-driver"
+      label="CLI · Session driver"
+      title="MakaSessionRuntime: steer ≠ send"
+      lede="Queue and steer do not open a turn; rewind is branchBeforeTurn, not destructive truncate."
+    >
+      <p>Specimen: <code>packages/cli/src/session-driver.ts</code>.</p>
+      <div class="table-wrap" role="region" aria-label="session runtime surface" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Surface</th>
+              <th scope="col">Contract</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>sendMessage</code> / <code>preparePrompt</code></td>
+              <td>
+                Opens a turn / consumes the event stream; human-facing prompt may differ from optional
+                <code>modelText</code> persisted as <code>displayText</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>steer</code> / <code>queueMessage</code></td>
+              <td>
+                Enqueue only — <strong>no</strong> automatic send. Outcome is
+                <code>QueueEnqueueOutcome</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>drainFollowup</code> / <code>retractQueue</code></td>
+              <td>Take or retract queued text; never fabricate committed RuntimeEvents</td>
+            </tr>
+            <tr>
+              <td><code>rewindToTurn</code></td>
+              <td>
+                Read the full prompt from the original session, then
+                <code>branchBeforeTurn</code> — original ledger stays intact; editor is refilled for
+                resend
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>planLatestAuthoritativeSafeBoundaryContinuation</code> /
+                <code>resumeSafeBoundaryContinuation</code>
+              </td>
+              <td>
+                Phase1 safe-continuation wiring; same family as
+                <a href={`${ch01}#recovery`}>§01 · #recovery</a> — not warm mid-tool resume
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>inspectSessionResumeAvailability</code>: missing cwd or vanished cwd →
+        <code>available: false</code> with a readable reason; never pretend resume is possible.
+      </p>
+    </Section>
+
+    <Section
+      id="runtime-bootstrap"
+      label="CLI · Runtime bootstrap"
+      title="Same assembly bricks as Desktop — not a second Runtime"
+      lede="Sandbox, FS worker, SQLite persistence, default ContextBudgetPolicy, and skills discovery reuse the runtime kit."
+    >
+      <p>
+        Specimen: <code>packages/cli/src/runtime-bootstrap.ts</code>. Opens interactive stores,
+        assembles <code>SessionManager</code> / <code>PermissionEngine</code> / builtin + deferred
+        tools, <code>buildDefaultContextBudgetPolicy</code>,
+        <code>resolveSkillDiscoveryPaths</code>, optional FilesystemWorker. CLI system prompt /
+        turn-tail (<code>cli-system-prompt.ts</code>) differ from Desktop copy, but do
+        <strong>not</strong> invent a second commit sink or recovery authority.
+      </p>
+      <p>
+        Ready model resolution: <code>connection-target.ts</code>
+        <code>listReadyModelChoices</code> / <code>resolveSessionTargetForSlug</code> — a not-ready
+        connection must not silently start a run.
+      </p>
+      <p>
+        Cross-links:
+        <a href={`${ch01}#runtime-host`}>§01 · #runtime-host</a> (CLI may bypass the Host four-op
+        gateway — stated honestly) · <a href={`${ch01}#stores`}>#stores</a> ·
+        <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a>.
+      </p>
+    </Section>
+
+    <Section
+      id="inspect"
+      label="CLI · Inspect"
+      title="Readable lineage without copying raw tool args"
+      lede="inspect-command is the same family as execution-evidence spine Phase 3A."
+    >
+      <p>
+        Specimen: <code>packages/cli/src/inspect-command.ts</code>. Resolves session / agent-run /
+        task-run; on ambiguity returns <code>maka.inspect_resolution.v1</code> (
+        <code>not_found</code> / <code>ambiguous</code> + candidates) — no guessing. Tree output carries
+        identities, cursors, counts, and health diagnostics — <strong>not</strong> raw model messages,
+        tool arguments, or tool results. A Tool Call without a committed response is an unknown
+        outcome (external side effects may have occurred); never inferred as success or failure.
+      </p>
+      <p>
+        Protocol overview: <a href={`${ch01}#execution-evidence`}>§01 · #execution-evidence</a>.
+      </p>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="CLI · Boundaries"
+      title="Not the Harbor essay, not Desktop UI"
+      lede="Three pages, three truths."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>This page</strong> — interactive CLI session / bootstrap / inspect contracts.
+        </li>
+        <li>
+          <strong><a href={`${ch04}#harbor-trust`}>§04 · #harbor-trust</a></strong> — headless eval
+          fake-only + RealBackendIsolation.
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a></strong> —
+          Electron supervision projections; pi-tui stream caps (<code>bounded-chunk-buffer</code>) are
+          display budgets, not Runtime protocol authority.
+        </li>
+      </ul>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

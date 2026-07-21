@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-21  
 **Specimen root:** `/Users/tushaokun/code/maka-agent`  
-**Map:** [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
+**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3; precursor [#34](https://github.com/tt-a1i/agent-atelier/issues/34))  
 **Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Do not duplicate the corpus plan’s bucket counts; link it.
 
 ## Method
@@ -107,15 +107,17 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | — | ContextBudgetPolicy two-plane DSL | §03 `#budget-dsl` | `context-budget*.ts` · `composePrepareStep` | **shipped** · outline `context-budget-policy-pipeline-deep-outline.md` · [#74](https://github.com/tt-a1i/agent-atelier/issues/74) |
 | — | Semantic compact failedOpen / privacy / savings | §03 `#semantic-gates` | `semantic-compact.ts` | **shipped** · outline `semantic-compact-gates-deep-outline.md` · [#75](https://github.com/tt-a1i/agent-atelier/issues/75) |
 | — | Permission park/remember vs escalation one-shot | §01 `#park-remember` | `permission-engine.ts` · `sandbox-escalation.ts` | **shipped** · outline `permission-park-remember-escalation-deep-outline.md` · [#76](https://github.com/tt-a1i/agent-atelier/issues/76) |
-| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 / `/guides/sandbox` | `permission-profile.ts` · `sandbox/**` | outline → Task #62 |
+| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 `#sandbox` | `permission-profile.ts` · `sandbox/**` | **deep** (no separate `/guides/sandbox`) |
 | 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | **shipped** `#ledger` |
-| 8 | Execution evidence spine | cross-cut §02/04/05/06 | `execution-evidence.ts` · `execution-evidence-spine.md` | **shipped** |
+| 8 | Execution evidence spine | §01 `#execution-evidence` (+ cross-cut §02/04/05/06) | `execution-evidence.ts` · `execution-evidence-spine.md` | **deep** dig v3/#90 — was dangling-link slogan; body shipped |
 | 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | **shipped** `#mcp` |
-| 10 | Computer-use foundation | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **shipped** companion |
+| 10 | Computer-use foundation + package internals | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **deep** dig v3/#90 — `#backend-selection` · `#cua-driver-lifecycle` · `#snapshot-coordinates` · `#presentation-overlay` |
 | 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | **shipped** `#swarm` |
 | 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | shipped §02 `#shell-side-effects` |
 | 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
 | 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |
+| 12d | Desktop UI supervision contracts | `/guides/desktop-ui` | `packages/ui` interaction-queue · chat-input-behavior · composer | **deep** dig v3/#90 — `#interaction-queue` · `#composer-input` + prior streaming/mentions |
+| 12e | CLI session / bootstrap / inspect | `/guides/cli` | `packages/cli` session-driver · runtime-bootstrap · inspect-command | **deep** dig v3/#90 — new companion |
 | 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | **deep** (#81) |
 | 14 | Skill catalog policy + bundled corpus | §01 `#skills` + `/guides/skills-corpus` | runtime `skills.ts` · desktop `skills.ts` / `managed-skill-sources.ts` · SKILL×29 | **deep** dig v3/#90 — mechanism + cross-body contracts |
 | 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | **shipped** `#harbor-trust` |
@@ -155,11 +157,13 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | `task-ledger*.ts` | 7 | §04 |
 | `execution-evidence.ts` | 8 | cross-cut |
 | `mcp-tools.ts` | 9 | companion |
-| `computer-use/**` | 10 | guide |
+| `computer-use/**` | 10 | `/guides/computer-use` |
 | swarm / expert / team tools | 11 | companion |
 | `shell-run-manager.ts` / pty | 12 | §01/§02 |
+| `packages/ui` interaction-queue / chat-input | 12d | `/guides/desktop-ui` |
+| `packages/cli` session-driver / inspect | 12e | `/guides/cli` |
 | storage write-queue / jsonl | 13 | §01 stores |
-| skills / skill-invocation | 14 | companion |
+| skills / skill-invocation | 14 | §01 + `/guides/skills-corpus` |
 | `packages/headless/**` | 15 | §04 |
 
 ---

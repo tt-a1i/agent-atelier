@@ -43,7 +43,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 - `docs/ahe-target-protocol.md` + `docs/architecture/ahe-self-iteration-boundary-draft*` — Target controller/runner/`validateMakaAheChangeEvaluation`
 - `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` — Phase3 reconciler
 
-**#90 gate:** in progress this session — Skills corpus + elevated archives shipped; remaining true blockers = product stubs only.
+**#90 gate:** MET this session — Skills corpus + elevated archives + Top-15+ seam deepenings (incl. `#execution-evidence` body, CU internals, desktop-ui queue/input, `/guides/cli`). Remaining true blockers for **product Destination** = AHE Target / Phase3 stubs only (not map blockers).
 
 ## Full matrix (127)
 
@@ -93,7 +93,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/agent-swarm.md` | authority | deep | §04 #swarm + #swarm-failure | failure matrix shipped this pass |
 | `docs/expert-team-runtime.md` | authority | deep | §04 #swarm Expert Team | failure matrix shipped this pass |
 | `docs/ahe-target-protocol.md` | authority | deep | §06 validators/identity | deep on validators/identity; Target controller/runner/change-evaluation = product-stub — do not invent |
-| `docs/execution-evidence-spine.md` | authority | deep | §01 #execution-evidence | keep |
+| `docs/execution-evidence-spine.md` | authority | deep | §01 #execution-evidence | dig v3/#90 — body shipped (was dangling-link slogan) |
 | `docs/session-task-ledger-lifecycle.md` | authority | deep | §04 #ledger | keep |
 | `docs/skill-catalog-policy.md` | authority | deep | §01 #skills + #skills-failure | failure matrix shipped this pass |
 | `docs/workspace-privacy-context.md` | authority | deep | /guides/security-privacy | failure stories this pass |
@@ -102,12 +102,12 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/frontend-css-governance.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 — governance that binds agent chrome |
 | `docs/frontend-css-governance.zh-CN.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 |
 | `docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md` | authority | cite-only | §04 #terminal-bench-read | cite-only how-to-read vs Harbor taxonomy (#89); no new protocol |
-| `docs/computer-use-foundation-contract.md` | authority | deep | /guides/computer-use #six | companion failure matrix already live |
+| `docs/computer-use-foundation-contract.md` | authority | deep | /guides/computer-use #six | companion + package internals (#backend-selection etc.) dig v3 |
 | `docs/computer-use-model-loop-foundation.md` | authority | deep | /guides/computer-use #model-loop | companion failure matrix already live |
 | `docs/computer-use-evidence-classes.md` | authority | deep | /guides/computer-use #evidence | companion failure matrix already live |
 | `docs/computer-use-provider-evidence.md` | authority | deep | /guides/computer-use #evidence | companion failure matrix already live |
 | `docs/computer-use-host-events-contract.md` | authority | deep | /guides/computer-use #host-events | companion failure matrix already live |
-| `docs/cua-driver-artifact-integrity.md` | authority | deep | /guides/computer-use #artifact | companion failure matrix already live |
+| `docs/cua-driver-artifact-integrity.md` | authority | deep | /guides/computer-use #artifact | companion + #cua-driver-lifecycle dig v3 |
 | `docs/architecture/runtime-core-architecture-draft.md` | authority | deep | §01 | keep |
 | `docs/architecture/runtime-core-architecture-draft.zh-CN.md` | authority | deep | §01 | keep |
 | `docs/architecture/turn-evidence-tools-active-prune-draft.md` | authority | deep | §02 | keep |
@@ -168,7 +168,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `packages/runtime/README.md` | readme | cite-only | §01 entry / package seam | public-seam pointer; SessionManager/permission/recovery contracts taught in §01 + sandbox README |
 | `packages/runtime/src/sandbox/README.md` | readme | deep | §01 #sandbox | README lag caveat already taught |
 | `packages/headless/README.md` | readme | deep | §04 #harbor-trust + #harbor-failure | failure matrix this pass |
-| `packages/ui/README.md` | readme | deep | /guides/desktop-ui #layers | mined #86 |
+| `packages/ui/README.md` | readme | deep | /guides/desktop-ui #layers · #interaction-queue · #composer-input | mined #86; dig v3 queue/input contracts |
 | `notes/frontend-architecture-map-2026-07-19.md` | authority | deep | /guides/desktop-ui #boundaries | structure absorbed #86; R1–R8 campaign = history/process |
 | `.github/pull_request_template.md` | readme | oos | — | process template |
 | `skills/maka-architecture-docs/SKILL.md` | readme | oos | — | meta writing skill |
@@ -184,6 +184,10 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 3. Elevated archives with leftover teaching: composer-mentions · design-refinement D1–D4 · full-product PR five questions; ui-skills deep-reads → `history-only`.
 4. Desktop host deepened: `#skills-governance` + `#pr-five` from `skills.ts` / `managed-skill-sources.ts` + archive delivery contract.
 5. §01 `#skills` stub updated — no longer claims “bodies are not Destination.”
-6. Remaining `discard` = zero-teaching campaign/smoke/superseded CSS wave / stale capability audit.
-7. Remaining `oos` = changelog, license, smoke, PR template, meta architecture-docs writing skill.
-8. Product Destination still stub-gated (AHE Target / Phase3) — not invented.
+6. **Seam re-audit (ruthless):** `#execution-evidence` was a dangling site-wide link with zero body — inventory “shipped” was false; body + phases table shipped CN+EN.
+7. **CU internals** beyond six-doc companion: `#backend-selection` · `#cua-driver-lifecycle` · `#snapshot-coordinates` · `#presentation-overlay`.
+8. **Desktop UI gaps:** `#interaction-queue` · `#composer-input` from `packages/ui`.
+9. **CLI companion** `/guides/cli` CN+EN — session-driver / runtime-bootstrap / inspect (was slogan-level package gap).
+10. Remaining `discard` = zero-teaching campaign/smoke/superseded CSS wave / stale capability audit.
+11. Remaining `oos` = changelog, license, smoke, PR template, meta architecture-docs writing skill.
+12. Product Destination still stub-gated (AHE Target / Phase3) — not invented; **does not block #90 corpus dig close**.
