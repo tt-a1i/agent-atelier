@@ -159,16 +159,16 @@ A seam is mined enough for Destination only when:
 
 | # | Title | Notes |
 | --- | --- | --- |
-| [#46](https://github.com/tt-a1i/agent-atelier/issues/46) | Sandbox outline → narrative home | Outline already at `sandbox-boundary-deep-outline.md` |
-| [#62](https://github.com/tt-a1i/agent-atelier/issues/62) | Task: ship sandbox teaching | Blocked by #46 home decision |
-| [#47](https://github.com/tt-a1i/agent-atelier/issues/47) | Computer-use suite teaching plan | Companion likely |
-| [#48](https://github.com/tt-a1i/agent-atelier/issues/48) | Recovery Phase0/1 + tool journal | Failpoint matrix |
-| [#49](https://github.com/tt-a1i/agent-atelier/issues/49) | Session task ledger ≠ TaskRun | Glossary fix |
+| [#46](https://github.com/tt-a1i/agent-atelier/issues/46) | Sandbox outline → narrative home | **closed** — home = §01 `#sandbox` |
+| [#62](https://github.com/tt-a1i/agent-atelier/issues/62) | Task: ship sandbox teaching | **closed** — live zh+en |
+| [#47](https://github.com/tt-a1i/agent-atelier/issues/47) | Computer-use suite teaching plan | **closed** — outline + `/guides/computer-use` |
+| [#48](https://github.com/tt-a1i/agent-atelier/issues/48) | Recovery Phase0/1 + tool journal | **closed** — outline + §01 `#recovery` |
+| [#49](https://github.com/tt-a1i/agent-atelier/issues/49) | Session task ledger ≠ TaskRun | **closed** — outline + §04 `#ledger` |
 | [#50](https://github.com/tt-a1i/agent-atelier/issues/50) | Execution-evidence spine | Cross-cut |
-| [#51](https://github.com/tt-a1i/agent-atelier/issues/51) | MCP runtime | |
-| [#52](https://github.com/tt-a1i/agent-atelier/issues/52) | Agent swarm + expert team | |
-| [#53](https://github.com/tt-a1i/agent-atelier/issues/53) | Skill catalog policy | Mechanism, not 29 SKILL bodies |
-| [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | |
+| [#51](https://github.com/tt-a1i/agent-atelier/issues/51) | MCP runtime | **closed** — outline + §01 `#mcp` |
+| [#52](https://github.com/tt-a1i/agent-atelier/issues/52) | Agent swarm + expert team | **closed** — outline + §04 `#swarm` |
+| [#53](https://github.com/tt-a1i/agent-atelier/issues/53) | Skill catalog policy | **closed** — outline + §01 `#skills` |
+| [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | **closed** — outline + §04 `#harbor-trust` |
 | [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **outline + lean §01 durability** |
 | [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **outline** (narrative → §02) |
 | [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **outline + lean §01 note** |
