@@ -1,5 +1,7 @@
 /** Cognitive-track chapter IA — 1:1 with Maka ARCHITECTURE six chapters. */
 
+import { chrome, localePath, type Locale } from "./i18n";
+
 export type ChapterId = "01" | "02" | "03" | "04" | "05" | "06";
 
 export interface ChapterMeta {
@@ -131,38 +133,80 @@ export function adjacentChapters(id: ChapterId): {
   };
 }
 
+export function chapterHref(slug: string, locale: Locale = "zh"): string {
+  return localePath(locale, `chapters/${slug}`);
+}
+
 /** Sticky § nav items shared by ReportLayout (compact labels). */
-export function chapterNavItems(_activeId?: ChapterId): { href: string; label: string }[] {
+export function chapterNavItems(locale: Locale = "zh"): { href: string; label: string }[] {
+  const t = chrome(locale);
   return [
-    { href: "/", label: "导读" },
+    { href: localePath(locale, ""), label: t.navGuide },
     ...CHAPTERS.map((c) => ({
-      href: c.href,
+      href: chapterHref(c.slug, locale),
       label: `§${c.id}`,
     })),
-    { href: "/history", label: "History" },
+    { href: localePath(locale, "history"), label: t.navHistory },
   ];
 }
 
-export const ARCHITECTURE_SENTENCE_ZH =
-  "Maka 是一个 log-first、projection-driven 的 Agent Runtime：运行事实进入 append-only log；Session、模型上下文、TaskRun、Self-check 和演化证据都是这些事实面向不同消费者的投影。";
+export const ARCHITECTURE_SENTENCE: Record<Locale, string> = {
+  zh: "Maka 是一个 log-first、projection-driven 的 Agent Runtime：运行事实进入 append-only log；Session、模型上下文、TaskRun、Self-check 和演化证据都是这些事实面向不同消费者的投影。",
+  en: "Maka is a log-first, projection-driven Agent Runtime. Execution facts enter append-only logs; Session state, model context, TaskRun, Self-check, and evolution evidence are projections of those facts for different consumers.",
+};
 
-export const LAYERS_ZH = [
-  {
-    n: 1 as const,
-    title: "运行事实层",
-    body: "一次 Agent Run 产生模型消息、Tool Call、Tool Result、权限与终止事实。Runtime Event Log 是交互语义的 canonical source。裁剪与 Compaction 可以改变模型下一轮看见什么，但不能反向改写已经发生的事实。",
-    chapters: ["01", "02", "03"] as ChapterId[],
-  },
-  {
-    n: 2 as const,
-    title: "长程任务层",
-    body: "当任务长于一次 Turn 或一个进程时，Headless 通过独立 Task identity、Task Event Log 与 TaskRun projection 保存跨 Attempt 进度。Self-check 提供受限反馈，但不拥有最终事实 authority。",
-    chapters: ["04", "05"] as ChapterId[],
-  },
-  {
-    n: 3 as const,
-    title: "演化层",
-    body: "AHE 把多次 TaskRun 的结果与 trace 组织成带 target identity 的演化证据。它位于交互 Runtime 外部，通过受限 change surface、可证伪 manifest、candidate evaluation 与 rollback lineage 推进系统改进。",
-    chapters: ["06"] as ChapterId[],
-  },
-];
+/** @deprecated use ARCHITECTURE_SENTENCE.zh */
+export const ARCHITECTURE_SENTENCE_ZH = ARCHITECTURE_SENTENCE.zh;
+
+export type LayerBlock = {
+  n: 1 | 2 | 3;
+  title: string;
+  body: string;
+  chapters: ChapterId[];
+};
+
+export const LAYERS: Record<Locale, LayerBlock[]> = {
+  zh: [
+    {
+      n: 1,
+      title: "运行事实层",
+      body: "一次 Agent Run 产生模型消息、Tool Call、Tool Result、权限与终止事实。Runtime Event Log 是交互语义的 canonical source。裁剪与 Compaction 可以改变模型下一轮看见什么，但不能反向改写已经发生的事实。",
+      chapters: ["01", "02", "03"],
+    },
+    {
+      n: 2,
+      title: "长程任务层",
+      body: "当任务长于一次 Turn 或一个进程时，Headless 通过独立 Task identity、Task Event Log 与 TaskRun projection 保存跨 Attempt 进度。Self-check 提供受限反馈，但不拥有最终事实 authority。",
+      chapters: ["04", "05"],
+    },
+    {
+      n: 3,
+      title: "演化层",
+      body: "AHE 把多次 TaskRun 的结果与 trace 组织成带 target identity 的演化证据。它位于交互 Runtime 外部，通过受限 change surface、可证伪 manifest、candidate evaluation 与 rollback lineage 推进系统改进。",
+      chapters: ["06"],
+    },
+  ],
+  en: [
+    {
+      n: 1,
+      title: "Execution facts",
+      body: "An Agent Run produces model messages, Tool Calls, Tool Results, permission decisions, and termination facts. The Runtime Event Log is the canonical source for those interaction semantics. Context pruning and Compaction may change what the model sees next, but cannot rewrite facts that already occurred.",
+      chapters: ["01", "02", "03"],
+    },
+    {
+      n: 2,
+      title: "Durable tasks",
+      body: "When a task outlives one Turn or process, Headless uses an independent task identity, Task Event Log, and TaskRun projection to preserve progress across Attempts. Self-check provides bounded feedback inside that task loop but does not own final fact authority.",
+      chapters: ["04", "05"],
+    },
+    {
+      n: 3,
+      title: "Evolution",
+      body: "AHE organizes outcomes and traces from multiple TaskRuns into evolution evidence bound to target identity. It remains outside the interactive Runtime and advances system changes through a constrained change surface, falsifiable manifests, candidate evaluation, and rollback lineage.",
+      chapters: ["06"],
+    },
+  ],
+};
+
+/** @deprecated use LAYERS.zh */
+export const LAYERS_ZH = LAYERS.zh;

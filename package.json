@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "history:ingest": "node scripts/maka-history-ingest.mjs",
-    "history:smoke": "node scripts/maka-history-smoke.mjs"
+    "history:smoke": "node scripts/maka-history-smoke.mjs",
+    "i18n:smoke": "node scripts/i18n-smoke.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.3",

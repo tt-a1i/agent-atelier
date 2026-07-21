@@ -1,0 +1,342 @@
+---
+import ReportLayout from "../layouts/ReportLayout.astro";
+import Section from "./Section.astro";
+import {
+  ARCHITECTURE_SENTENCE,
+  CHAPTERS,
+  LAYERS,
+  chapterHref,
+  chapterNavItems,
+  type ChapterId,
+} from "../lib/chapters";
+import { LAYER_LABELS, localePath, type Locale } from "../lib/i18n";
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = "zh" } = Astro.props;
+const nav = chapterNavItems(locale);
+const layers = LAYERS[locale];
+const layerLabels = LAYER_LABELS[locale];
+const historyHref = localePath(locale, "history");
+
+function chapterLinks(ids: ChapterId[]) {
+  return ids.map((id) => CHAPTERS.find((c) => c.id === id)!);
+}
+
+const copy =
+  locale === "en"
+    ? {
+        title: "Dissecting Agents with Maka · Agent Atelier",
+        description:
+          "Maka is a log-first, projection-driven Agent Runtime. Follow six milestone chapters to learn a complete Agent structure.",
+        eyebrow: "Agent Learning Report · Specimen: Maka",
+        h1: "Dissecting Agents with Maka",
+        metaCog: "Cognitive track · §01–§06",
+        metaSpecimen: "Specimen · maka-agent",
+        metaGenre: "Form · research report",
+        metaHistory: "History track",
+        layersLabel: "Mental model",
+        layersTitle: "A three-layer mental model",
+        layersLede:
+          "The same execution facts are projected for different consumers — learn the layers, then enter chapters.",
+        layerChapters: "Chapters:",
+        tocLabel: "Six chapters",
+        tocTitle: "Chapter index",
+        tocLede:
+          "Routes match Maka ARCHITECTURE English titles 1:1. All chapters are WIP — none marked complete.",
+        tracksLabel: "Dual track",
+        tracksTitle: "Cognitive track and history track",
+        tracksLede:
+          "Milestones teach structure; full commit/PR lineage lives at /history.",
+        tracksBody:
+          "The cognitive track advances through six milestone chapters instead of dumping every commit into the TOC. To ask when a mechanism matured, open /history (PR-first snapshot) or follow sparse in-chapter evolution asides.",
+        pull: "This site is for readers who want to understand how an Agent keeps its ledger, thins context, reviews failure, and improves in a falsifiable way — not only how to call an API.",
+      }
+    : {
+        title: "用 Maka 解剖 Agent · Agent Atelier",
+        description:
+          "Maka 是 log-first、projection-driven 的 Agent Runtime。沿六章里程碑理解完整 Agent 结构。",
+        eyebrow: "Agent Learning Report · Specimen: Maka",
+        h1: "用 Maka 解剖 Agent",
+        metaCog: "认知轨 · §01–§06",
+        metaSpecimen: "标本 · maka-agent",
+        metaGenre: "体裁 · research report",
+        metaHistory: "演进轨",
+        layersLabel: "Mental model",
+        layersTitle: "三层心智模型",
+        layersLede: "同一组运行事实，被投影给不同消费者；先分清层，再进章节。",
+        layerChapters: "对应章节：",
+        tocLabel: "Six chapters",
+        tocTitle: "六章索引",
+        tocLede: "路由与 Maka ARCHITECTURE 英文章名 1:1；全部为 WIP，未标完成。",
+        tracksLabel: "Dual track",
+        tracksTitle: "认知轨与演进轨",
+        tracksLede: "里程碑讲透结构；完整 commit/PR 谱系在 /history。",
+        tracksBody:
+          "认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入 /history（PR-first 快照），或在章内稀疏的演进旁注中跳转。",
+        pull: "目标读者不是「只会调 API 的人」，而是想弄清 Agent 内部账本怎么记、上下文怎么瘦、失败怎么复盘、系统如何可证伪地改进的人。",
+      };
+---
+
+<ReportLayout
+  title={copy.title}
+  description={copy.description}
+  nav={nav}
+  activeHref={localePath(locale, "")}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">{copy.eyebrow}</p>
+      <h1>{copy.h1}</h1>
+      <p class="masthead__sub masthead__sub--architecture">
+        {ARCHITECTURE_SENTENCE[locale]}
+      </p>
+      <div class="masthead__meta">
+        <span>{copy.metaCog}</span>
+        <span>{copy.metaSpecimen}</span>
+        <span>{copy.metaGenre}</span>
+        <span>
+          {copy.metaHistory} · <a href={historyHref}>/history</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="layers"
+      label={copy.layersLabel}
+      title={copy.layersTitle}
+      lede={copy.layersLede}
+    >
+      <ol class="layer-list">
+        {
+          layers.map((layer) => (
+            <li class="layer-card">
+              <p class="layer-card__n">
+                {layer.n}. {layer.title}
+              </p>
+              <p class="layer-card__body">{layer.body}</p>
+              <p class="layer-card__chapters">
+                {copy.layerChapters}{" "}
+                {chapterLinks(layer.chapters).map((c, i) => (
+                  <span>
+                    {i > 0 ? " · " : ""}
+                    <a href={chapterHref(c.slug, locale)}>
+                      §{c.id} {locale === "en" ? c.titleEn : c.titleZh}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section id="chapters" label={copy.tocLabel} title={copy.tocTitle} lede={copy.tocLede}>
+      <ol class="chapter-toc">
+        {
+          CHAPTERS.map((c) => (
+            <li class="chapter-toc__item">
+              <a class="chapter-toc__link" href={chapterHref(c.slug, locale)}>
+                <span class="chapter-toc__id">§{c.id}</span>
+                <span class="chapter-toc__titles">
+                  <span class="chapter-toc__zh">
+                    {locale === "en" ? c.titleEn : c.titleZh}
+                  </span>
+                  <span class="chapter-toc__en">
+                    {locale === "en" ? c.titleZh : c.titleEn}
+                  </span>
+                </span>
+                <span class="chapter-toc__meta">
+                  <span class="chapter-toc__layer">{layerLabels[c.layer]}</span>
+                  <span class="chapter-toc__wip">WIP</span>
+                </span>
+              </a>
+              <p class="chapter-toc__q">
+                {locale === "en" ? c.questionEn : c.questionZh}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section
+      id="tracks"
+      label={copy.tracksLabel}
+      title={copy.tracksTitle}
+      lede={copy.tracksLede}
+    >
+      <p>
+        {
+          locale === "en" ? (
+            <span>
+              The cognitive track advances through six milestone chapters instead of dumping every
+              commit into the TOC. To ask when a mechanism matured, open{" "}
+              <a href={historyHref}>/history</a> (PR-first snapshot) or follow sparse in-chapter
+              evolution asides.
+            </span>
+          ) : (
+            <span>
+              认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入
+              <a href={historyHref}>/history</a>
+              （PR-first 快照），或在章内稀疏的演进旁注中跳转。
+            </span>
+          )
+        }
+      </p>
+      <blockquote class="pull">{copy.pull}</blockquote>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .masthead__sub--architecture {
+    font-style: normal;
+    font-size: 1.12rem;
+    line-height: 1.65;
+    color: var(--ink);
+    max-width: 42em;
+  }
+
+  .layer-list {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+
+  .layer-card {
+    padding: 0 0 1.35rem;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .layer-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .layer-card__n {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.45rem;
+  }
+
+  .layer-card__body {
+    font-family: var(--serif);
+    margin: 0 0 0.65rem;
+    max-width: 40em;
+  }
+
+  .layer-card__chapters {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--mute);
+  }
+
+  .chapter-toc {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+
+  .chapter-toc__item {
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .chapter-toc__item:last-child {
+    border-bottom: none;
+  }
+
+  .chapter-toc__link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem 1rem;
+    align-items: baseline;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .chapter-toc__link:hover .chapter-toc__zh {
+    color: var(--accent);
+  }
+
+  .chapter-toc__id {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .chapter-toc__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .chapter-toc__zh {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.2rem;
+    transition: color 0.15s ease;
+  }
+
+  .chapter-toc__en {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--mute);
+  }
+
+  .chapter-toc__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--mute);
+  }
+
+  .chapter-toc__wip {
+    color: var(--accent);
+  }
+
+  .chapter-toc__q {
+    margin: 0.55rem 0 0 0;
+    padding-left: calc(0.78rem * 3.2);
+    font-family: var(--serif);
+    font-size: 0.98rem;
+    color: var(--mute);
+    max-width: 40em;
+  }
+
+  @media (max-width: 640px) {
+    .chapter-toc__link {
+      grid-template-columns: auto 1fr;
+    }
+
+    .chapter-toc__meta {
+      grid-column: 2;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .chapter-toc__q {
+      padding-left: 0;
+    }
+  }
+</style>

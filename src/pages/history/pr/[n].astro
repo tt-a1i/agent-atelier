@@ -28,7 +28,7 @@ const memberCommits = pr.commitShas
   .filter((c): c is NonNullable<typeof c> => Boolean(c));
 const chips = prAreaChips(pr, 8);
 
-const nav = chapterNavItems();
+const nav = chapterNavItems("zh");
 
 function fmtDate(iso: string): string {
   try {
@@ -49,6 +49,8 @@ function fmtDate(iso: string): string {
   title={`PR #${pr.number} · ${pr.title} · Agent Atelier`}
   description={`Maka PR #${pr.number}: ${pr.title}`}
   nav={nav}
+  locale="zh"
+  activeHref="/history"
 >
   <article class="report">
     <header class="masthead">
@@ -108,12 +110,12 @@ function fmtDate(iso: string): string {
         <a href={pr.url} rel="noopener noreferrer">在 GitHub 打开 PR #{pr.number}</a>
         {
           pr.mergeCommitSha && (
-            <>
+            <span>
               {" · "}
               <a href={githubCommitUrl(pr.mergeCommitSha)} rel="noopener noreferrer">
                 merge commit
               </a>
-            </>
+            </span>
           )
         }
       </p>

@@ -1,0 +1,49 @@
+---
+import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipelineKeystone.astro";
+---
+
+<ChapterShell chapterId="02" locale="en">
+  <div slot="thesis">
+    <p lang="zh-CN">
+      （正文仍以中文源稿为准）当一次 Tool 调用既改变世界又产生巨量输出时，如何留下「发生过什么」的证据，同时不拖垮同一
+      Turn 的下一次推理？
+    </p>
+  </div>
+
+  <Section
+    id="keystone"
+    label="§02 · Keystone"
+    title="Turn-level evidence pipeline"
+    lede="Scene-local metaphor; the fixed system is NewsLiquid tokens, hand keystones, and motion discipline."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · A Tool Result splits into four representations; active prune rewrites Provider messages only — never Evidence."
+      alt="Pipeline from Tool execution to Runtime Event, Artifact, Turn Evidence, then Provider messages; 01–04 persist as evidence; 05 may be pruned; invariant: Prune the context, never prune the evidence."
+    >
+      <EvidencePipelineKeystone />
+    </DiagramFigure>
+
+    <p class="figure-note">
+      Invariant: <strong>Prune the context, never prune the evidence.</strong>
+      Pipeline metaphor is local to §02.
+    </p>
+  </Section>
+</ChapterShell>
+
+<style>
+  .figure-note {
+    margin: -0.35rem 0 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 38em;
+  }
+
+  .figure-note strong {
+    font-weight: 600;
+    color: var(--ink);
+  }
+</style>

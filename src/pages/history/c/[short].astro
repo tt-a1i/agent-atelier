@@ -21,7 +21,7 @@ if (!commit) {
 }
 
 const meta = loadMeta();
-const nav = chapterNavItems();
+const nav = chapterNavItems("zh");
 
 function fmtDate(iso: string): string {
   try {
@@ -42,6 +42,8 @@ function fmtDate(iso: string): string {
   title={`${commit.short} · ${commit.subject} · Agent Atelier`}
   description={`Maka commit ${commit.short}: ${commit.subject}`}
   nav={nav}
+  locale="zh"
+  activeHref="/history"
 >
   <article class="report">
     <header class="masthead">

@@ -258,6 +258,35 @@ a:hover {
   color: var(--accent);
 }
 
+.site-nav__locale {
+  color: var(--ink) !important;
+  border: 1px solid var(--hair);
+  padding: 0.15rem 0.45rem;
+}
+
+.site-nav__locale:hover {
+  border-color: var(--accent);
+  color: var(--accent) !important;
+}
+
+main > .shell-banner.stub {
+  max-width: var(--col);
+  margin: 1rem auto 0;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  border: none;
+  background: transparent;
+}
+
+main > .shell-banner.stub > .stub__tag + p,
+main > .shell-banner.stub > p:last-child {
+  margin: 0;
+  padding: 1.05rem 1.15rem;
+  background: var(--soft);
+  border: 1px solid var(--hair);
+  border-left: 2px solid var(--accent);
+}
+
 .history-aside {
   margin: 1.25rem 0 1.5rem;
   padding: 0.75rem 0 0.75rem 1rem;

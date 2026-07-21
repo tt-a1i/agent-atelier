@@ -1,6 +1,14 @@
 ---
 import "../styles/global.css";
 import { chapterNavItems } from "../lib/chapters";
+import {
+  alternateLocalePath,
+  chrome,
+  detectLocaleFromPath,
+  htmlLang,
+  localePath,
+  type Locale,
+} from "../lib/i18n";
 
 interface NavItem {
   href: string;
@@ -13,23 +21,38 @@ interface Props {
   nav?: NavItem[];
   /** Highlight matching sticky-nav link. */
   activeHref?: string;
-  /** Document language; bilingual shell (#12) will flip this. */
-  lang?: string;
+  locale?: Locale;
 }
 
 const {
   title,
   description = "用 Maka 解剖 Agent：里程碑式的 Agent 学习站",
-  nav = chapterNavItems(),
+  locale: localeProp,
   activeHref,
-  lang = "zh-CN",
 } = Astro.props;
 
+const locale: Locale = localeProp ?? detectLocaleFromPath(Astro.url.pathname);
+const t = chrome(locale);
+const nav = Astro.props.nav ?? chapterNavItems(locale);
 const currentPath = activeHref ?? Astro.url.pathname;
+const alternateHref = alternateLocalePath(locale, Astro.url.pathname, Astro.url.search);
+const switchLabel = locale === "zh" ? t.localeSwitchToEn : t.localeSwitchToZh;
+
+function barePath(pathname: string): string {
+  let path = pathname || "/";
+  if (path !== "/" && path.endsWith("/")) path = path.slice(0, -1);
+  if (path === "/en") return "";
+  if (path.startsWith("/en/")) return path.slice(4);
+  return path.replace(/^\//, "");
+}
+
+const bare = barePath(Astro.url.pathname);
+const hrefZh = localePath("zh", bare);
+const hrefEn = localePath("en", bare);
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={htmlLang(locale)}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -38,6 +61,9 @@ const currentPath = activeHref ?? Astro.url.pathname;
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <link rel="alternate" hreflang="zh-CN" href={hrefZh} />
+    <link rel="alternate" hreflang="en" href={hrefEn} />
+    <link rel="alternate" hreflang="x-default" href={hrefZh} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -46,16 +72,21 @@ const currentPath = activeHref ?? Astro.url.pathname;
     />
   </head>
   <body>
-    <a class="skip-link" href="#main">跳到正文</a>
-    <nav class="site-nav" aria-label="站点与章节导航">
+    <a class="skip-link" href="#main">{t.skipToContent}</a>
+    <nav
+      class="site-nav"
+      aria-label={locale === "en" ? "Site and chapter navigation" : "站点与章节导航"}
+    >
       <div class="site-nav__inner">
-        <a class="site-nav__brand" href="/">Agent <span>Atelier</span></a>
+        <a class="site-nav__brand" href={localePath(locale, "")}>
+          Agent <span>Atelier</span>
+        </a>
         <ul class="site-nav__links">
           {
             nav.map((item) => {
               const active =
-                item.href === "/"
-                  ? currentPath === "/"
+                item.href === "/" || item.href === "/en" || item.href === "/en/"
+                  ? currentPath === "/" || currentPath === "/en" || currentPath === "/en/"
                   : currentPath === item.href || currentPath.startsWith(`${item.href}/`);
               return (
                 <li>
@@ -66,14 +97,31 @@ const currentPath = activeHref ?? Astro.url.pathname;
               );
             })
           }
+          <li>
+            <a
+              class="site-nav__locale"
+              href={alternateHref}
+              hreflang={locale === "zh" ? "en" : "zh-CN"}
+              lang={locale === "zh" ? "en" : "zh-CN"}
+              aria-label={t.localeSwitchAria}
+            >
+              {switchLabel}
+            </a>
+          </li>
         </ul>
       </div>
     </nav>
     <main id="main">
+      {
+        locale === "en" && (
+          <aside class="shell-banner stub" aria-label="Locale shell status">
+            <p class="stub__tag">{t.wipShellTag}</p>
+            <p>{t.wipShellBanner}</p>
+          </aside>
+        )
+      }
       <slot />
     </main>
-    <footer class="footer">
-      Agent Atelier · specimen: Maka · visual tokens adapted from NewsLiquid research reports
-    </footer>
+    <footer class="footer">{t.footer}</footer>
   </body>
 </html>

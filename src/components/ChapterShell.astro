@@ -3,73 +3,103 @@ import ReportLayout from "../layouts/ReportLayout.astro";
 import Section from "./Section.astro";
 import {
   adjacentChapters,
+  chapterHref,
   chapterNavItems,
   getChapter,
-  LAYER_LABELS_ZH,
   type ChapterId,
 } from "../lib/chapters";
+import { LAYER_LABELS, chrome, localePath, type Locale } from "../lib/i18n";
 
 interface Props {
   chapterId: ChapterId;
+  locale?: Locale;
   /** Extra description for <meta>; defaults to question. */
   description?: string;
 }
 
-const { chapterId, description } = Astro.props;
+const { chapterId, locale = "zh", description } = Astro.props;
 const chapter = getChapter(chapterId);
 const { prev, next } = adjacentChapters(chapterId);
-const nav = chapterNavItems(chapterId);
-const metaDescription = description ?? chapter.questionZh;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const layers = LAYER_LABELS[locale];
+const metaDescription =
+  description ?? (locale === "en" ? chapter.questionEn : chapter.questionZh);
+const titlePrimary = locale === "en" ? chapter.titleEn : chapter.titleZh;
+const titleSecondary = locale === "en" ? chapter.titleZh : chapter.titleEn;
+const question = locale === "en" ? chapter.questionEn : chapter.questionZh;
+const lede = chapter.ledeZh;
+const selfHref = chapterHref(chapter.slug, locale);
+const historyHref = localePath(locale, "history");
+const guideHref = localePath(locale, "");
 ---
 
 <ReportLayout
   title={`§${chapter.id} ${chapter.titleEn} · Agent Atelier`}
   description={metaDescription}
   nav={nav}
-  activeHref={chapter.href}
+  activeHref={selfHref}
+  locale={locale}
 >
   <article class="report">
     <header class="masthead">
       <p class="masthead__eyebrow">
-        §{chapter.id} · {chapter.titleEn} · 草稿 / Draft
+        §{chapter.id} · {chapter.titleEn} · {locale === "en" ? "Draft" : "草稿 / Draft"}
       </p>
       <h1>
-        <span class="masthead__title-zh">{chapter.titleZh}</span>
-        <span class="masthead__title-en">{chapter.titleEn}</span>
+        <span class="masthead__title-zh">{titlePrimary}</span>
+        <span class="masthead__title-en">{titleSecondary}</span>
       </h1>
-      <p class="masthead__sub">{chapter.questionZh}</p>
+      <p class="masthead__sub">{question}</p>
       <div class="masthead__meta">
-        <span>层 · {LAYER_LABELS_ZH[chapter.layer]}</span>
-        <span>标本 · maka-agent</span>
-        <span>状态 · WIP（未达验收清单）</span>
+        <span>{t.layer} · {layers[chapter.layer]}</span>
+        <span>{t.specimen}</span>
+        <span>{t.statusWip}</span>
         <span>
-          演进轨 · <a href="/history">/history</a>
+          {t.historyTrack} · <a href={historyHref}>/history</a>
         </span>
       </div>
     </header>
 
-    <aside class="stub" aria-label="WIP 说明">
-      <p class="stub__tag">WIP · 章节脚手架</p>
+    <aside class="stub" aria-label="WIP">
+      <p class="stub__tag">{t.chapterWipTag}</p>
       <p>
-        本章已挂路由与 NewsLiquid chrome，正文按
-        <a href="https://github.com/tt-a1i/agent-atelier/issues/6">验收清单</a>
-        推进中。勿将本页标为完成；§ 导航仅表示结构，不表示完成度。
+        {t.chapterWipBody}
+        {
+          locale === "zh" && (
+            <span>
+              {" "}
+              详见
+              <a href="https://github.com/tt-a1i/agent-atelier/issues/6">验收清单</a>。
+            </span>
+          )
+        }
       </p>
     </aside>
 
     <Section
       id="thesis"
-      label={`§${chapter.id} · Thesis`}
-      title="本章要回答什么"
-      lede={chapter.ledeZh}
+      label={`§${chapter.id} · ${t.thesisLabel}`}
+      title={t.thesisTitle}
+      lede={lede}
     >
       <p>
-        核心问题：{chapter.questionZh}
+        {locale === "en" ? "Core question: " : "核心问题："}
+        {question}
       </p>
-      <p class="thesis-en" lang="en">
-        <span class="thesis-en__label">EN question</span>
-        {chapter.questionEn}
-      </p>
+      {
+        locale === "zh" ? (
+          <p class="thesis-en" lang="en">
+            <span class="thesis-en__label">EN question</span>
+            {chapter.questionEn}
+          </p>
+        ) : (
+          <p class="thesis-en" lang="zh-CN">
+            <span class="thesis-en__label">中文问题</span>
+            {chapter.questionZh}
+          </p>
+        )
+      }
       <slot name="thesis" />
     </Section>
 
@@ -77,49 +107,64 @@ const metaDescription = description ?? chapter.questionZh;
 
     <Section
       id="outline"
-      label={`§${chapter.id} · Outline`}
-      title="拟展开的阅读骨架"
-      lede="结构占位，便于后续同船双语与关键图槽位对齐。"
+      label={`§${chapter.id} · ${t.outlineLabel}`}
+      title={t.outlineTitle}
+      lede={t.outlineLede}
     >
       <slot name="outline">
         <ul class="outline-list">
-          <li>机制主线：用标本讲清 Current 边界</li>
-          <li>关键图槽位：章首手写 SVG（待补）</li>
-          <li>体量图槽位：≥3 张流程/投影图（待补）</li>
-          <li>
-            演进旁注：稀疏链到 <a href="/history">/history</a>（PR 优先）
-          </li>
+          {
+            t.outlineDefaults.map((item) => (
+              <li>
+                {item.includes("/history") ? (
+                  <span>
+                    {item.split("/history")[0]}
+                    <a href={historyHref}>/history</a>
+                    {item.split("/history")[1] ?? ""}
+                  </span>
+                ) : (
+                  item
+                )}
+              </li>
+            ))
+          }
         </ul>
       </slot>
     </Section>
 
-    <nav class="chapter-pager" aria-label="相邻章节">
+    <nav class="chapter-pager" aria-label={locale === "en" ? "Adjacent chapters" : "相邻章节"}>
       {
         prev ? (
-          <a class="chapter-pager__link chapter-pager__link--prev" href={prev.href}>
-            <span class="chapter-pager__dir">上一章</span>
+          <a
+            class="chapter-pager__link chapter-pager__link--prev"
+            href={chapterHref(prev.slug, locale)}
+          >
+            <span class="chapter-pager__dir">{t.pagerPrev}</span>
             <span class="chapter-pager__title">
-              §{prev.id} {prev.titleZh}
+              §{prev.id} {locale === "en" ? prev.titleEn : prev.titleZh}
             </span>
           </a>
         ) : (
-          <a class="chapter-pager__link chapter-pager__link--prev" href="/">
-            <span class="chapter-pager__dir">返回</span>
-            <span class="chapter-pager__title">导读</span>
+          <a class="chapter-pager__link chapter-pager__link--prev" href={guideHref}>
+            <span class="chapter-pager__dir">{t.pagerBack}</span>
+            <span class="chapter-pager__title">{t.pagerGuide}</span>
           </a>
         )
       }
       {
         next ? (
-          <a class="chapter-pager__link chapter-pager__link--next" href={next.href}>
-            <span class="chapter-pager__dir">下一章</span>
+          <a
+            class="chapter-pager__link chapter-pager__link--next"
+            href={chapterHref(next.slug, locale)}
+          >
+            <span class="chapter-pager__dir">{t.pagerNext}</span>
             <span class="chapter-pager__title">
-              §{next.id} {next.titleZh}
+              §{next.id} {locale === "en" ? next.titleEn : next.titleZh}
             </span>
           </a>
         ) : (
-          <a class="chapter-pager__link chapter-pager__link--next" href="/history">
-            <span class="chapter-pager__dir">演进轨</span>
+          <a class="chapter-pager__link chapter-pager__link--next" href={historyHref}>
+            <span class="chapter-pager__dir">{t.pagerHistory}</span>
             <span class="chapter-pager__title">/history</span>
           </a>
         )
