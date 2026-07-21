@@ -1,0 +1,96 @@
+---
+import ReportLayout from "../layouts/ReportLayout.astro";
+import Section from "../components/Section.astro";
+---
+
+<ReportLayout title="用 Maka 解剖 Agent · Agent Atelier">
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Agent Learning Report · Specimen: Maka</p>
+      <h1>用 Maka 解剖 Agent</h1>
+      <p class="masthead__sub">
+        不是把每一次 git commit 摊成目录，而是沿着真正改变认知的里程碑，把 Agent
+        从「会调用工具的聊天框」拆到可观察、可压缩、可演进的系统。
+      </p>
+      <div class="masthead__meta">
+        <span>系列 · 里程碑演进</span>
+        <span>标本 · maka-agent</span>
+        <span>体裁 · research report</span>
+      </div>
+    </header>
+
+    <Section
+      id="intro"
+      label="§00 · Preface"
+      title="为什么用标本，而不是教科书"
+      lede="先看见一只活着的 Agent，再抽象出通用结构。"
+    >
+      <p>
+        Agent Atelier 是一座面向「深度理解 Agent」的学习站。内容以
+        <strong>Maka</strong> 为教学标本：它足够真实（有工具循环、日志、上下文压缩），又足够可读（可以沿着工程决策追问为什么）。
+      </p>
+      <p>
+        目录按<strong>里程碑</strong>组织——那些一旦理解就再也回不去的节点——而不是仓库里的每一笔提交。图表与动画会逐步补上；这一页先把骨架与语气定下来。
+      </p>
+      <blockquote class="pull">
+        目标读者不是「只会调 API 的人」，而是想弄清 Agent
+        内部账本怎么记、上下文怎么瘦、失败怎么复盘的人。
+      </blockquote>
+    </Section>
+
+    <Section
+      id="s01"
+      label="§01 · Milestone"
+      title="Tool loop：从一次回答到可行动的循环"
+      lede="模型、工具、观察——闭环比 prompt 更重要。"
+    >
+      <p>
+        第一个里程碑：Agent 不是「生成一段话」，而是反复经历
+        <em>decide → act → observe → decide</em>。Maka 的工具循环是这条主线的入口。
+      </p>
+      <div class="stub">
+        <p class="stub__tag">Stub · 待展开</p>
+        <p>
+          计划：一张循环示意图 + 一次真实 tool call 的时间线动画；对照「单次 completion」与「多步 loop」的失败模式。
+        </p>
+      </div>
+    </Section>
+
+    <Section
+      id="s02"
+      label="§02 · Milestone"
+      title="Log-first：没有日志就没有可调试的 Agent"
+      lede="把黑盒拆成可回放的事件流。"
+    >
+      <p>
+        第二个里程碑：先把「发生了什么」写进可查询的日志，再谈策略与智能。Log-first
+        让复现、评测与教学成为可能——标本级 Agent 必须可被旁观。
+      </p>
+      <div class="stub">
+        <p class="stub__tag">Stub · 待展开</p>
+        <p>
+          计划：事件类型一览表 + 一次会话的瀑布图；说明哪些字段属于 trust boundary，哪些只是调试噪声。
+        </p>
+      </div>
+    </Section>
+
+    <Section
+      id="s03"
+      label="§03 · Milestone"
+      title="Compaction：上下文是稀缺资源"
+      lede="记住一切是幻觉；压缩才是工程。"
+    >
+      <p>
+        第三个里程碑：上下文窗口会满，历史必须被摘要、裁剪或外置。Compaction
+        不是边角优化，而是长任务 Agent 能否活过第 N 轮的分水岭。
+      </p>
+      <div class="stub">
+        <p class="stub__tag">Stub · 待展开</p>
+        <p>
+          计划：token 预算面积图 + 压缩前后对照；用 Maka 的 compaction
+          决策讲清「丢什么 / 留什么 / 何时触发」。
+        </p>
+      </div>
+    </Section>
+  </article>
+</ReportLayout>

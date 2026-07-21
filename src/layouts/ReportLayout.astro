@@ -1,0 +1,64 @@
+---
+import "../styles/global.css";
+
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  nav?: NavItem[];
+}
+
+const {
+  title,
+  description = "用 Maka 解剖 Agent：里程碑式的 Agent 学习站",
+  nav = [
+    { href: "#intro", label: "§00 引言" },
+    { href: "#s01", label: "§01 Tool loop" },
+    { href: "#s02", label: "§02 Log-first" },
+    { href: "#s03", label: "§03 Compaction" },
+  ],
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="site-nav" aria-label="章节导航">
+      <div class="site-nav__inner">
+        <a class="site-nav__brand" href="/">Agent <span>Atelier</span></a>
+        <ul class="site-nav__links">
+          {
+            nav.map((item) => (
+              <li>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </nav>
+    <slot />
+    <footer class="footer">
+      Agent Atelier · specimen: Maka · visual tokens adapted from NewsLiquid research reports
+    </footer>
+  </body>
+</html>
