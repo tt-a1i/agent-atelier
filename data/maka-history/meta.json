@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "owner": "maka-agent",
+    "repo": "maka-agent",
+    "defaultBranch": "main",
+    "rootSha": "8fd91a43cc64cdde58cfbd046256effce0cfa6f8",
+    "sourceSha": "42461f2b261da71ab2551a86d9c15bd64896d13c",
+    "sourceShort": "42461f2",
+    "clonePathHint": "/Users/tushaokun/code/maka-agent"
+  },
+  "extractedAt": "2026-07-21T08:08:18.134Z",
+  "counts": {
+    "commits": 2249,
+    "prs": 1022,
+    "firstParent": 1740,
+    "cloneCommitCount": 2249,
+    "cloneFirstParent": 1740
+  },
+  "caps": {
+    "bodyMaxBytes": 2048,
+    "pathPrefixesMax": 40,
+    "prAssociation": [
+      "subject (#N)",
+      "mergeCommitSha from merged PR catalog"
+    ],
+    "notes": "Full DAG stored. Patches omitted — link to GitHub. Open/draft PRs out of scope."
+  },
+  "status": "ok"
+}

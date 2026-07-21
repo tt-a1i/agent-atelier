@@ -1,0 +1,222 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import {
+  HISTORY_PAGE_SIZE,
+  hasMakaHistorySnapshot,
+  loadMeta,
+  loadPrs,
+  prAreaChips,
+} from "../../lib/maka-history";
+
+const nav = [
+  { href: "/", label: "导读" },
+  { href: "/history", label: "History" },
+];
+
+const ready = hasMakaHistorySnapshot();
+const meta = ready ? loadMeta() : null;
+const allPrs = ready ? loadPrs() : [];
+
+const pageParam = Number(Astro.url.searchParams.get("page") ?? "1");
+const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1;
+const totalPages = Math.max(1, Math.ceil(allPrs.length / HISTORY_PAGE_SIZE));
+const safePage = Math.min(page, totalPages);
+const start = (safePage - 1) * HISTORY_PAGE_SIZE;
+const pagePrs = allPrs.slice(start, start + HISTORY_PAGE_SIZE);
+
+function fmtDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+---
+
+<ReportLayout
+  title="History · Maka 演进轨 · Agent Atelier"
+  description="Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。"
+  nav={nav}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">History track · PR-first · Draft</p>
+      <h1>Maka 演进史</h1>
+      <p class="masthead__sub">
+        默认按已合并 PR 浏览发展链路；成员 commit 嵌套在详情页。认知轨章节保持里程碑叙事，这里提供完整可追溯档案。
+      </p>
+      {
+        meta && (
+          <div class="masthead__meta">
+            <span>
+              Archive pin · {meta.source.sourceShort}
+            </span>
+            <span>extracted · {fmtDate(meta.extractedAt)}</span>
+            <span>
+              {meta.counts.prs} PRs · {meta.counts.commits} commits
+            </span>
+          </div>
+        )
+      }
+    </header>
+
+    <aside class="stub" aria-label="WIP 说明">
+      <p class="stub__tag">WIP · v1 listing</p>
+      <p>
+        已实现 PR-first 列表与详情路由。筛选（area / author / time / search）与 first-parent /
+        full-DAG 高级视图尚未上线——勿当作完成。
+      </p>
+    </aside>
+
+    {
+      !ready ? (
+        <p class="history-empty">
+          尚未找到 <code>data/maka-history/</code> 快照。请先运行{" "}
+          <code>npm run history:ingest</code>。
+        </p>
+      ) : (
+        <>
+          <ol class="history-list" start={start + 1}>
+            {pagePrs.map((pr) => {
+              const chips = prAreaChips(pr);
+              return (
+                <li class="history-row">
+                  <a class="history-row__link" href={`/history/pr/${pr.number}`}>
+                    <span class="history-row__num">#{pr.number}</span>
+                    <span class="history-row__title">{pr.title}</span>
+                  </a>
+                  <div class="history-row__meta">
+                    <span>{pr.author}</span>
+                    <span>{fmtDate(pr.mergedAt)}</span>
+                    {chips.length > 0 && (
+                      <span class="history-row__chips">
+                        {chips.map((c) => (
+                          <span class="chip">{c}</span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          <nav class="history-pager" aria-label="分页">
+            {safePage > 1 ? (
+              <a href={safePage === 2 ? "/history" : `/history?page=${safePage - 1}`}>
+                ← 上一页
+              </a>
+            ) : (
+              <span class="history-pager__disabled">← 上一页</span>
+            )}
+            <span class="history-pager__status">
+              {safePage} / {totalPages}
+            </span>
+            {safePage < totalPages ? (
+              <a href={`/history?page=${safePage + 1}`}>下一页 →</a>
+            ) : (
+              <span class="history-pager__disabled">下一页 →</span>
+            )}
+          </nav>
+        </>
+      )
+    }
+  </article>
+</ReportLayout>
+
+<style>
+  .history-empty {
+    margin-top: 1.75rem;
+    font-family: var(--serif);
+  }
+
+  .history-list {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+  }
+
+  .history-row {
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .history-row:first-child {
+    border-top: 1px solid var(--hair);
+  }
+
+  .history-row__link {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .history-row__link:hover .history-row__title {
+    color: var(--accent);
+  }
+
+  .history-row__num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    flex: 0 0 auto;
+  }
+
+  .history-row__title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1.4;
+  }
+
+  .history-row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-top: 0.35rem;
+    padding-left: calc(0.78rem * 0.6 + 0.75rem + 2ch);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--mute);
+  }
+
+  .history-row__chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .chip {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--hair);
+    background: var(--softer);
+    color: var(--mute);
+  }
+
+  .history-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .history-pager a {
+    text-decoration: none;
+  }
+
+  .history-pager__status {
+    color: var(--mute);
+  }
+
+  .history-pager__disabled {
+    color: color-mix(in srgb, var(--mute) 45%, var(--bg));
+  }
+</style>

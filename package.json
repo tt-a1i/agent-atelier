@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "history:ingest": "node scripts/maka-history-ingest.mjs",
+    "history:smoke": "node scripts/maka-history-smoke.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.3",
