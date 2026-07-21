@@ -7,14 +7,16 @@ import AttemptContinueFlow from "../../components/diagrams/AttemptContinueFlow.a
 import DurableBoundaryFlow from "../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
 import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.astro";
+import ParkGrantResumeFlow from "../../components/diagrams/ParkGrantResumeFlow.astro";
+import DurableCheckpointFlow from "../../components/diagrams/DurableCheckpointFlow.astro";
 ---
 
 <ChapterShell chapterId="04">
   <div slot="thesis">
     <p>
-      交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。Headless 的 Durable Task Loop
-      把「一次聊天」升级为「可续跑的任务」——不重写 §01–§03 的 Runtime，而是在外面加一层 durable
-      envelope。关键句：
+      当任务长于单次 Turn、Run，甚至长于一个进程的存活时间时，系统必须为它保留稳定身份、进度、预算与中断边界。Headless
+      引入 <code>TaskRun</code>：每次 Agent 执行成为 bounded Attempt，跨 Attempt 事实写入 append-only Task Event
+      Log，再投影出下一步工作状态——不重写 §01–§03 Runtime，而是在外面加一层 durable envelope。关键句：
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -28,18 +30,24 @@ import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.a
     <p>
       假设任务是：阅读大型代码库，迁移旧接口，逐步修复构建，并在高风险权限处停下来等待确认。它可能经历：首轮只做
       inventory；一次 Run 因 tool-step cap 结束但任务未完；第二次执行需要知道已检查文件与开放
-      todo；中途 park 等待批准；人几小时后回来继续；进程可能重启，内存中的 loop counter
-      与 active backend 都已消失。
+      todo；中途 park 等待批准；人几小时后回来继续；进程可能重启，内存中的 loop counter 与 active backend
+      都已消失；workspace 可能由本地临时目录、外部 container 或远程 executor 持有。
     </p>
     <p>
       Turn 表达一轮问答，Run 表达一次具体执行，RuntimeEvent ledger 能回放模型与工具经历——这是
-      §01–§03 已经立住的事实层。长程任务还要回答另一组问题：稳定目标
-      ID、尝试次数、剩余预算、有效 progress、是在运行还是等待批准、下次继承什么、workspace
-      是否仍是离开时的那个、谁有权接管下一步。
+      §01–§03 已经立住的事实层。长程任务还要回答另一组问题：
     </p>
+    <pre class="code-block" aria-label="长程任务控制问题">这个长期目标的稳定 ID 是什么？
+已经尝试过几次？
+当前预算还剩多少？
+哪些 progress snapshot 仍然有效？
+任务是在运行、等待批准，还是已经因为预算停止？
+下一次执行应该继承哪些上下文？
+workspace 是否仍然是上一 Attempt 离开时的那个？
+谁有权接管下一步？</pre>
     <blockquote class="pull">
-      Headless 真正解决的是：如何把跨 Attempt、跨暂停、甚至跨进程的开放式目标，收成一段可投影的 Task
-      Event 历史——而不是假装一次 Invocation 可以永生。
+      Headless 真正解决的是：如何把跨 Attempt、跨暂停、甚至跨进程的开放式目标，收成一段可投影的 Task Event
+      历史——而不是假装一次 Invocation 可以永生。
     </blockquote>
   </Section>
 
@@ -57,21 +65,25 @@ import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.a
       <DurableTaskKeystone />
     </DiagramFigure>
 
+    <p>执行身份分成四层，生命周期不同，不可互换：</p>
     <ul class="plain-list">
-      <li><strong>TaskRun</strong> — 长程目标从开始到终止是谁（跨 Attempt）</li>
-      <li><strong>Attempt</strong> — 有预算边界的一次推进切片</li>
+      <li><strong>TaskRun</strong> — 长程目标从开始到终止是谁（跨 Attempt、可跨多次执行）</li>
+      <li><strong>Attempt</strong> — 有预算边界的一次推进切片（一次 task-level try）</li>
       <li><strong>Turn</strong> — 一次送给 Agent 的输入与回复</li>
       <li><strong>Run / Invocation</strong> — 一次模型与工具循环的起止</li>
     </ul>
-    <pre class="code-block" aria-label="Task 投影">TaskRunProjection(t) = Project(TaskEvents[0..t])
+    <pre class="code-block" aria-label="Task 投影与进度">TaskRunProjection(t) = Project(TaskEvents[0..t])
 
 Long task progress
   = sequence of bounded Attempts
   + durable Task Events between them
-  + explicitly selected continuation state</pre>
+  + explicitly selected continuation state
+
+≠ one immortal Invocation</pre>
     <p>
-      Projection 不是另一份可独立修改的 Task truth。CLI inspect、resume planning、prompt replay 与
-      export 都应从 Task Events 派生——与 §01「状态是日志的函数」、§03「checkpoint 是 projection」同一纪律，只是消费者换成了长程任务控制面。
+      Projection 不是另一份可独立修改的 Task truth。CLI inspect、resume planning、prompt replay 与 export
+      都应从 Task Events 派生——与 §01「状态是日志的函数」、§03「checkpoint 是 projection」同一纪律，只是消费者换成了长程任务控制面。图中刻意不画
+      workspace：当前 workspace lifecycle 并不总是与 TaskRun 一样 durable。
     </p>
   </Section>
 
@@ -82,26 +94,53 @@ Long task progress
     lede="对话归属与 durable orchestration 不应互相污染。"
   >
     <p>
-      Session 可跨多个 Turn 并保留模型历史，但主要回答「这些对话属于谁」。TaskRun 还必须表达
-      Attempt 数量与 outcome、loop budget、权限/预算暂停、跨 Attempt 的 progress/evidence、workspace
-      lease、continue/retry/stop/abort，以及生效的 task policy。普通交互式对话不该被迫携带这些控制字段；不同
-      Attempt 当前也可创建不同 Session / AgentRun。引用方向：Task Events 保存
-      <code>sessionId</code> / <code>agentRunId</code>，而不是让 Session header 成为 TaskRun 真相。
+      Session 可跨多个 Turn 并保留模型历史，但主要回答「这些对话属于谁」。TaskRun 还必须表达：Attempt
+      数量与 outcome、loop budget 已用量、是否因权限/预算/外部介入而暂停、跨 Attempt 的
+      progress/evidence、workspace lease 归属、continue / retry / stop / abort，以及生效的 task
+      policy。普通交互式对话不该被迫携带这些控制字段；不同 Attempt 当前也可创建不同 Session /
+      AgentRun。
     </p>
     <p>
-      若把 Task 控制字段硬塞进 Session，交互式聊天会被迫携带无人值守语义；若反过来用 Session
-      header 当 Task 真相，park / budget / multi-Attempt 就会在重启后无法诚实重建。两层身份必须分开，再用
-      refs 交叉引用。
+      引用方向：Task Events 保存 <code>sessionId</code> / <code>agentRunId</code>，而不是让 Session header
+      成为 TaskRun 真相。若把 Task 控制字段硬塞进 Session，交互式聊天会被迫携带无人值守语义；若反过来用
+      Session header 当 Task 真相，park / budget / multi-Attempt 就会在重启后无法诚实重建。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Durable Task Loop 架构章合入：
+        Task ledger / Headless orchestration 相关机制演进可对照
+        <a href={`${import.meta.env.BASE_URL}history/pr/567`}>maka:pr:567</a>。架构章合入：
         <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a>
-        （docs: add durable task loop architecture chapter）。Task ledger 生命周期相关演进亦可对照
-        <a href={`${import.meta.env.BASE_URL}history/pr/567`}>maka:pr:567</a>。
+        （docs: durable task loop chapter）。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="events"
+    label="§04 · Task Events"
+    title="Task Event Log 是长程控制面的事实源"
+    lede="Append-only JSONL；projection 从头计算，不从可变表回写真相。"
+  >
+    <p>
+      <code>TaskRunStore</code> 以 append-only JSONL 按 <code>taskRunId</code> 分文件保存
+      <code>TaskEvent</code>；进程内对同一 TaskRun 的 append 经 promise queue 串行化。
+      <code>projectTaskRun()</code> 从头读取事件，计算当前状态、Attempts、latest progress、evidence、permission
+      facts、parked state、warnings，以及与 Runtime execution 的 refs。
+    </p>
+    <p>长程控制面相关事件包括（非穷尽，但教学上必须能说出类别）：</p>
+    <ul class="plain-list">
+      <li>TaskRun created / queued / started / terminal</li>
+      <li>Attempt started / completed</li>
+      <li>autonomous decision 与 runtime feedback</li>
+      <li>heavy-task：mode、inventory、todos、self-check、workspace observation、compact evidence</li>
+      <li>isolation policy、workspace lease、tool-executor identity</li>
+      <li>permission request / grant / decision；inbox item / resolution / <code>needs_approval</code></li>
+    </ul>
+    <p>
+      Runtime Events 保存每次 Agent 执行的语义事实；Task Events 保存跨执行的任务事实。Task Events
+      <strong>引用</strong> Runtime execution，不复制或改写 RuntimeEvent truth——两层 ledger 各有权威边界。
+    </p>
   </Section>
 
   <Section
@@ -116,23 +155,25 @@ Long task progress
     >
       <DurableBoundaryFlow />
     </DiagramFigure>
-    <p>
-      <code>TaskRunStore</code> 以 append-only JSONL 保存 TaskEvent；
-      <code>projectTaskRun()</code> 从头投影状态、Attempts、progress、evidence、permission、parked
-      state 与 Runtime refs。当前明确 durable：TaskRun identity、已 append 的 Task Events、其中记录的
-      Attempt / progress / decision / permission / lifecycle，以及指向 Session、AgentRun、RuntimeEvents
-      与 artifact 的 refs。
-    </p>
-    <p>
-      不能由 TaskRun ledger 单独保证：临时 workspace 当前 bytes、正在跑的 provider stream、tool
-      process live handle、内存中的 backend / abort controller、外部 executor 是否仍持有同一
-      workspace、进程重启后是否有 scheduler 自动接管。
-    </p>
+    <p><strong>当前明确 durable：</strong></p>
+    <ul class="plain-list">
+      <li>TaskRun identity 与已 append 的 Task Events</li>
+      <li>事件中记录的 Attempt、progress、decision、permission、lifecycle facts</li>
+      <li>指向 Session、AgentRun、RuntimeEvents 与 artifact 的 refs</li>
+    </ul>
+    <p><strong>不能由 TaskRun ledger 单独保证：</strong></p>
+    <ul class="plain-list">
+      <li>临时 workspace 的当前 bytes</li>
+      <li>正在跑的 provider stream / tool process live handle</li>
+      <li>内存中的 backend、abort controller、loop closure</li>
+      <li>外部 executor 是否仍持有同一 workspace</li>
+      <li>进程重启后是否有 scheduler 自动接管</li>
+    </ul>
     <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
+      <p class="stub__tag">精度要求</p>
       <p>
-        Current：TaskRun ledger 与 Attempt 包装已落地。Target：跨进程安全接管的统一 checkpoint
-        协议（workspace、in-flight Invocation、scheduler ownership）——教学必须显式标注，不得伪装成已保证。
+        当前有 durable、可 replay 的 Task 控制状态，但<strong>没有</strong>完整的 crash-resumable task
+        executor。教学必须显式标注，不得把 ledger 回放伪装成 live world 已接管。
       </p>
     </div>
   </Section>
@@ -140,8 +181,8 @@ Long task progress
   <Section
     id="attempt"
     label="§04 · Attempt"
-    title="Attempt 是进度切片，不是失败的同义词"
-    lede="外层 policy 决定 continue / retry / stop / abort；不是复活 immortal Invocation。"
+    title="一次 Attempt 怎样复用 Runtime 主链"
+    lede="Attempt 是进度切片，不是失败的同义词；继续=新 Attempt。"
   >
     <DiagramFigure
       caption="图 3 · Attempt 结束 → 写入 TaskEvent → policy 门控 → 投影 next-work；继续=新 Attempt。"
@@ -149,18 +190,91 @@ Long task progress
     >
       <AttemptContinueFlow />
     </DiagramFigure>
+    <p>
+      <code>TaskAgentController.runTaskOnce()</code> 把一次 Attempt 包在 Runtime 外面。关键顺序（教学压缩版）：
+    </p>
+    <ol class="plain-list numbered">
+      <li>校验 backend isolation 与 task setup；解析 TaskRun/Attempt identity 与 intervention policy</li>
+      <li>从既有 projection 读取 Heavy-task progress / self-check / compact evidence，追加到本次 instruction</li>
+      <li>append mode、isolation、已有 permission grant facts；准备 workspace，记录 lease 与 executor identity</li>
+      <li>创建 Session、<code>AgentRun</code>；append <code>task_run_started</code> / <code>task_attempt_started</code></li>
+      <li>运行 <code>AgentRun → AiSdkFlow → RuntimeRunner</code>；把 Invocation refs / budget / tool activity 转成 Task-level feedback</li>
+      <li>处理 permission intervention 或 bounded Heavy-task repair；append Attempt / TaskRun 下一状态</li>
+    </ol>
+    <p>
+      这条路径绕过 <code>SessionManager.sendMessage()</code> facade，直接组装 Runtime 核心组件——需要的是
+      non-streaming <code>InvocationResult</code>、独立 Task Event Log、isolated backend lifecycle 与 Attempt
+      后处理边界，不是另一套模型循环。
+    </p>
+    <p>
+      Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。外层 policy 决定
+      <code>continue</code> / <code>retry</code> / <code>stop</code> / <code>abort</code>。
+      <code>AutonomousAgentLoop</code> 每次 <code>runTaskOnce()</code> 创建新 Attempt——不是从旧
+      RuntimeRunner 的 instruction pointer 恢复，也不会复活已退出的 tool process。
+    </p>
+  </Section>
+
+  <Section
+    id="budget"
+    label="§04 · Budget"
+    title="三层预算给循环一个可证明的边界"
+    lede="「继续直到完成」不是安全的 terminal condition；硬 cap 支配自定义 policy。"
+  >
     <DiagramFigure
-      caption="图 4 · 预算分层：maxAttempts · maxRuntimeSteps · park/stop/abort；没有无限续跑许可。"
-      alt="三列：maxAttempts、maxRuntimeSteps、policy gates。"
+      caption="图 4 · AutonomousLoopBudget：maxAttempts · maxRuntimeSteps（跨 Attempt 累计）· maxWallTimeMs；enforceCaps 再应用一次。"
+      alt="三列：maxAttempts、maxRuntimeSteps 累计、maxWallTimeMs。"
     >
       <BudgetLayersFlow />
     </DiagramFigure>
+    <ul class="plain-list">
+      <li><code>maxAttempts</code> — TaskRun 最多启动多少个 Attempt（Attempt 前后检查）</li>
+      <li><code>maxRuntimeSteps</code> — <strong>所有 Attempt 累计</strong> Runtime steps（Attempt 后检查）</li>
+      <li><code>maxWallTimeMs</code> — TaskRun loop 总 wall time（Attempt 前后检查）</li>
+    </ul>
     <p>
-      Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。
-      <code>AutonomousAgentLoop</code> 每次 <code>runTaskOnce()</code> 创建新
-      Attempt——不是从旧 RuntimeRunner 的 instruction pointer 恢复，也不会复活已退出的 tool process。三层预算（如
-      <code>maxAttempts</code> / <code>maxRuntimeSteps</code> 等）给无人值守循环可证明的边界：没有「继续直到完成」的无限许可。即使自定义
-      policy 请求 continue，硬上限仍由 <code>enforceCaps()</code> 再应用一次。
+      <code>LoopBudgetSnapshot</code> 把 used 与 max 一起交给 decision policy。即使自定义 policy 请求
+      continue/retry，<code>enforceCaps()</code> 也会重新应用硬上限。Attempt 数量可从 Task Events
+      重建，Runtime steps 也写入 feedback；但当前 loop 的 <code>startedAt</code>、累计 counters 与 decision
+      closure 主要由正在运行的 <code>runAutonomousTask()</code> 持有——可审计预算使用，却不能仅凭通用
+      projection 在任意重启点无歧义恢复全部 loop counters（Target：durable budget accounting）。
+    </p>
+  </Section>
+
+  <Section
+    id="progress"
+    label="§04 · Progress"
+    title="跨 Attempt 的 bounded progress projection"
+    lede="不能只把上一 Attempt 的自然语言回复塞回 prompt。"
+  >
+    <p>Heavy-task 模式引入几类结构化、append-only 进度事实：</p>
+    <ul class="plain-list">
+      <li>
+        <strong>Inventory</strong>（<code>inventory_submit</code>）— 完整 snapshot（文件/artifact、状态、用途、开放问题）；latest
+        覆盖投影中的当前 inventory，旧 snapshot 仍留在 log。
+      </li>
+      <li>
+        <strong>Todos</strong>（<code>todo_update</code>）— 完整 todo snapshot（ID、priority、status、content、可选
+        kind）；可稳定找到 active todo。
+      </li>
+      <li>
+        <strong>Compact Evidence</strong> — 在 Bash/Read/Grep/Write/Edit/Glob 等周围捕获有界公开证据（摘要、truncation
+        ref、source link、mutation metadata）；不把大 stdout / 全文 / raw diff 全量写入任务 prompt。
+      </li>
+      <li>
+        <strong>Self-check</strong> — 公开 reason、command/artifact evidence 与 hygiene（详见 §05）；advisory，有界
+        repair，不是隐藏权威。
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="Progress 投影链">Full task history remains in Task Events
+  → latest progress snapshots are selected
+  → recent public evidence is bounded
+  → next Attempt receives a continuation-oriented prompt view</pre>
+    <p>
+      后续 Attempt 启动时，
+      <code>renderHeavyTaskProgressForPrompt()</code> /
+      <code>renderHeavyTaskSelfCheckForPrompt()</code> /
+      <code>renderHeavyTaskEvidenceForPrompt()</code> 从 projection 生成有界文本。这不是完整
+      replay，也不声称省略的 raw output 仍在 prompt 中。
     </p>
   </Section>
 
@@ -168,36 +282,131 @@ Long task progress
     id="continue"
     label="§04 · Continuation"
     title="「继续」至少有三条路径，不要混成一个 resume"
-    lede="Autonomous continue、parked CLI resume、冷启动重载 ledger——语义不同，事件必须显式。"
+    lede="Harbor Cell Turn · Autonomous Attempt · parked CLI resume —— 语义不同，事件必须显式。"
   >
     <DiagramFigure
-      caption="图 5 · 三条续跑：autonomous continue/retry · parked needs_approval · cold start 重载 ledger；统一 resume 协议仍是 Target。"
+      caption="图 5 · 三条续跑：same-Session Harbor Turn · autonomous 新 Attempt · parked needs_approval；统一 resume 协议仍是 Target。"
       alt="四列：Autonomous continue、Parked resume、Cold start reload、Target unified resume gap。"
     >
       <ColdStartResumeFlow />
     </DiagramFigure>
-    <ol class="plain-list numbered">
-      <li>
-        <strong>Autonomous continue / retry</strong> — 再次调用
-        <code>runTaskOnce()</code>；Heavy-task 状态可从 Task Events 投影进新 instruction；可选把旧 Attempt 的
-        RuntimeEvents 拼进下一次 Runtime context。仍是新 Attempt，不是 instruction-level resume。
-      </li>
-      <li>
-        <strong>Parked permission 的 CLI resume</strong> — intervention 为
-        <code>park</code> 时形成 Inbox / <code>needs_approval</code>；当前
-        <code>task resume</code> 主要服务此路径：先 resolve inbox，再开新 Attempt，并把 grant 写入 Task
-        Event Log。
-      </li>
-      <li>
-        <strong>Cold start</strong> — 进程重启后从 JSONL 重载并
-        <code>projectTaskRun()</code>；attempts / steps 计数不得因新进程清零。能恢复的是控制面真相，不是 live
-        tool handle 或自动 scheduler 接管。
-      </li>
-    </ol>
+
+    <h3 class="subhead">1. 同一 Harbor Cell 内的新 Turn</h3>
     <p>
-      Explicit continuation 必须留下 Task Event，不能只靠进程内隐式循环计数。把三条路径说成同一个「resume」按钮，会在 park
-      与 crash 之间偷换语义，也会把 Target 的统一接管协议伪装成 Current。
+      在同一 Session 与同一 container workspace 内循环调用 <code>SessionManager.sendMessage()</code>。当前只在上一个
+      Invocation 因 tool-step cap 或 incomplete tool calls 结束时继续。下一 Turn 使用固定 continuation
+      prompt，受 <code>maxTurns</code> 与 <code>maxTotalRuntimeSteps</code> 限制（启用后默认最多 3 个 Turn，总
+      Runtime step 默认按每 Turn 50 计算）。这是当前最接近「同一 workspace 上继续工作」的路径，但仍是多个新
+      Invocation，不是 instruction-level resume。
     </p>
+
+    <h3 class="subhead">2. Autonomous Loop 的新 Attempt</h3>
+    <p>
+      continue/retry 再次调用 <code>runTaskOnce()</code>。Heavy-task 状态从 Task Events 投影到新
+      instruction；<code>replayPriorAttemptRuntimeContext</code> 打开时，旧 Attempt 的 RuntimeEvents
+      也会显式拼进下一次 Runtime context——该开关默认不是强制语义。关闭时，跨 Attempt continuation 主要依赖
+      instruction feedback 与 TaskRun progress projection。
+    </p>
+
+    <h3 class="subhead">3. Parked permission 的 CLI resume</h3>
+    <DiagramFigure
+      caption="图 6 · park → Inbox / needs_approval → resolve + grant facts → 新 Attempt；禁止事后改写旧 tool call。"
+      alt="四步协议：Permission park、Inbox item、CLI resume 写 grant、禁止 post-hoc auth。"
+    >
+      <ParkGrantResumeFlow />
+    </DiagramFigure>
+    <p>
+      intervention policy 为 <code>park</code> 时，permission request 形成
+      <code>TaskPermissionRequest</code>、Inbox item、Attempt <code>needs_approval</code> 与 TaskRun parked
+      state。当前 <code>task resume</code> 主要服务此路径：先 resolve inbox，再开新 Attempt，并把 grant 写入
+      Task Event Log。迟到的 grant <strong>不能</strong> post-hoc 授权已 handoff 的旧 tool
+      call——Resume 是下一 Attempt 的新输入，不是旧调用栈复活。
+    </p>
+
+    <h3 class="subhead">冷启动重载 ledger</h3>
+    <p>
+      进程重启后从 JSONL 重载并 <code>projectTaskRun()</code>。能恢复的是控制面真相；attempts / steps
+      不得因新进程「看起来清零」而被教学上当作已重置——但完整 loop counter 恢复仍属 Target（见下文
+      checkpoint）。缺少 workspace / executor ownership 证据时，不得宣称已安全接管 live world。
+    </p>
+  </Section>
+
+  <Section
+    id="workspace"
+    label="§04 · Workspace"
+    title="Lease 记录归属，不是 Workspace Checkpoint"
+    lede="Current TaskRun durability preserves control history; workspace continuity remains carrier-dependent."
+  >
+    <p>
+      默认本地 <code>runTaskOnce()</code> 会为每个 Attempt 从 task fixture 创建新的 throwaway
+      copy，并在 <code>finally</code> 中清理（拒绝 fixture symlink，避免复制后指向 host 的逃逸路径）。Task
+      Events 记录 <code>WorkspaceLeaseFacts</code>（lease ID、TaskRun/Attempt identity、source 与实际
+      path、writable、cleanup policy、createdAt 等），但<strong>记录 lease ≠ 保存 workspace
+      bytes</strong>。下一 Attempt 默认重新复制 fixture；上一 Attempt 的修改不会因相同 TaskRun ID
+      自动出现。
+    </p>
+    <p>
+      外部 isolation 可提供稳定 <code>workspaceDir</code>，Harbor Cell 也能在 container 存活期间共享同一
+      workspace，但 TaskRunStore 不拥有该外部 workspace 的 snapshot、lease renewal 或 fencing
+      protocol。Throwaway directory 只隔离 fixture mutation，不是 OS security sandbox；真实
+      model-backed backend 必须提供 <code>RealBackendIsolation</code>。Headless 验证 isolation record 的
+      shape 与非空 label——真正的 filesystem / network / process / secret 隔离由外部 executor 兑现。
+    </p>
+  </Section>
+
+  <Section
+    id="crash"
+    label="§04 · Recovery"
+    title="Crash、corrupt tail 与当前恢复能力"
+    lede="可重建控制事实 ≠ 自动恢复执行。"
+  >
+    <p>File TaskRunStore 读取规则：</p>
+    <ul class="plain-list">
+      <li>newline-terminated 合法事件按序 replay</li>
+      <li>完整但无法解析的行 → <code>event_corrupt</code>，进入 projection warnings</li>
+      <li>最后一个未 newline-terminated 的 partial tail 被忽略</li>
+      <li>TaskRun ID 不匹配的事件不进有效 projection</li>
+      <li>多个 terminal events → warning；当前 last terminal wins</li>
+    </ul>
+    <p>当前缺少的通用能力包括：枚举并 claim 非终态 TaskRun 的 scheduler；判断
+      <code>running</code> Attempt 是仍在执行还是 owner 已死；跨进程 writers 的 lease/fencing；从
+      workspace snapshot 与 Runtime high water 恢复；幂等准备新 Attempt；从任意
+      parked/blocked/budget state 按统一协议 resume。</p>
+  </Section>
+
+  <Section
+    id="target"
+    label="§04 · Target"
+    title="真正的 Durable Task Loop 需要成对的 High Water"
+    lede="只保存 Task Event high water 不够；恢复点至少绑定五类状态。"
+  >
+    <DiagramFigure
+      caption="图 7 · Target DurableTaskCheckpoint：Task / Runtime / Workspace / Budget / Owner 五类 high water 一致绑定后，才允许安全接管。"
+      alt="五列 high water 汇入 checkpoint，再重建投影并决定 nextAction。"
+    >
+      <DurableCheckpointFlow />
+    </DiagramFigure>
+    <pre class="code-block" aria-label="DurableTaskCheckpoint 形状">DurableTaskCheckpoint
+  task:      taskRunId, taskEventHighWater, policyVersion
+  runtime:   sessionId, completedRunIds, runtimeEventHighWaterByRun
+  workspace: snapshotId, manifestHash, carrierIdentity
+  budget:    attemptsUsed, runtimeStepsUsed, elapsedAccounting
+  control:   nextAction, parkedInboxItemId?, ownerLease / fencingToken</pre>
+    <p>
+      这不是字段承诺，而是恢复不变量集合：Task 与 Runtime high water 必须一致；workspace snapshot
+      必须与同一边界配对；budget 必须可恢复而不是重新计时（区分 active / parked / scheduler
+      downtime）；owner 必须有 fencing，阻止双重 Attempt 与双写 terminal。Target 仍以新的幂等 Attempt
+      为主要恢复单元——不尝试恢复 provider socket 或 live tool process。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current：Task identity、append-only Task Events、Attempt lifecycle、三层预算、Heavy-task
+        progress/evidence、permission Inbox、Harbor/Autonomous/parked 不同续跑路径。Target：versioned
+        checkpoint、scheduler claim、durable budget、workspace snapshot + fencing、统一 parked-state
+        protocol——不得伪装为已保证。
+      </p>
+    </div>
   </Section>
 
   <Section
@@ -209,25 +418,41 @@ Long task progress
     <ul class="plain-list">
       <li>Budget / hard cap 触顶 → 停止无人值守循环；不得用「再试一次」绕过 <code>enforceCaps()</code>。</li>
       <li>Permission fail-closed 或 park → 没有 grant 不得继续副作用；parked resume 必须写 grant facts。</li>
-      <li>进程重启后缺少 workspace / executor ownership 证据 → 只恢复控制面投影，不宣称已安全接管 live world。</li>
+      <li>迟到 grant → 拒绝改写旧 tool call 当时的权限事实（no post-hoc authorization）。</li>
+      <li>进程重启后缺少 workspace / executor ownership 证据 → 只恢复控制面投影，不宣称已安全接管。</li>
       <li>旧 Attempt 的 RuntimeEvents 可选 replay 进 context，但不得假装 tool process 仍在运行。</li>
-      <li>自定义 policy 请求 continue，而硬上限已耗尽 → 以 cap 为准，不以叙述为准。</li>
+      <li>corrupt / mismatched / multi-terminal → warnings 必须可观察；冲突不得 silently 消失。</li>
     </ul>
-    <div class="stub">
-      <p class="stub__tag">Hybrid 教学深度</p>
-      <p>
-        本章按 Hybrid 决策加厚：作为 Runtime→长程任务的关键桥，叙事与续跑图接近 §01–§03 密度。§05–§06
-        保持 lean、清单完整；更细的演进细节走 <code>/history</code> 旁注。
-      </p>
-    </div>
+  </Section>
+
+  <Section
+    id="not"
+    label="§04 · Not"
+    title="不要把 Durable Task Loop 误解成什么"
+    lede="划清边界，避免把长程任务抬成永生 Invocation 或 Memory。"
+  >
+    <ul class="plain-list">
+      <li><strong>不是无限大的 Turn</strong> — 通过多个 bounded Attempts 前进。</li>
+      <li><strong>不是把完整历史反复塞回模型</strong> — 跨 Attempt 状态来自 bounded progress/evidence projection。</li>
+      <li><strong>不是 Memory 系统</strong> — 服务一个具体长期目标，不是跨任务用户偏好库。</li>
+      <li><strong>不是 Workspace 本身</strong> — Task Event Log 可引用 lease/snapshot，不能替代文件 bytes。</li>
+      <li><strong>不是同一 Invocation 的热恢复</strong> — 推荐恢复单元是新的 Turn/Attempt。</li>
+    </ul>
+    <p class="figure-note">
+      必须保护的不变量包括：stable <code>taskRunId</code>；bounded attempts；append before
+      project；explicit continuation；budget caps dominate policy；no post-hoc
+      authorization；progress bounded and source-bearing；workspace claims
+      explicit；Runtime facts remain separate；conflicts observable。
+    </p>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + durable boundary + Attempt continue + 预算三层 + 三条续跑/冷启动流</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a></li>
-      <li>Current ledger vs Target 跨进程接管缺口已显式标注</li>
-      <li>Hybrid：§04 加厚；§05–§06 lean；验收清单硬闸门已过（中英同船）</li>
+      <li>关键图 + durable boundary + Attempt + 三层预算 + park/grant + Target checkpoint</li>
+      <li>三条续跑（Harbor Turn / Autonomous Attempt / parked CLI）已分语义</li>
+      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/567`}>maka:pr:567</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a></li>
+      <li>Current ledger vs Target 跨进程接管：字段级不变量已写清（中英同船）</li>
     </ul>
   </div>
 </ChapterShell>
@@ -247,7 +472,7 @@ Long task progress
   .plain-list {
     margin: 0.75rem 0 1.1rem;
     padding-left: 1.2rem;
-    max-width: 40em;
+    max-width: 42em;
   }
   .plain-list.numbered {
     list-style: decimal;
@@ -271,5 +496,18 @@ Long task progress
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .figure-note {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 40em;
   }
 </style>

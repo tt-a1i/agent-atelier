@@ -1,6 +1,5 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
-import { localePath } from "../../../lib/i18n";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeystone.astro";
@@ -8,15 +7,18 @@ import AttemptContinueFlow from "../../../components/diagrams/AttemptContinueFlo
 import DurableBoundaryFlow from "../../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astro";
 import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlow.astro";
+import ParkGrantResumeFlow from "../../../components/diagrams/ParkGrantResumeFlow.astro";
+import DurableCheckpointFlow from "../../../components/diagrams/DurableCheckpointFlow.astro";
 ---
 
 <ChapterShell chapterId="04" locale="en">
   <div slot="thesis">
     <p>
-      Work that does not fit an interactive Turn needs its own task identity and progress that can
-      survive process boundaries. Headless Durable Task Loop upgrades “one chat” into “a task that can
-      continue” — without rewriting the §01–§03 Runtime; it wraps execution in a durable envelope. Key
-      line:
+      When work outlives a Turn, a Run, or even a process, the system must keep a stable identity,
+      progress, budgets, and interrupt boundaries. Headless introduces <code>TaskRun</code>: each Agent
+      execution becomes a bounded Attempt; cross-Attempt facts append to a Task Event Log and project
+      into the next-work view — without rewriting the §01–§03 Runtime; it wraps execution in a durable
+      envelope. Key line:
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -29,18 +31,25 @@ import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlo
   >
     <p>
       Suppose the task is: read a large codebase, migrate an old API, fix the build step by step, and
-      pause at high-risk permissions for confirmation. It may: do inventory only on the first round;
-      end a Run on a tool-step cap while the task is unfinished; need a second execution that knows
-      which files were checked and which todos are open; park waiting for approval; resume hours later;
-      and survive a process restart that wiped in-memory loop counters and the active backend.
+      pause at high-risk permissions for confirmation. It may: do inventory only on the first round; end
+      a Run on a tool-step cap while the task is unfinished; need a second execution that knows which
+      files were checked and which todos are open; park waiting for approval; resume hours later;
+      survive a process restart that wiped in-memory loop counters and the active backend; and hold its
+      workspace in a local temp dir, an external container, or a remote executor.
     </p>
     <p>
       Turn expresses one Q&amp;A; Run expresses one concrete execution; the RuntimeEvent ledger can
       replay model and tool experience — the fact layer already locked in §01–§03. A long task still
-      must answer another set of questions: stable goal id, attempt count, remaining budget, effective
-      progress, running vs waiting for approval, what to inherit next, whether the workspace is still
-      the one left behind, and who may take the next step.
+      must answer another set of questions:
     </p>
+    <pre class="code-block" aria-label="Long-task control questions">What is the stable ID of this long-lived goal?
+How many attempts have already run?
+How much budget remains?
+Which progress snapshots are still valid?
+Is the task running, waiting for approval, or stopped by budget?
+What context should the next execution inherit?
+Is the workspace still the one left by the previous Attempt?
+Who may take over the next step?</pre>
     <blockquote class="pull">
       Headless’s real problem is how to turn an open goal across Attempts, parks, and even process
       restarts into a projectable Task Event history — not how to pretend one Invocation can live
@@ -52,65 +61,97 @@ import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlo
     id="keystone"
     label="§04 · Keystone"
     title="TaskRun is a durable envelope outside the Runtime"
-    lede="Headless does not rewrite Agent Runtime; it organizes Runtime execution into a long Task lifecycle."
+    lede="Headless does not reimplement the Agent Runtime; it organizes Runtime execution into a long task lifecycle."
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · TaskRun wraps bounded Attempts; cross-Attempt facts enter the Task Event Log and project as next-work view."
-      alt="TaskRun envelope with Attempt 1/2, Task Event Log, dashed TaskRun Projection; invariant: a task is longer than a turn."
+      caption="Fig. 1 · TaskRun wraps bounded Attempts; cross-Attempt facts enter the Task Event Log and project into a next-work view."
+      alt="TaskRun shell with Attempt 1/2, Task Event Log to dashed TaskRun Projection; invariant: a task is longer than a turn."
     >
       <DurableTaskKeystone />
     </DiagramFigure>
 
+    <p>Execution identity has four layers with different lifecycles — do not collapse them:</p>
     <ul class="plain-list">
-      <li><strong>TaskRun</strong> — who owns the long goal from start to terminal (across Attempts)</li>
-      <li><strong>Attempt</strong> — one progress slice with budget boundaries</li>
-      <li><strong>Turn</strong> — one input/reply handed to the Agent</li>
-      <li><strong>Run / Invocation</strong> — start/end of one model+tool loop</li>
+      <li><strong>TaskRun</strong> — who the long-lived goal is from start to terminal (across Attempts)</li>
+      <li><strong>Attempt</strong> — one budget-bounded progress slice (one task-level try)</li>
+      <li><strong>Turn</strong> — one input/reply exchange handed to the Agent</li>
+      <li><strong>Run / Invocation</strong> — one model-and-tool loop start to finish</li>
     </ul>
-    <pre class="code-block" aria-label="Task projection">TaskRunProjection(t) = Project(TaskEvents[0..t])
+    <pre class="code-block" aria-label="Task projection and progress">TaskRunProjection(t) = Project(TaskEvents[0..t])
 
 Long task progress
   = sequence of bounded Attempts
   + durable Task Events between them
-  + explicitly selected continuation state</pre>
+  + explicitly selected continuation state
+
+≠ one immortal Invocation</pre>
     <p>
-      A projection is not a second Task truth that can be edited on its own. CLI inspect, resume
-      planning, prompt replay, and export should all derive from Task Events — the same discipline as
-      §01 (“state is a function of the log”) and §03 (“a checkpoint is a projection”), with the long-task
-      control plane as the consumer.
+      Projection is not a second mutable Task truth. CLI inspect, resume planning, prompt replay, and
+      export should all derive from Task Events — the same discipline as §01 (“state is a function of
+      the log”) and §03 (“checkpoint is a projection”), with a long-task control plane as the consumer.
+      The figure intentionally omits workspace: workspace lifecycle is not always as durable as TaskRun.
     </p>
   </Section>
 
   <Section
     id="session"
     label="§04 · Identity"
-    title="Why Session is still not a TaskRun"
-    lede="Dialogue ownership and durable orchestration must not contaminate each other."
+    title="Why Session is still not TaskRun"
+    lede="Conversation ownership and durable orchestration must not contaminate each other."
   >
     <p>
-      A Session can span many Turns and keep model history, but mainly answers “who owns this
-      conversation.” A TaskRun must also express Attempt counts and outcomes, loop budget,
-      permission/budget parks, cross-Attempt progress/evidence, workspace lease,
-      continue/retry/stop/abort, and the effective task policy. Ordinary interactive chat should not
-      be forced to carry these control fields; different Attempts may currently create different
-      Sessions / AgentRuns. Reference direction: Task Events store <code>sessionId</code> /
-      <code>agentRunId</code>; the Session header is not the TaskRun truth.
+      A Session can span Turns and keep model history, but it mainly answers “who owns these
+      dialogues.” A TaskRun must also express: Attempt count and outcomes, loop-budget usage, pause for
+      permission/budget/intervention, cross-Attempt progress/evidence, workspace-lease ownership,
+      continue / retry / stop / abort, and the active task policy. Ordinary interactive chat should not
+      be forced to carry those control fields; different Attempts may currently create different
+      Sessions / AgentRuns.
     </p>
     <p>
-      Stuff Task control fields into Session and interactive chat inherits unattended semantics; treat
-      the Session header as Task truth and park / budget / multi-Attempt cannot honestly rebuild after
-      restart. Keep the two identities separate and cross-link with refs.
+      Reference direction: Task Events store <code>sessionId</code> / <code>agentRunId</code>; the Session
+      header is not TaskRun truth. Stuffing task-control fields into Session forces unattended semantics
+      onto interactive chat; using Session headers as Task truth makes park / budget / multi-Attempt
+      dishonest after restart.
     </p>
     <aside class="history-aside">
-      <p class="history-aside__tag">Evolution aside</p>
+      <p class="history-aside__tag">History aside</p>
       <p>
-        Durable Task Loop architecture chapter land:
-        <a href={`${localePath("en", "history/pr/773")}`}>maka:pr:773</a>
-        (docs: add durable task loop architecture chapter). Related Task ledger lifecycle:
-        <a href={`${localePath("en", "history/pr/567")}`}>maka:pr:567</a>.
+        Task ledger / Headless orchestration mechanisms:
+        <a href={`${import.meta.env.BASE_URL}en/history/pr/567`}>maka:pr:567</a>. Architecture chapter
+        land:
+        <a href={`${import.meta.env.BASE_URL}en/history/pr/773`}>maka:pr:773</a>
+        (docs: durable task loop chapter).
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="events"
+    label="§04 · Task Events"
+    title="The Task Event Log is the long-task control-plane source of truth"
+    lede="Append-only JSONL; project from the head — never write truth back from a mutable table."
+  >
+    <p>
+      <code>TaskRunStore</code> persists <code>TaskEvent</code> as append-only JSONL files keyed by
+      <code>taskRunId</code>; in-process appends for one TaskRun are serialized via a promise queue.
+      <code>projectTaskRun()</code> replays from the head to compute status, Attempts, latest progress,
+      evidence, permission facts, parked state, warnings, and refs into Runtime execution.
+    </p>
+    <p>Control-plane event families a reader should be able to name:</p>
+    <ul class="plain-list">
+      <li>TaskRun created / queued / started / terminal</li>
+      <li>Attempt started / completed</li>
+      <li>autonomous decision and runtime feedback</li>
+      <li>heavy-task: mode, inventory, todos, self-check, workspace observation, compact evidence</li>
+      <li>isolation policy, workspace lease, tool-executor identity</li>
+      <li>permission request / grant / decision; inbox item / resolution / <code>needs_approval</code></li>
+    </ul>
+    <p>
+      Runtime Events hold semantic facts of each Agent execution; Task Events hold cross-execution task
+      facts. Task Events <strong>reference</strong> Runtime execution — they do not copy or rewrite
+      RuntimeEvent truth.
+    </p>
   </Section>
 
   <Section
@@ -120,30 +161,31 @@ Long task progress
     lede="Durable control-plane facts ≠ the whole execution world is checkpointed."
   >
     <DiagramFigure
-      caption="Fig. 2 · TaskRun ledger owns control-plane facts; workspace / live stream / auto-takeover remain Target gaps."
-      alt="Left column Current ledger owns; right column Not guaranteed by ledger alone."
+      caption="Fig. 2 · The TaskRun ledger owns control-plane facts; workspace / live stream / auto-takeover remain Target gaps."
+      alt="Left column: Current ledger owns. Right column: Not guaranteed by ledger alone."
     >
       <DurableBoundaryFlow />
     </DiagramFigure>
-    <p>
-      <code>TaskRunStore</code> appends TaskEvents as JSONL;
-      <code>projectTaskRun()</code> projects status, Attempts, progress, evidence, permission, parked
-      state, and Runtime refs from the start. Explicitly durable today: TaskRun identity, appended
-      Task Events, recorded Attempt / progress / decision / permission / lifecycle, and refs to
-      Session, AgentRun, RuntimeEvents, and artifacts.
-    </p>
-    <p>
-      Not guaranteed by the TaskRun ledger alone: current bytes of a temporary workspace, an in-flight
-      provider stream, live tool process handles, in-memory backends / abort controllers, whether an
-      external executor still holds the same workspace, or whether a scheduler auto-takes over after
-      restart.
-    </p>
+    <p><strong>Clearly durable today:</strong></p>
+    <ul class="plain-list">
+      <li>TaskRun identity and appended Task Events</li>
+      <li>Attempt / progress / decision / permission / lifecycle facts recorded in those events</li>
+      <li>Refs to Session, AgentRun, RuntimeEvents, and artifacts</li>
+    </ul>
+    <p><strong>Not guaranteed by the TaskRun ledger alone:</strong></p>
+    <ul class="plain-list">
+      <li>Current bytes of a throwaway workspace</li>
+      <li>Live provider streams / tool-process handles</li>
+      <li>In-memory backend, abort controller, loop closure</li>
+      <li>Whether an external executor still holds the same workspace</li>
+      <li>Whether a scheduler auto-claims after process restart</li>
+    </ul>
     <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
+      <p class="stub__tag">Precision bar</p>
       <p>
-        Current: TaskRun ledger and Attempt wrapping are shipped. Target: a unified cross-process
-        safe-takeover checkpoint protocol (workspace, in-flight Invocation, scheduler ownership) —
-        teaching must label this explicitly; do not pretend it is already guaranteed.
+        Today there is durable, replayable Task control state — <strong>not</strong> a complete
+        crash-resumable task executor. Teaching must label that gap; ledger replay must not be sold as
+        live-world takeover.
       </p>
     </div>
   </Section>
@@ -151,8 +193,8 @@ Long task progress
   <Section
     id="attempt"
     label="§04 · Attempt"
-    title="An Attempt is a progress slice, not a synonym for failure"
-    lede="Outer policy decides continue / retry / stop / abort — not resurrecting an immortal Invocation."
+    title="How one Attempt reuses the Runtime spine"
+    lede="An Attempt is a progress slice, not a synonym for failure; continue means a new Attempt."
   >
     <DiagramFigure
       caption="Fig. 3 · Attempt ends → append TaskEvent → policy gate → project next-work; continue = new Attempt."
@@ -160,59 +202,237 @@ Long task progress
     >
       <AttemptContinueFlow />
     </DiagramFigure>
+    <p>
+      <code>TaskAgentController.runTaskOnce()</code> wraps one Attempt around the Runtime. Teaching
+      compression of the sequence:
+    </p>
+    <ol class="plain-list numbered">
+      <li>Validate backend isolation and task setup; resolve TaskRun/Attempt identity and intervention policy</li>
+      <li>Read Heavy-task progress / self-check / compact evidence from the existing projection into this instruction</li>
+      <li>Append mode, isolation, and prior permission-grant facts; prepare workspace; record lease and executor identity</li>
+      <li>Create Session and <code>AgentRun</code>; append <code>task_run_started</code> / <code>task_attempt_started</code></li>
+      <li>Run <code>AgentRun → AiSdkFlow → RuntimeRunner</code>; fold Invocation refs / budget / tool activity into Task-level feedback</li>
+      <li>Handle permission intervention or bounded Heavy-task repair; append next Attempt / TaskRun state</li>
+    </ol>
+    <p>
+      This path bypasses the <code>SessionManager.sendMessage()</code> facade and assembles Runtime core
+      components directly — it needs a non-streaming <code>InvocationResult</code>, its own Task Event
+      Log, isolated backend lifecycle, and Attempt post-processing, not a second model loop.
+    </p>
+    <p>
+      An Attempt may end on normal stop, execution failure, incomplete information, permission block,
+      budget exhaustion, cancel, or abort. Outer policy chooses <code>continue</code> / <code>retry</code> /
+      <code>stop</code> / <code>abort</code>. <code>AutonomousAgentLoop</code> creates a new Attempt on
+      every <code>runTaskOnce()</code> — it does not resume an old RuntimeRunner instruction pointer or
+      resurrect an exited tool process.
+    </p>
+  </Section>
+
+  <Section
+    id="budget"
+    label="§04 · Budget"
+    title="Three budget layers give the loop a provable boundary"
+    lede="“Continue until done” is not a safe terminal condition; hard caps dominate custom policy."
+  >
     <DiagramFigure
-      caption="Fig. 4 · Layered budgets: maxAttempts · maxRuntimeSteps · park/stop/abort — no infinite continue."
-      alt="Three columns: maxAttempts, maxRuntimeSteps, policy gates."
+      caption="Fig. 4 · AutonomousLoopBudget: maxAttempts · maxRuntimeSteps (summed across Attempts) · maxWallTimeMs; enforceCaps reapplies."
+      alt="Three columns: maxAttempts, cumulative maxRuntimeSteps, maxWallTimeMs."
     >
       <BudgetLayersFlow />
     </DiagramFigure>
+    <ul class="plain-list">
+      <li><code>maxAttempts</code> — how many Attempts a TaskRun may start (checked before/after Attempt)</li>
+      <li><code>maxRuntimeSteps</code> — Runtime steps <strong>summed across all Attempts</strong> (checked after Attempt)</li>
+      <li><code>maxWallTimeMs</code> — total wall time of the TaskRun loop (checked before/after Attempt)</li>
+    </ul>
     <p>
-      An Attempt may end on normal stop, execution failure, incomplete information, permission block,
-      budget exhaustion, cancel, or abort. <code>AutonomousAgentLoop</code> creates a new Attempt on
-      each <code>runTaskOnce()</code> — it does not resume from an old RuntimeRunner instruction
-      pointer, nor revive an exited tool process. Layered budgets (e.g. <code>maxAttempts</code> /
-      <code>maxRuntimeSteps</code>) give unattended loops a provable boundary: there is no infinite
-      license to “continue until done.” Even if a custom policy asks to continue,
-      <code>enforceCaps()</code> reapplies the hard limits.
+      <code>LoopBudgetSnapshot</code> hands used and max to decision policy. Even if custom policy asks
+      continue/retry, <code>enforceCaps()</code> reapplies hard limits. Attempt counts rebuild from Task
+      Events and Runtime steps are recorded in feedback; yet today’s loop <code>startedAt</code>,
+      cumulative counters, and decision closure mostly live inside the running
+      <code>runAutonomousTask()</code> — budget use is auditable, but a generic projection cannot
+      unambiguously restore every loop counter at an arbitrary restart point (Target: durable budget
+      accounting).
+    </p>
+  </Section>
+
+  <Section
+    id="progress"
+    label="§04 · Progress"
+    title="Bounded progress projection across Attempts"
+    lede="Do not shove the previous Attempt’s natural-language reply back into the prompt."
+  >
+    <p>Heavy-task mode introduces structured, append-only progress facts:</p>
+    <ul class="plain-list">
+      <li>
+        <strong>Inventory</strong> (<code>inventory_submit</code>) — full snapshot (files/artifacts, status,
+        purpose, open questions); latest replaces current inventory in the projection; older snapshots stay
+        in the log.
+      </li>
+      <li>
+        <strong>Todos</strong> (<code>todo_update</code>) — full todo snapshot (ID, priority, status,
+        content, optional kind); projection can stably find the active todo.
+      </li>
+      <li>
+        <strong>Compact Evidence</strong> — bounded public evidence around Bash/Read/Grep/Write/Edit/Glob
+        (summaries, truncation refs, source links, mutation metadata); large stdout / full bodies / raw
+        diffs do not flood the task prompt.
+      </li>
+      <li>
+        <strong>Self-check</strong> — public reason, command/artifact evidence, and hygiene (see §05);
+        advisory with bounded repair — not hidden authority.
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="Progress projection chain">Full task history remains in Task Events
+  → latest progress snapshots are selected
+  → recent public evidence is bounded
+  → next Attempt receives a continuation-oriented prompt view</pre>
+    <p>
+      On the next Attempt,
+      <code>renderHeavyTaskProgressForPrompt()</code> /
+      <code>renderHeavyTaskSelfCheckForPrompt()</code> /
+      <code>renderHeavyTaskEvidenceForPrompt()</code> render bounded text from the projection. This is
+      not full replay, and it does not claim omitted raw output is still in the prompt.
     </p>
   </Section>
 
   <Section
     id="continue"
     label="§04 · Continuation"
-    title="“Continue” is at least three paths — not one resume"
-    lede="Autonomous continue, parked CLI resume, and cold-start ledger reload — different semantics, explicit events."
+    title="“Continue” has at least three paths — do not merge them into one resume"
+    lede="Harbor Cell Turn · Autonomous Attempt · parked CLI resume — different semantics; events must be explicit."
   >
     <DiagramFigure
-      caption="Fig. 5 · Three continuations: autonomous continue/retry · parked needs_approval · cold-start ledger reload; unified resume stays Target."
-      alt="Four columns: Autonomous continue, Parked resume, Cold start reload, Target unified resume gap."
+      caption="Fig. 5 · Three continuations: same-Session Harbor Turn · autonomous new Attempt · parked needs_approval; unified resume remains Target."
+      alt="Columns: Autonomous continue, Parked resume, Cold start reload, Target unified resume gap."
     >
       <ColdStartResumeFlow />
     </DiagramFigure>
-    <ol class="plain-list numbered">
-      <li>
-        <strong>Autonomous continue / retry</strong> — call <code>runTaskOnce()</code> again;
-        heavy-task state can project from Task Events into a new instruction; optionally splice prior
-        Attempt RuntimeEvents into the next Runtime context. Still a new Attempt — not
-        instruction-level resume.
-      </li>
-      <li>
-        <strong>Parked permission CLI resume</strong> — when intervention is <code>park</code>, an
-        Inbox / <code>needs_approval</code> forms; current <code>task resume</code> mainly serves this
-        path: resolve inbox, open a new Attempt, append grant facts to the Task Event Log.
-      </li>
-      <li>
-        <strong>Cold start</strong> — after process restart, reload JSONL and
-        <code>projectTaskRun()</code>; attempt / step counts must not reset because a new process
-        started. What recovers is control-plane truth — not live tool handles or automatic scheduler
-        takeover.
-      </li>
-    </ol>
+
+    <h3 class="subhead">1. New Turn inside the same Harbor Cell</h3>
     <p>
-      Explicit continuation must leave Task Events; an in-process loop counter alone is not enough.
-      Collapsing the three into one “resume” button smuggles semantics between park and crash, and
-      dresses Target’s unified takeover protocol as Current.
+      Loops <code>SessionManager.sendMessage()</code> inside the same Session and container workspace.
+      Today it continues only when the previous Invocation ended on a tool-step cap or incomplete tool
+      calls. The next Turn uses a fixed continuation prompt under <code>maxTurns</code> and
+      <code>maxTotalRuntimeSteps</code> (defaults when enabled: at most 3 Turns; total Runtime steps
+      default to 50 per Turn). Closest path to “keep working on the same workspace,” still multiple new
+      Invocations — not instruction-level resume.
     </p>
+
+    <h3 class="subhead">2. New Attempt from the Autonomous Loop</h3>
+    <p>
+      continue/retry calls <code>runTaskOnce()</code> again. Heavy-task state projects from Task Events
+      into the new instruction; when <code>replayPriorAttemptRuntimeContext</code> is on, prior Attempt
+      RuntimeEvents are also folded into the next Runtime context — that switch is not mandatory
+      semantics by default. When off, cross-Attempt continuation mainly rides instruction feedback and
+      TaskRun progress projection.
+    </p>
+
+    <h3 class="subhead">3. CLI resume of a parked permission</h3>
+    <DiagramFigure
+      caption="Fig. 6 · park → Inbox / needs_approval → resolve + grant facts → new Attempt; forbid rewriting an old tool call after the fact."
+      alt="Four-step protocol: Permission park, Inbox item, CLI resume writes grant, forbid post-hoc auth."
+    >
+      <ParkGrantResumeFlow />
+    </DiagramFigure>
+    <p>
+      When intervention policy is <code>park</code>, a permission request becomes a
+      <code>TaskPermissionRequest</code>, Inbox item, Attempt <code>needs_approval</code>, and TaskRun
+      parked state. Today’s <code>task resume</code> mainly serves this path: resolve the inbox, open a
+      new Attempt, and append grant facts to the Task Event Log. A late grant
+      <strong>must not</strong> post-hoc authorize a tool call that already handed off — Resume is new
+      input for the next Attempt, not resurrection of the old call stack.
+    </p>
+
+    <h3 class="subhead">Cold-start ledger reload</h3>
+    <p>
+      After process restart, reload JSONL and <code>projectTaskRun()</code>. What returns is control-plane
+      truth; teaching must not treat attempts/steps as “reset because the process is new” — yet full
+      loop-counter recovery is still Target (see checkpoint below). Without workspace / executor
+      ownership evidence, do not claim safe live-world takeover.
+    </p>
+  </Section>
+
+  <Section
+    id="workspace"
+    label="§04 · Workspace"
+    title="A lease records ownership — it is not a workspace checkpoint"
+    lede="Current TaskRun durability preserves control history; workspace continuity remains carrier-dependent."
+  >
+    <p>
+      Default local <code>runTaskOnce()</code> creates a throwaway copy of the task fixture per Attempt and
+      cleans it in <code>finally</code> (fixture symlinks are rejected to avoid host escape after copy).
+      Task Events record <code>WorkspaceLeaseFacts</code> (lease ID, TaskRun/Attempt identity, source and
+      actual path, writable, cleanup policy, createdAt, …), but <strong>recording a lease ≠ saving
+      workspace bytes</strong>. The next Attempt recopies the fixture by default; mutations from the prior
+      Attempt do not appear just because the TaskRun ID matches.
+    </p>
+    <p>
+      External isolation may provide a stable <code>workspaceDir</code>, and a Harbor Cell can share one
+      workspace while the container lives, but TaskRunStore does not own that external workspace’s
+      snapshot, lease renewal, or fencing protocol. A throwaway directory isolates fixture mutation — it
+      is not an OS security sandbox; real model-backed backends must supply
+      <code>RealBackendIsolation</code>. Headless validates isolation-record shape and non-empty labels —
+      filesystem / network / process / secret isolation is fulfilled by the external executor.
+    </p>
+  </Section>
+
+  <Section
+    id="crash"
+    label="§04 · Recovery"
+    title="Crash, corrupt tail, and current recovery power"
+    lede="Rebuildable control facts ≠ automatic execution resume."
+  >
+    <p>File TaskRunStore read rules:</p>
+    <ul class="plain-list">
+      <li>Newline-terminated valid events replay in order</li>
+      <li>Complete but unparsable lines → <code>event_corrupt</code>, enter projection warnings</li>
+      <li>A final non-newline-terminated partial tail is ignored</li>
+      <li>Events with mismatched TaskRun ID never enter a valid projection</li>
+      <li>Multiple terminal events → warning; today last terminal wins</li>
+    </ul>
+    <p>
+      Still missing as general capabilities: a scheduler that enumerates and claims non-terminal
+      TaskRuns; deciding whether a <code>running</code> Attempt is live or its owner is dead;
+      cross-process writer lease/fencing; restore from workspace snapshot + Runtime high water;
+      idempotent new-Attempt preparation; unified resume from arbitrary parked/blocked/budget states.
+    </p>
+  </Section>
+
+  <Section
+    id="target"
+    label="§04 · Target"
+    title="A real Durable Task Loop needs paired high waters"
+    lede="Task Event high water alone is not enough; a recovery point binds at least five state classes."
+  >
+    <DiagramFigure
+      caption="Fig. 7 · Target DurableTaskCheckpoint: Task / Runtime / Workspace / Budget / Owner high waters must bind before safe takeover."
+      alt="Five high-water columns feed a checkpoint, then rebuild projection and choose nextAction."
+    >
+      <DurableCheckpointFlow />
+    </DiagramFigure>
+    <pre class="code-block" aria-label="DurableTaskCheckpoint shape">DurableTaskCheckpoint
+  task:      taskRunId, taskEventHighWater, policyVersion
+  runtime:   sessionId, completedRunIds, runtimeEventHighWaterByRun
+  workspace: snapshotId, manifestHash, carrierIdentity
+  budget:    attemptsUsed, runtimeStepsUsed, elapsedAccounting
+  control:   nextAction, parkedInboxItemId?, ownerLease / fencingToken</pre>
+    <p>
+      This is a set of recovery invariants, not a field promise: Task and Runtime high waters must
+      agree; workspace snapshot must pair with the same boundary; budget must restore rather than
+      re-time (distinguish active / parked / scheduler downtime); owner fencing must block double
+      Attempts and double-written terminals. Target still uses an idempotent new Attempt as the primary
+      recovery unit — it does not try to revive provider sockets or live tool processes.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current: Task identity, append-only Task Events, Attempt lifecycle, three budget layers,
+        Heavy-task progress/evidence, permission Inbox, and distinct Harbor / Autonomous / parked
+        continuation paths. Target: versioned checkpoint, scheduler claim, durable budget, workspace
+        snapshot + fencing, unified parked-state protocol — not to be taught as already guaranteed.
+      </p>
+    </div>
   </Section>
 
   <Section
@@ -222,44 +442,43 @@ Long task progress
     lede="Fail closed on budgets and ownership; do not invent a live world from a ledger alone."
   >
     <ul class="plain-list">
-      <li>
-        Budget / hard cap hit → stop the unattended loop; do not bypass
-        <code>enforceCaps()</code> with “one more try.”
-      </li>
-      <li>
-        Permission fail-closed or park → no side effects without a grant; parked resume must record
-        grant facts.
-      </li>
-      <li>
-        After restart, missing workspace / executor ownership evidence → restore control-plane
-        projection only; do not claim safe live-world takeover.
-      </li>
-      <li>
-        Prior Attempt RuntimeEvents may optionally replay into context, but must not pretend the tool
-        process is still running.
-      </li>
-      <li>
-        Custom policy asks to continue while hard caps are exhausted → caps win over narrative.
-      </li>
+      <li>Budget / hard cap hit → stop the unattended loop; never bypass <code>enforceCaps()</code> with “one more try.”</li>
+      <li>Permission fail-closed or park → no side effects without a grant; parked resume must write grant facts.</li>
+      <li>Late grant → refuse to rewrite the permission facts of an old tool call (no post-hoc authorization).</li>
+      <li>After restart, missing workspace / executor ownership evidence → restore control-plane projection only; do not claim live takeover.</li>
+      <li>Prior Attempt RuntimeEvents may optionally replay into context — never pretend the tool process is still running.</li>
+      <li>Corrupt / mismatched / multi-terminal → warnings must stay observable; conflicts must not vanish silently.</li>
     </ul>
-    <div class="stub">
-      <p class="stub__tag">Hybrid teaching depth</p>
-      <p>
-        This chapter is thickened under the Hybrid decision: as the Runtime→durable-task bridge, its
-        narrative and continuation figure approach §01–§03 density. §05–§06 stay lean and
-        checklist-complete; finer evolution detail lives in <code>/history</code> asides.
-      </p>
-    </div>
+  </Section>
+
+  <Section
+    id="not"
+    label="§04 · Not"
+    title="What the Durable Task Loop is not"
+    lede="Draw the boundary so a long task is not sold as an immortal Invocation or a Memory system."
+  >
+    <ul class="plain-list">
+      <li><strong>Not an unbounded Turn</strong> — progress moves through multiple bounded Attempts.</li>
+      <li><strong>Not stuffing full history back into the model</strong> — cross-Attempt state comes from bounded progress/evidence projection.</li>
+      <li><strong>Not a Memory system</strong> — serves one concrete long goal, not a cross-task preference store.</li>
+      <li><strong>Not the workspace itself</strong> — the Task Event Log may cite a lease/snapshot; it does not replace file bytes.</li>
+      <li><strong>Not hot recovery of the same Invocation</strong> — the recommended recovery unit is a new Turn/Attempt.</li>
+    </ul>
+    <p class="figure-note">
+      Invariants to protect: stable <code>taskRunId</code>; bounded attempts; append before project;
+      explicit continuation; budget caps dominate policy; no post-hoc authorization; progress bounded
+      and source-bearing; workspace claims explicit; Runtime facts remain separate; conflicts
+      observable.
+    </p>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>Keystone + durable boundary + Attempt continue + budgets + three continuations / cold start</li>
-      <li>
-        Aside: <a href={`${localePath("en", "history/pr/773")}`}>maka:pr:773</a>
-      </li>
-      <li>Current ledger vs Target cross-process takeover gaps labeled</li>
-      <li>Hybrid: §04 fuller; §05–§06 lean; checklist hard gate met (zh+en same ship)</li>
+      <li>Keystone + durable boundary + Attempt + three budgets + park/grant + Target checkpoint</li>
+      <li>Three continuations (Harbor Turn / Autonomous Attempt / parked CLI) kept semantically distinct</li>
+      <li>History asides <a href={`${import.meta.env.BASE_URL}en/history/pr/567`}>maka:pr:567</a> ·
+        <a href={`${import.meta.env.BASE_URL}en/history/pr/773`}>maka:pr:773</a></li>
+      <li>Current ledger vs Target cross-process takeover: field-level invariants written (CN+EN ship together)</li>
     </ul>
   </div>
 </ChapterShell>
@@ -279,7 +498,7 @@ Long task progress
   .plain-list {
     margin: 0.75rem 0 1.1rem;
     padding-left: 1.2rem;
-    max-width: 40em;
+    max-width: 42em;
   }
   .plain-list.numbered {
     list-style: decimal;
@@ -303,5 +522,18 @@ Long task progress
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .figure-note {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 40em;
   }
 </style>

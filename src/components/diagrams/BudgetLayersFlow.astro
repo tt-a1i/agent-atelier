@@ -1,6 +1,6 @@
 ---
 /**
- * §04 flow — layered budgets that bound unattended loops.
+ * §04 flow — AutonomousLoopBudget: three hard caps that dominate policy.
  */
 ---
 
@@ -12,7 +12,7 @@
   focusable="false"
 >
   <text class="bl-kicker bl-stage bl-stage--0" x="8" y="20" fill="var(--accent)">
-    FLOW · LAYERED BUDGETS · NO INFINITE CONTINUE
+    FLOW · AUTONOMOUS LOOP BUDGET · ENFORCECAPS DOMINATES
   </text>
   <line class="bl-stage bl-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
   <g class="bl-col bl-stage bl-stage--1" transform="translate(8,52)">
@@ -21,26 +21,26 @@
     <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">A · ATTEMPTS</text>
     <text class="bl-col__title" x="14" y="56" fill="var(--ink)">maxAttempts</text>
     <text class="bl-col__line" x="14" y="90" fill="var(--mute)">TaskRun outer loop</text>
-    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">each runTaskOnce</text>
-    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">new Attempt slice</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">checked before/after</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">each runTaskOnce</text>
   </g>
   <g class="bl-col bl-stage bl-stage--2" transform="translate(298,52)">
     <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
     <rect width="272" height="2" fill="var(--accent)" opacity="0.65"></rect>
     <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">B · RUNTIME STEPS</text>
     <text class="bl-col__title" x="14" y="56" fill="var(--ink)">maxRuntimeSteps</text>
-    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">inside one Attempt</text>
-    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">model/tool cycles</text>
-    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">cap ends Attempt</text>
+    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">sum across Attempts</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">checked after Attempt</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">not per-Attempt only</text>
   </g>
   <g class="bl-col bl-stage bl-stage--3" transform="translate(588,52)">
     <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
     <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
-    <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">C · POLICY GATES</text>
-    <text class="bl-col__title" x="14" y="56" fill="var(--ink)">park / stop / abort</text>
-    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">permission · budget</text>
-    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">human approval</text>
-    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">≠ immortal Invocation</text>
+    <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">C · WALL TIME</text>
+    <text class="bl-col__title" x="14" y="56" fill="var(--ink)">maxWallTimeMs</text>
+    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">TaskRun loop clock</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">before/after Attempt</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">≠ new-process reset</text>
   </g>
 </svg>
 

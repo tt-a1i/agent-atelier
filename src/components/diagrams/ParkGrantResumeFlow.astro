@@ -1,0 +1,88 @@
+---
+/**
+ * §04 protocol — park → inbox → grant facts → new Attempt (no post-hoc auth).
+ */
+---
+
+<svg
+  class="pg-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="pg-kicker pg-stage pg-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · PARK → GRANT FACTS → NEW ATTEMPT · NO POST-HOC AUTH
+  </text>
+  <line class="pg-stage pg-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="pg-stage pg-stage--1" transform="translate(8,52)">
+    <rect width="152" height="180" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="152" height="2" fill="var(--accent)"></rect>
+    <text class="pg-idx" x="12" y="28" fill="var(--accent)">1</text>
+    <text class="pg-title" x="12" y="56" fill="var(--ink)">Permission</text>
+    <text class="pg-line" x="12" y="88" fill="var(--mute)">tool needs grant</text>
+    <text class="pg-line" x="12" y="112" fill="var(--mute)">policy = park</text>
+    <text class="pg-line" x="12" y="148" fill="var(--ink)">Attempt parks</text>
+  </g>
+  <path class="pg-stage pg-stage--1" d="M168 142 H188" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pg-arrow)"></path>
+
+  <g class="pg-stage pg-stage--2" transform="translate(196,52)">
+    <rect width="152" height="180" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="152" height="2" fill="var(--accent)" opacity="0.85"></rect>
+    <text class="pg-idx" x="12" y="28" fill="var(--accent)">2</text>
+    <text class="pg-title" x="12" y="56" fill="var(--ink)">Inbox item</text>
+    <text class="pg-line" x="12" y="88" fill="var(--mute)">TaskPermission</text>
+    <text class="pg-line" x="12" y="112" fill="var(--mute)">needs_approval</text>
+    <text class="pg-line" x="12" y="148" fill="var(--ink)">TaskEvents append</text>
+  </g>
+  <path class="pg-stage pg-stage--2" d="M356 142 H376" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pg-arrow)"></path>
+
+  <g class="pg-stage pg-stage--3" transform="translate(384,52)">
+    <rect width="152" height="180" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="152" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="pg-idx" x="12" y="28" fill="var(--accent)">3</text>
+    <text class="pg-title" x="12" y="56" fill="var(--ink)">CLI resume</text>
+    <text class="pg-line" x="12" y="88" fill="var(--mute)">resolve inbox</text>
+    <text class="pg-line" x="12" y="112" fill="var(--mute)">write grant facts</text>
+    <text class="pg-line" x="12" y="148" fill="var(--ink)">new Attempt only</text>
+  </g>
+  <path class="pg-stage pg-stage--3" d="M544 142 H564" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pg-arrow)"></path>
+
+  <g class="pg-stage pg-stage--4" transform="translate(572,52)">
+    <rect width="288" height="180" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="288" height="2" fill="var(--accent)"></rect>
+    <text class="pg-idx" x="14" y="28" fill="var(--accent)">FORBIDDEN</text>
+    <text class="pg-title" x="14" y="56" fill="var(--ink)">Post-hoc grant</text>
+    <text class="pg-line" x="14" y="92" fill="var(--mute)">late grant after handoff</text>
+    <text class="pg-line" x="14" y="116" fill="var(--mute)">≠ rewrite old tool call</text>
+    <text class="pg-line" x="14" y="140" fill="var(--mute)">≠ revive call stack</text>
+    <text class="pg-line" x="14" y="172" fill="var(--ink)">resume = next Attempt input</text>
+  </g>
+
+  <defs>
+    <marker id="pg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .pg-flow { font-family: var(--sans); }
+  .pg-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .pg-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .pg-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .pg-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pg-stage { opacity: 0; animation: pg-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .pg-stage--0 { animation-delay: 0.04s; }
+    .pg-stage--1 { animation-delay: 0.14s; }
+    .pg-stage--2 { animation-delay: 0.26s; }
+    .pg-stage--3 { animation-delay: 0.38s; }
+    .pg-stage--4 { animation-delay: 0.5s; }
+    @keyframes pg-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pg-stage { opacity: 1; animation: none; }
+  }
+</style>

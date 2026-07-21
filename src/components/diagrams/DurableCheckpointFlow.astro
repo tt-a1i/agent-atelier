@@ -1,0 +1,82 @@
+---
+/**
+ * §04 Target — DurableTaskCheckpoint binds five high waters for safe takeover.
+ */
+---
+
+<svg
+  class="dc-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="dc-kicker dc-stage dc-stage--0" x="8" y="20" fill="var(--accent)">
+    TARGET · DURABLETASKCHECKPOINT · FIVE HIGH WATERS BOUND TOGETHER
+  </text>
+  <line class="dc-stage dc-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="dc-stage dc-stage--1" transform="translate(8,52)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="dc-idx" x="10" y="24" fill="var(--accent)">TASK</text>
+    <text class="dc-line" x="10" y="52" fill="var(--ink)">event high water</text>
+    <text class="dc-line" x="10" y="76" fill="var(--mute)">policyVersion</text>
+  </g>
+  <g class="dc-stage dc-stage--1" transform="translate(168,52)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="dc-idx" x="10" y="24" fill="var(--accent)">RUNTIME</text>
+    <text class="dc-line" x="10" y="52" fill="var(--ink)">run boundaries</text>
+    <text class="dc-line" x="10" y="76" fill="var(--mute)">event HWM / run</text>
+  </g>
+  <g class="dc-stage dc-stage--1" transform="translate(328,52)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="dc-idx" x="10" y="24" fill="var(--accent)">WORKSPACE</text>
+    <text class="dc-line" x="10" y="52" fill="var(--ink)">snapshotId</text>
+    <text class="dc-line" x="10" y="76" fill="var(--mute)">manifestHash</text>
+  </g>
+  <g class="dc-stage dc-stage--1" transform="translate(488,52)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="dc-idx" x="10" y="24" fill="var(--accent)">BUDGET</text>
+    <text class="dc-line" x="10" y="52" fill="var(--ink)">used counters</text>
+    <text class="dc-line" x="10" y="76" fill="var(--mute)">elapsed policy</text>
+  </g>
+  <g class="dc-stage dc-stage--1" transform="translate(648,52)">
+    <rect width="212" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="dc-idx" x="10" y="24" fill="var(--accent)">OWNER</text>
+    <text class="dc-line" x="10" y="52" fill="var(--ink)">lease / fencing</text>
+    <text class="dc-line" x="10" y="76" fill="var(--mute)">nextAction</text>
+  </g>
+
+  <path class="dc-stage dc-stage--2" d="M434 160 V188" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#dc-arrow)"></path>
+
+  <g class="dc-stage dc-stage--2" transform="translate(196,196)">
+    <rect width="476" height="84" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="476" height="2" fill="var(--accent)"></rect>
+    <text class="dc-title" x="16" y="32" fill="var(--ink)">Rebuild projection → decide nextAction</text>
+    <text class="dc-line" x="16" y="60" fill="var(--mute)">continue = idempotent new Attempt · park = inbox · terminal = stop</text>
+  </g>
+
+  <defs>
+    <marker id="dc-arrow" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .dc-flow { font-family: var(--sans); }
+  .dc-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .dc-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .dc-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .dc-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .dc-stage { opacity: 0; animation: dc-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .dc-stage--0 { animation-delay: 0.04s; }
+    .dc-stage--1 { animation-delay: 0.18s; }
+    .dc-stage--2 { animation-delay: 0.4s; }
+    @keyframes dc-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dc-stage { opacity: 1; animation: none; }
+  }
+</style>
