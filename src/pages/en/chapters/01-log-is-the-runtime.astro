@@ -13,6 +13,7 @@ import ModelToolLoop from "../../../components/diagrams/ModelToolLoop.astro";
 import PermissionControlFlow from "../../../components/diagrams/PermissionControlFlow.astro";
 import SandboxOwnershipFlow from "../../../components/diagrams/SandboxOwnershipFlow.astro";
 import RecoveryLayersFlow from "../../../components/diagrams/RecoveryLayersFlow.astro";
+import T1T2BoundaryFlow from "../../../components/diagrams/T1T2BoundaryFlow.astro";
 import TerminalRace from "../../../components/diagrams/TerminalRace.astro";
 import PrefixVsShape from "../../../components/diagrams/PrefixVsShape.astro";
 import AttributionLadder from "../../../components/diagrams/AttributionLadder.astro";
@@ -830,62 +831,197 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       immediately before start. This is single-process ownership, not distributed fencing.
     </p>
 
-    <h3 class="subhead">RecoveryResolver: sole decision authority</h3>
+    <h3 id="t1-t2" class="subhead">D. T1 / T2 + RecoveryResolver triad</h3>
     <p>
-      Planner / CLI / UI must not assemble call / dispatch / response facts themselves. They consume
-      only <code>resolveRuntimeRecovery()</code> decisions. RuntimeEvent is the sole canonical recovery
-      fact source; Tool Journal is a rebuildable projection (RecoveryResolver ADR) — conflicts prefer
-      RuntimeEvent.
+      Phase0 deliberately speaks only of “the last fully committed RuntimeEvent prefix,” without
+      pretending a journal already exists. The current SQLite durable path adds a separate
+      <strong>tool-boundary protocol</strong>: after every preflight (args, availability, loop gate,
+      permission, sandbox escalation) and <em>before</em> <code>tool.impl()</code>, Runtime must cross
+      <strong>T1</strong>; after the implementation and <em>before</em> publishing a result to the model,
+      it must cross <strong>T2</strong>. Sole decision authority is
+      <code>resolveRuntimeRecovery()</code> — Planner / CLI / UI must not reassemble call / dispatch /
+      response themselves.
+    </p>
+
+    <DiagramFigure
+      caption="Fig 8c · T1 atomic prepare → impl → T2 CAS commit → Resolver reads the event prefix only; crash points match the inject harness."
+      alt="Four stages: T1 prepare, impl, T2 outcome, RecoveryResolver; four crash failpoints below."
+    >
+      <T1T2BoundaryFlow />
+    </DiagramFigure>
+
+    <h4 class="subhead">T1 ≠ function_call</h4>
+    <p>
+      A provider-visible <code>function_call</code> may commit while permission is still pending — it
+      only means “the model requested a call.” <strong>T1</strong> is a distinct, non-model-visible
+      RuntimeEvent:
+    </p>
+    <pre class="code-block" aria-label="toolDispatch shape">actions.toolDispatch = &#123;
+  protocol: "t1_after_preflight_v1",
+  operationId, providerToolCallId, toolName,
+  canonicalArgsHash, recoveryMode
+&#125;</pre>
+    <p>
+      Exact meaning: “Runtime entered the boundary where it is <strong>unsafe to assume implementation
+      did not run</strong>” — not “side effects happened.”
+      <code>prepareDurableToolAttempt</code> commits, via
+      <code>RuntimeCommitSink.commitToolPrepared</code> in one transaction: the call (if absent), the
+      dispatch event, a journal row <code>prepared</code>, and the <code>tool_operations</code>
+      projection. T1 failure must block impl: tests pin <code>implementationCalls === 0</code> and no
+      published <code>tool_result</code>. Another dispatcher already owning the same
+      <code>operationId</code> (<code>created: false</code>) also blocks impl.
+    </p>
+
+    <h4 class="subhead">T2 and RuntimeCommitBoundaryError</h4>
+    <p>
+      Happy-path ordering is locked by the durable-boundary test as
+      <code>['t1','impl','t2','published-result']</code>. T2 writes <code>function_response</code>
+      through <code>commitToolOutcome</code>; SQLite compare-and-sets
+      <code>current_state='prepared' AND result_event_id IS NULL</code> — a second writer throws, never
+      silent double-writes. <code>RuntimeCommitBoundaryError</code> carries phase
+      <code>'T1' | 'T2'</code>: ToolRuntime <strong>rethrows</strong> it instead of folding it into a
+      synthetic tool result — a commit-boundary fault is a Runtime fault, not “the tool returned an
+      error string.” On T2 failure, impl may already have run once, but the model still sees no
+      published result (that side-effect window is Resolver <code>indeterminate</code>).
+    </p>
+
+    <h4 class="subhead">Protocol marker is a capability fact</h4>
+    <p>
+      <code>toolBoundary: t1_after_preflight_v1</code> is written only when the host
+      <strong>actually wires</strong> a <code>RuntimeCommitSink</code>, and only on the run’s
+      <strong>first</strong> canonical RuntimeEvent (initial user on a normal run; continuation-start on
+      a continuation). Never invent it from a software version; JSONL / no-sink paths must not carry
+      the marker; mid-run backfill is always <code>protocol_marker_invalid</code>. Illegal markers →
+      <code>hasCorruption</code>; missing marker → interpret the whole run as legacy (missing dispatch
+      never proves “definitely did not run”).
+    </p>
+
+    <h4 class="subhead">RecoveryResolver decision table (row-locked by tests)</h4>
+    <p>
+      RuntimeEvent is the sole canonical recovery fact; Tool Journal / <code>tool_operations</code>
+      are rebuildable projections (ADR) — after wiping projections, rebuild from events must match;
+      conflicts prefer RuntimeEvent and count as corruption.
     </p>
     <div class="table-wrap" role="region" aria-label="RecoveryResolver decision table" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
             <th scope="col">Fact combination</th>
-            <th scope="col">Decision</th>
+            <th scope="col">status</th>
+            <th scope="col">reason (test code)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <th scope="row">call + matching response (dispatch optional)</th>
             <td><code>completed</code></td>
+            <td><code>matching_response</code> (incl. pre-T1 synthetic deny)</td>
           </tr>
           <tr>
             <th scope="row">call + dispatch, no response</th>
-            <td><code>indeterminate</code> / reconcile_required — <strong>no</strong> auto re-run</td>
+            <td><code>indeterminate</code></td>
+            <td><code>dispatch_without_response</code> · <strong>no</strong> auto re-run</td>
           </tr>
           <tr>
             <th scope="row">call, no dispatch/response, new-protocol marker</th>
             <td><code>definitely_not_dispatched</code></td>
+            <td><code>new_protocol_before_dispatch</code></td>
           </tr>
           <tr>
             <th scope="row">Same, but legacy / unknown protocol</th>
-            <td><code>indeterminate</code> (missing events ≠ proof of non-execution)</td>
+            <td><code>indeterminate</code></td>
+            <td><code>legacy_dispatch_unknown</code> (missing ≠ non-execution)</td>
           </tr>
           <tr>
-            <th scope="row">orphan / duplicate / identity conflict</th>
-            <td><code>corruption</code> · fail-closed</td>
+            <th scope="row">orphan dispatch / orphan response</th>
+            <td><code>corruption</code></td>
+            <td><code>orphan_dispatch</code> / <code>orphan_response</code></td>
+          </tr>
+          <tr>
+            <th scope="row">duplicate dispatch / response</th>
+            <td><code>corruption</code></td>
+            <td><code>duplicate_dispatch</code> / <code>duplicate_response</code></td>
+          </tr>
+          <tr>
+            <th scope="row">name / operationId / toolCallId drift</th>
+            <td><code>corruption</code></td>
+            <td><code>identity_conflict</code></td>
+          </tr>
+          <tr>
+            <th scope="row">illegal / misplaced protocol marker</th>
+            <td>issues + corruption</td>
+            <td><code>protocol_marker_invalid</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="subhead">SQLite crash harness (orthogonal to the Phase0 catalog)</h4>
+    <p>
+      Phase0 P0–P11 decide at the “event prefix” grain; the durable sink additionally pins
+      in-transaction points with a real child-process <code>SIGKILL</code>
+      (<code>sqlite-runtime-crash.test.ts</code>):
+    </p>
+    <div class="table-wrap" role="region" aria-label="T1/T2 crash points" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Inject</th>
+            <th scope="col">Facts after reopen</th>
+            <th scope="col">Resolver meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>inside_t1</code></th>
+            <td>Zero events, zero unsettled ops (full rollback)</td>
+            <td>No tool-boundary facts</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>after_effect</code> (after T1; side effects possible)</th>
+            <td>Op stays <code>prepared</code>; listed by <code>listUnsettledToolOperations</code></td>
+            <td><code>indeterminate</code> / reconcile_required</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>inside_t2</code></th>
+            <td>T1 survives; op still <code>prepared</code> (T2 is atomic — no half response)</td>
+            <td>Same as dispatch_without_response</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>after_t2</code></th>
+            <td><code>outcome_committed</code>; nothing unsettled</td>
+            <td><code>completed</code></td>
           </tr>
         </tbody>
       </table>
     </div>
     <p>
-      T1 is an independent, non-model-visible <code>actions.toolDispatch</code> RuntimeEvent: it means
-      “Runtime crossed the boundary where it is unsafe to assume implementation did not run,” not “side
-      effects happened.” Protocol marker <code>toolBoundary: t1_after_preflight_v1</code> appears only on
-      the first canonical event when a durable commit sink is actually wired — never inferred from a
-      software version alone.
+      Journal state is narrowed to the write paths that exist today:
+      <code>prepared | outcome_committed</code>. Future indeterminate / reconciled query states need
+      matching RuntimeEvents first — never a second parallel state machine.
     </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Durable safe-boundary phases (resolver / sink / sqlite T1–T2):
+        <a href={localePath("en", "history/pr/1223")}>maka:pr:1223</a>. Contract = tests:
+        <code>recovery-resolver.test.ts</code> (row-by-row),
+        <code>tool-runtime-durable-boundary.test.ts</code> (T1 fail → zero impl; order
+        t1→impl→t2),
+        <code>tool-runtime-sqlite-boundary.test.ts</code>,
+        <code>sqlite-runtime-crash.test.ts</code> (SIGKILL). ADR:
+        <code>runtime-recovery-resolver-adr.zh-CN.md</code>.
+      </p>
+    </aside>
 
     <div class="stub">
       <p class="stub__tag">Current vs Target</p>
       <p>
-        Default startup path remains state repair. Warm mid-tool resume = Target. Phase1 is a
-        flag-gated Current capability, not the default. Cross-process Attempt durability:
+        Default startup path remains state repair. Warm mid-tool resume = Target. Phase1 is
+        flag-gated Current, not default; T1/T2 claims the new protocol only on paths that wired a
+        <code>RuntimeCommitSink</code>. Cross-process Attempt durability:
         <a href={localePath("en", "chapters/04-the-durable-task-loop") + "#crash"}>§04 crash</a>.
-        Mechanism aside:
-        <a href={localePath("en", "history/pr/1223")}>maka:pr:1223</a>; tests:
-        <code>runtime-resume*.test.ts</code>, <code>recovery-resolver.test.ts</code>.
       </p>
     </div>
   </Section>
@@ -1394,9 +1530,11 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         <a href={localePath("en", "history/pr/41")}>41</a>
       </li>
       <li>
-        Recovery / resume:
+        Recovery / T1–T2:
         <a href={localePath("en", "history/pr/1223")}>1223</a> (safe-boundary phases) ·
-        tests <code>runtime-resume*.test.ts</code> / <code>recovery-resolver.test.ts</code>
+        tests <code>recovery-resolver.test.ts</code> /
+        <code>tool-runtime-durable-boundary.test.ts</code> /
+        <code>sqlite-runtime-crash.test.ts</code>
       </li>
       <li>
         Sandbox: tests <code>sandbox-manager.test.ts</code> /
@@ -1412,7 +1550,7 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
   <div slot="outline">
     <ul class="outline-list">
       <li>Keystone + spine / dual stream / loop / permission / sandbox / terminal race</li>
-      <li>Three-store authority + recovery layers (repair / Phase0 / Phase1) + Resolver</li>
+      <li>Three-store authority + recovery layers + T1/T2 triad (Fig 8c · crash harness · reason codes)</li>
       <li>Three replay layers → #request-shape cost spine</li>
       <li>#skills catalog budget + #mcp same ToolRuntime (not a second loop)</li>
       <li>

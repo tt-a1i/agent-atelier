@@ -1,0 +1,152 @@
+---
+/**
+ * §02 protocol — live emitOutput channels vs final tool / shell_run result.
+ */
+---
+
+<svg
+  class="lv-flow"
+  viewBox="0 0 868 292"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="lv-kicker lv-stage lv-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · LIVE DELTA ⟂ TERMINAL RESULT · CAPS ARE INDEPENDENT
+  </text>
+  <line
+    class="lv-stage lv-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="lv-stage lv-stage--1" transform="translate(8,52)">
+    <rect width="200" height="100" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="lv-idx" x="12" y="26" fill="var(--accent)">PROCESS</text>
+    <text class="lv-title" x="12" y="52" fill="var(--ink)">stdout / stderr</text>
+    <text class="lv-line" x="12" y="78" fill="var(--mute)">pipes or PTY</text>
+  </g>
+
+  <path
+    class="lv-stage lv-stage--1"
+    d="M216 102 H252"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#lv-arrow)"
+  ></path>
+
+  <g class="lv-stage lv-stage--2" transform="translate(260,48)">
+    <rect width="280" height="108" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="lv-idx" x="12" y="24" fill="var(--accent)">LIVE CHANNEL</text>
+    <text class="lv-title" x="12" y="48" fill="var(--ink)">emitOutput</text>
+    <text class="lv-line" x="12" y="72" fill="var(--mute)">BASH_MAX_LIVE_EMIT_CHARS</text>
+    <text class="lv-line" x="12" y="94" fill="var(--mute)">then suppress marker · UI only</text>
+  </g>
+
+  <path
+    class="lv-stage lv-stage--2"
+    d="M400 164 V188"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#lv-arrow)"
+  ></path>
+
+  <g class="lv-stage lv-stage--3" transform="translate(560,48)">
+    <rect width="300" height="108" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="lv-idx" x="12" y="24" fill="var(--accent)">RETAINED TAIL</text>
+    <text class="lv-title" x="12" y="48" fill="var(--ink)">BASH_MAX_RETAINED</text>
+    <text class="lv-line" x="12" y="72" fill="var(--mute)">final tool result / model</text>
+    <text class="lv-line" x="12" y="94" fill="var(--mute)">live may already be muted</text>
+  </g>
+
+  <g class="lv-stage lv-stage--4" transform="translate(8,200)">
+    <rect width="412" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="lv-idx" x="14" y="26" fill="var(--accent)">FOREGROUND RESULT</text>
+    <text class="lv-line" x="14" y="52" fill="var(--ink)">
+      shapeTerminalResult + model truncate
+    </text>
+  </g>
+
+  <g class="lv-stage lv-stage--4" transform="translate(448,200)">
+    <rect width="412" height="72" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="lv-idx" x="14" y="26" fill="var(--accent)">BACKGROUND + STORE</text>
+    <text class="lv-line" x="14" y="52" fill="var(--ink)">
+      shell_run ref · revision checkpoint · Read
+    </text>
+  </g>
+
+  <defs>
+    <marker id="lv-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .lv-flow {
+    font-family: var(--sans);
+  }
+  .lv-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .lv-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .lv-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .lv-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lv-stage {
+      opacity: 0;
+      animation: lv-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .lv-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .lv-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .lv-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .lv-stage--3 {
+      animation-delay: 0.4s;
+    }
+    .lv-stage--4 {
+      animation-delay: 0.52s;
+    }
+    @keyframes lv-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lv-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

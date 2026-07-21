@@ -8,7 +8,10 @@ import FourRepsFlow from "../../../components/diagrams/FourRepsFlow.astro";
 import ToolRuntimeSwimlane from "../../../components/diagrams/ToolRuntimeSwimlane.astro";
 import ActivePruneFlow from "../../../components/diagrams/ActivePruneFlow.astro";
 import ActiveVsStaleFlow from "../../../components/diagrams/ActiveVsStaleFlow.astro";
+import ThreePruneLifecyclesFlow from "../../../components/diagrams/ThreePruneLifecyclesFlow.astro";
 import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro";
+import ShellSpawnTreeFlow from "../../../components/diagrams/ShellSpawnTreeFlow.astro";
+import ShellLiveVsResultFlow from "../../../components/diagrams/ShellLiveVsResultFlow.astro";
 ---
 
 <ChapterShell chapterId="02" locale="en">
@@ -190,6 +193,160 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
   </Section>
 
   <Section
+    id="shell-side-effects"
+    label="§02 · Shell / PTY"
+    title="Side-effect stack: three spawn paths and output channels"
+    lede="Bash is not one exec. Managed, local foreground, and workspace-executor differ in sandbox insertion and output authority; PTY mutually excludes mandatory sandboxed argv."
+  >
+    <DiagramFigure
+      caption="Fig. 4a · Three paths: Managed Bash (optional transform) → ShellRun; local foreground (no ShellRun store); workspace executor (isolation: none). Bottom bar pins PTY mutual exclusion."
+      alt="Flow: Managed Bash via transformCommand to foreground pipes or background pipes/pty; other paths are local foreground and workspace executor; footer PTY vs sandbox argv mutual exclusion."
+    >
+      <ShellSpawnTreeFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">Spawn decision tree</h3>
+    <pre class="code-block" aria-label="Three spawn paths">buildManagedBashTool
+  → transformCommand? (sandboxCommand)
+  → ShellRunProcessManager
+       ├─ Foreground: pipes only → PipeProcessDriver → terminalContent
+       └─ Background: pipes | pty → persistObservation + shell_run ref
+
+buildLocalForegroundBashTool → runShellWithBoundedTail (no ShellRun store)
+LocalWorkspaceExecutor → Read/Write/Edit/Glob (+ optional bash) · isolation: 'none'</pre>
+
+    <p>
+      The Desktop mainline uses <code>buildManagedBashTool</code>:
+      <code>builtin-tools</code> wires <code>transformCommand</code> to
+      <code>sandboxCommand</code> → <code>SandboxManager.transform</code>, yielding
+      <code>&#123; argv, cwd, env, fdInputs, sandboxType &#125;</code>. Approval
+      (PermissionEngine) is orthogonal to sandbox transform — see
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#sandbox"}>§01 · #sandbox</a>;
+      this section pins the <strong>insertion point and spawn honesty</strong>.
+    </p>
+
+    <h3 class="subhead">Sandbox insertion (Current)</h3>
+    <ul class="plain-list">
+      <li>Non-PTY managed bash: <code>SandboxManager.transform</code> (Seatbelt / bwrap / none).</li>
+      <li>PTY + escalation grant → <code>sandboxType: 'none'</code> (explicit escalate, not silent host).</li>
+      <li>PTY + profile requires sandbox → <strong>throw</strong> (unavailable, not degrade-to-host).</li>
+      <li>Other PTY → no transform (raw shell command).</li>
+      <li>
+        Manager throws <strong>before spawn</strong> when
+        <code>mode === 'pty' &amp;&amp; (argv || fdInputs)</code> — sandboxed argv/fd and PTY are
+        mutually exclusive.
+      </li>
+      <li>
+        <code>LocalWorkspaceExecutor</code> fixes <code>isolation: 'none'</code>: sync file tools are
+        not an OS sandbox; do not conflate with §01 Seatbelt.
+      </li>
+    </ul>
+
+    <DiagramFigure
+      caption="Fig. 4b · Live emitOutput and retained tool result / shell_run are independent channels: live may suppress while the command continues; the final result still gets the retained tail."
+      alt="Process output forks: live emitOutput hits LIVE_EMIT cap then suppress; retained hits RETAINED cap into foreground terminal or background shell_run checkpoint."
+    >
+      <ShellLiveVsResultFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="Output channels" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Channel</th>
+            <th scope="col">Bound</th>
+            <th scope="col">Consumer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Live <code>emitOutput</code></td>
+            <td><code>BASH_MAX_LIVE_EMIT_CHARS</code> then suppress marker</td>
+            <td>UI stream</td>
+          </tr>
+          <tr>
+            <td>Retained tail</td>
+            <td><code>BASH_MAX_RETAINED_CHARS</code></td>
+            <td>Final tool result</td>
+          </tr>
+          <tr>
+            <td>Foreground result</td>
+            <td><code>shapeTerminalResult</code> + model truncate</td>
+            <td>function_response</td>
+          </tr>
+          <tr>
+            <td>Background result</td>
+            <td><code>shell_run</code> ref + PTY model text budget</td>
+            <td>Model + Read ref</td>
+          </tr>
+          <tr>
+            <td>Persisted checkpoint</td>
+            <td>shell-run-store revision</td>
+            <td>Recovery / UI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>Key separation:</strong> after the live cap, a suppress marker may fire while the
+      process keeps running; the tool result still receives the retained tail. Same shape as “output
+      delta ≠ tool result” above — Bash makes it two measurable caps.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="Shell failure matrix" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Surface</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Timeout</td>
+            <td>exit 124 / <code>timed_out</code></td>
+          </tr>
+          <tr>
+            <td>Abort</td>
+            <td>exit 130 / <code>cancelled</code></td>
+          </tr>
+          <tr>
+            <td>Live flood</td>
+            <td>suppress marker; result still retains the tail</td>
+          </tr>
+          <tr>
+            <td>Sandbox denial (output heuristic)</td>
+            <td><code>sandboxDenial.likely</code> on terminal</td>
+          </tr>
+          <tr>
+            <td>PTY + argv/fdInputs</td>
+            <td>throw before spawn</td>
+          </tr>
+          <tr>
+            <td>Persist failure</td>
+            <td>live may lag durable state — never pretend a checkpoint landed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Bounded recoverable Bash output:
+        <a href={localePath("en", "history/pr/92")}>maka:pr:92</a>. Background shell_run refs:
+        <a href={localePath("en", "history/pr/547")}>maka:pr:547</a>. PTY + stdin control:
+        <a href={localePath("en", "history/pr/778")}>maka:pr:778</a>. Tests:
+        <code>shell-exec.test.ts</code> · <code>shell-tools.test.ts</code> ·
+        <code>shell-run-manager.test.ts</code> · <code>pty-screen-collector.test.ts</code> ·
+        <code>workspace-executor.test.ts</code>. Outline:
+        <code>docs/research/shell-pty-executor-deep-outline.md</code> (#56 → Task #68).
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="turn"
     label="§02 · Boundary"
     title="Why Turn is the natural Evidence boundary"
@@ -282,51 +439,132 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
 
   <Section
     id="stale"
-    label="§02 · Stale prune"
-    title="Stale prune: a different policy for prior history"
-    lede="Two policies, two pressures — collapsing them swaps “current Turn” for “replay history.”"
+    label="§02 · Three lifecycles"
+    title="Three lifecycles: Active · Stale · History compact"
+    lede="They share prune / archive / placeholder vocabulary but differ in when they fire, what they mutate, and how they fail — collapsing them into one “compaction” story is a classic teaching failure."
   >
     <DiagramFigure
-      caption="Fig. 6 · Active (same-Turn prepareStep) vs Stale (prior-history materialization) — different targets, timing, and misuse risks."
-      alt="Two columns: Active same Turn prepareStep; Stale prior history replay materialization."
+      caption="Fig. 6 · Three lifecycles side by side: Active (same-Turn messages) · Stale (compact input projection) · History compact (checkpoint over a covered prefix)."
+      alt="Three columns: Active prune, Stale prune, History compact — mutate surface, placeholder kind, fail-open."
+    >
+      <ThreePruneLifecyclesFlow />
+    </DiagramFigure>
+
+    <DiagramFigure
+      caption="Fig. 6b · Active vs Stale pressure contrast (History compact in the table + §03) — do not swap “current Turn” for “replay history.”"
+      alt="Two columns: Active same Turn prepareStep; Stale prior history."
     >
       <ActiveVsStaleFlow />
     </DiagramFigure>
 
-    <div class="table-wrap" role="region" aria-label="Active vs Stale contrast" tabindex="0">
+    <div class="table-wrap" role="region" aria-label="Three-lifecycle protocol contrast" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
             <th scope="col"></th>
-            <th scope="col">Active</th>
-            <th scope="col">Stale</th>
+            <th scope="col">Active prune</th>
+            <th scope="col">Stale prune</th>
+            <th scope="col">History compact</th>
           </tr>
         </thead>
         <tbody>
           <tr>
+            <th scope="row">Code</th>
+            <td><code>active-tool-result-prune.ts</code></td>
+            <td><code>tool-result-archive.ts</code> · <code>pruneStaleToolResultsBeforeCompact</code></td>
+            <td><code>history-compact*.ts</code> (body in §03)</td>
+          </tr>
+          <tr>
             <th scope="row">When</th>
-            <td>Same Turn, between steps (<code>prepareStep</code>)</td>
-            <td>Prior-history materialization</td>
+            <td>Same Turn · <code>prepareStep</code></td>
+            <td>Immediately before a compact pass</td>
+            <td>Turn boundary / mid-turn shaping</td>
           </tr>
           <tr>
-            <th scope="row">Target</th>
-            <td>Just-produced large results</td>
-            <td>Old oversized tool results in replay</td>
+            <th scope="row">Mutates</th>
+            <td>In-memory <code>ModelMessage[]</code> for this request only</td>
+            <td>RuntimeEvent <strong>projection</strong> fed to the compactor</td>
+            <td>Model-visible projection: covered prefix → checkpoint block</td>
           </tr>
           <tr>
-            <th scope="row">Risk if confused</th>
-            <td>Rewrite “history” mid-Turn incorrectly</td>
-            <td>Miss current-Turn context pressure</td>
+            <th scope="row">Placeholder kind</th>
+            <td><code>maka.active_archived_tool_result</code></td>
+            <td><code>maka.archived_tool_result</code></td>
+            <td><code>maka.history_compact_checkpoint</code></td>
+          </tr>
+          <tr>
+            <th scope="row">reason code</th>
+            <td><code>active_current_turn_tool_result_pruned_before_next_step</code></td>
+            <td><code>stale_tool_result_pruned_before_compact</code></td>
+            <td>(checkpoint coverage / digest — not a tool-result reason)</td>
+          </tr>
+          <tr>
+            <th scope="row">Guard band</th>
+            <td><code>minStepNumber</code> (default 1; step 0 untouched)</td>
+            <td><code>minRecentTurnsFull</code> newest N turns stay full</td>
+            <td>Safe completed span · reserve tail · never straddle a tool pair</td>
+          </tr>
+          <tr>
+            <th scope="row">Failure</th>
+            <td><code>archiveFailures</code> → <strong>keep original</strong></td>
+            <td>Missing/mismatched <code>archiveRef</code> → keep + <code>archiveWriteFailures</code></td>
+            <td>Fail-open: no false coverage (see §03)</td>
+          </tr>
+          <tr>
+            <th scope="row">Durable ledger</th>
+            <td>Never rewritten</td>
+            <td>Does not claim to rewrite the authority ledger; swaps the projection’s result view</td>
+            <td>Canonical RuntimeEvent ledger stays authoritative; checkpoint is verifiable</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <h3 class="subhead">Stale prune protocol (source-level)</h3>
     <p>
-      The active path does not rewrite same-named large results inside history replay; prior history
-      has its own stale strategy. Default-on evolution:
-      <a href={`${localePath("en", "history/pr/621")}`}>maka:pr:621</a> (aside — not a full product
-      history).
+      <code>pruneStaleToolResultsBeforeCompact</code> only touches non-<code>partial</code>
+      <code>function_response</code> events outside the protected recent turns and above the size
+      threshold. Replacement requires a matching <code>archiveRef</code>:
+      <code>archiveRefMatches</code> demands identical <code>bodySha256</code> /
+      <code>originalBytes</code> / <code>originalEstimatedTokens</code> / tool identity — otherwise the
+      event is <strong>returned unchanged</strong> and counted as a failure, never silently truncated.
+      Hydration via <code>retrieveArchivedToolResultsForReplay</code> re-hashes
+      <code>sha256(serializedResult)</code> on every read; mismatch → <code>corrupt</code>, never
+      pretend damaged bytes are raw.
     </p>
+
+    <h3 class="subhead">Lineage: prune is a representation change, not a forked history</h3>
+    <p>
+      Active path <code>activeToolResultLineageIdentity()</code> hashes the <strong>raw serialized
+      body</strong> and shares that identity between raw payload and placeholder — later stale/compact
+      lineage tracking treats prune as a representation change, not a divergent source history. Within
+      one prune pass, <code>{'${toolCallId}:${bodySha256}'}</code> reuses the same placeholder to
+      avoid double-archiving.
+    </p>
+
+    <h3 class="subhead">History compact only owns a boundary slot in this chapter</h3>
+    <p>
+      The third lifecycle folds a <strong>completed prefix</strong> behind a checkpoint (V2
+      <code>sourceDigest</code>, optional <code>phase: mid_turn</code> + <code>headAnchor</code>); it is
+      not “run tool-result archive again.” Protocol body, digest match, and fail-open matrix live in
+      <a href={localePath("en", "chapters/03-compaction-is-a-projection")}>§03</a>. This chapter’s job
+      is: <strong>Active ≠ Stale ≠ Compact</strong> before the reader enters projection semantics.
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Active:
+        <a href={localePath("en", "history/pr/316")}>maka:pr:316</a> /
+        <a href={localePath("en", "history/pr/319")}>319</a> /
+        <a href={localePath("en", "history/pr/498")}>498</a>. Stale default-on aside:
+        <a href={localePath("en", "history/pr/621")}>621</a>; archive module split:
+        <a href={localePath("en", "history/pr/1237")}>1237</a>. History checkpoint V2:
+        <a href={localePath("en", "history/pr/729")}>729</a> (§03 body). Tests:
+        <code>active-tool-result-prune.test.ts</code>, <code>tool-result-archive</code> path,
+        <code>history-compact-*.test.ts</code>.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -373,9 +611,19 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
             <td>Correctness over token savings</td>
           </tr>
           <tr>
+            <td>Stale archiveRef mismatch</td>
+            <td>Keep event · count <code>archiveWriteFailures</code></td>
+            <td>Never silently truncate prior history</td>
+          </tr>
+          <tr>
             <td>Placeholder corrupt on hydrate</td>
-            <td>Explicit failure</td>
+            <td>Explicit <code>corrupt</code> (sha256 re-check fails)</td>
             <td>Never fake damaged bytes as raw evidence</td>
+          </tr>
+          <tr>
+            <td>History compact no safe span</td>
+            <td>Fail-open · keep raw projection</td>
+            <td>Never forge checkpoint coverage (§03)</td>
           </tr>
           <tr>
             <td>Process stops mid-tool</td>
@@ -521,14 +769,16 @@ activeEstimatedTokensSaved</pre>
   <div slot="outline">
     <ul class="outline-list">
       <li>
-        Protocol depth: four-reps table · ToolRuntime · archive diamond · Active vs Stale · failure
-        matrix · seven invariants
+        Protocol depth: four-reps · ToolRuntime · Shell/PTY · three lifecycles (Active/Stale/History
+        compact) · failure matrix · seven invariants
       </li>
       <li>
         Mechanism asides
-        <a href={`${localePath("en", "history/pr/316")}`}>maka:pr:316</a> /
-        <a href={`${localePath("en", "history/pr/319")}`}>maka:pr:319</a>
-        (docs-land 769 secondary)
+        <a href={`${localePath("en", "history/pr/316")}`}>316</a> /
+        <a href={`${localePath("en", "history/pr/319")}`}>319</a> /
+        <a href={`${localePath("en", "history/pr/498")}`}>498</a> /
+        <a href={`${localePath("en", "history/pr/1237")}`}>1237</a> /
+        <a href={`${localePath("en", "history/pr/729")}`}>729</a>
       </li>
       <li>Current building blocks taught; Target TurnEvidence envelope explicitly not fully landed</li>
       <li>

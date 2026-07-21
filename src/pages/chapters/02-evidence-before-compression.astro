@@ -7,7 +7,10 @@ import FourRepsFlow from "../../components/diagrams/FourRepsFlow.astro";
 import ToolRuntimeSwimlane from "../../components/diagrams/ToolRuntimeSwimlane.astro";
 import ActivePruneFlow from "../../components/diagrams/ActivePruneFlow.astro";
 import ActiveVsStaleFlow from "../../components/diagrams/ActiveVsStaleFlow.astro";
+import ThreePruneLifecyclesFlow from "../../components/diagrams/ThreePruneLifecyclesFlow.astro";
 import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
+import ShellSpawnTreeFlow from "../../components/diagrams/ShellSpawnTreeFlow.astro";
+import ShellLiveVsResultFlow from "../../components/diagrams/ShellLiveVsResultFlow.astro";
 ---
 
 <ChapterShell chapterId="02">
@@ -177,6 +180,160 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
   </Section>
 
   <Section
+    id="shell-side-effects"
+    label="§02 · Shell / PTY"
+    title="副作用栈：三条 spawn 路径与输出通道"
+    lede="Bash 不是单一 exec。Managed / local foreground / workspace-executor 的沙箱插入点与输出权威不同；PTY 与强制沙箱 argv 互斥。"
+  >
+    <DiagramFigure
+      caption="图 4a · 三条路径：Managed Bash（可 transform）→ ShellRun；Local foreground（无 ShellRun store）；Workspace executor（isolation: none）。底部钉死 PTY 互斥。"
+      alt="流程：Managed Bash 经 transformCommand 到 foreground pipes 或 background pipes/pty；另两路为 local foreground 与 workspace executor；底栏 PTY 与 sandbox argv 互斥。"
+    >
+      <ShellSpawnTreeFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">Spawn 决策树</h3>
+    <pre class="code-block" aria-label="三条 spawn 路径">buildManagedBashTool
+  → transformCommand? (sandboxCommand)
+  → ShellRunProcessManager
+       ├─ Foreground: pipes only → PipeProcessDriver → terminalContent
+       └─ Background: pipes | pty → persistObservation + shell_run ref
+
+buildLocalForegroundBashTool → runShellWithBoundedTail (no ShellRun store)
+LocalWorkspaceExecutor → Read/Write/Edit/Glob (+ optional bash) · isolation: 'none'</pre>
+
+    <p>
+      Desktop 主路径走 <code>buildManagedBashTool</code>：在
+      <code>builtin-tools</code> 里把 <code>transformCommand</code> 接到
+      <code>sandboxCommand</code> → <code>SandboxManager.transform</code>，得到
+      <code>&#123; argv, cwd, env, fdInputs, sandboxType &#125;</code>。批准（PermissionEngine）与沙箱
+      transform 正交——详见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#sandbox`}>§01 · #sandbox</a>；本节钉
+      <strong>插入点与 spawn 诚实性</strong>。
+    </p>
+
+    <h3 class="subhead">Sandbox 插入（Current）</h3>
+    <ul class="plain-list">
+      <li>非 PTY managed bash：走 <code>SandboxManager.transform</code>（Seatbelt / bwrap / none）。</li>
+      <li>PTY + escalation grant → <code>sandboxType: 'none'</code>（显式提权，非静默）。</li>
+      <li>PTY + profile 要求 sandbox → <strong>throw</strong>（不可用，不是降级到 host）。</li>
+      <li>其余 PTY → 不 transform（原始 shell command）。</li>
+      <li>
+        Manager 在 <code>mode === 'pty' &amp;&amp; (argv || fdInputs)</code> 时
+        <strong>spawn 前 throw</strong>——沙箱包装的 argv/fd 与 PTY 路径互斥。
+      </li>
+      <li>
+        <code>LocalWorkspaceExecutor</code> 固定 <code>isolation: 'none'</code>：同步文件工具不是 OS
+        sandbox；勿与 §01 Seatbelt 叙事混为一谈。
+      </li>
+    </ul>
+
+    <DiagramFigure
+      caption="图 4b · Live emitOutput 与 retained tool result / shell_run 是独立通道：live 可 suppress，命令仍继续，最终结果仍拿 retained tail。"
+      alt="进程输出分叉：live emitOutput 受 LIVE_EMIT 上限后 suppress；retained 受 RETAINED 上限进入 foreground terminal 或 background shell_run 检查点。"
+    >
+      <ShellLiveVsResultFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="输出通道" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">通道</th>
+            <th scope="col">边界</th>
+            <th scope="col">消费者</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Live <code>emitOutput</code></td>
+            <td><code>BASH_MAX_LIVE_EMIT_CHARS</code> 后 suppress marker</td>
+            <td>UI 流</td>
+          </tr>
+          <tr>
+            <td>Retained tail</td>
+            <td><code>BASH_MAX_RETAINED_CHARS</code></td>
+            <td>最终 tool result</td>
+          </tr>
+          <tr>
+            <td>Foreground result</td>
+            <td><code>shapeTerminalResult</code> + model truncate</td>
+            <td>function_response</td>
+          </tr>
+          <tr>
+            <td>Background result</td>
+            <td><code>shell_run</code> ref + PTY model text budget</td>
+            <td>模型 + Read ref</td>
+          </tr>
+          <tr>
+            <td>Persisted checkpoint</td>
+            <td>shell-run-store revision</td>
+            <td>recovery / UI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>关键分离：</strong>live 触顶后可发出 suppress marker，进程仍在跑；tool result 仍拿
+      retained tail。这与上方「output delta ≠ tool result」同构——Bash 把它做成可度量的双 cap。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="Shell 失败矩阵" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Surface</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Timeout</td>
+            <td>exit 124 / <code>timed_out</code></td>
+          </tr>
+          <tr>
+            <td>Abort</td>
+            <td>exit 130 / <code>cancelled</code></td>
+          </tr>
+          <tr>
+            <td>Live flood</td>
+            <td>suppress marker；result 仍保留 tail</td>
+          </tr>
+          <tr>
+            <td>Sandbox denial（输出启发式）</td>
+            <td><code>sandboxDenial.likely</code> on terminal</td>
+          </tr>
+          <tr>
+            <td>PTY + argv/fdInputs</td>
+            <td>throw before spawn</td>
+          </tr>
+          <tr>
+            <td>Persist failure</td>
+            <td>live 可能滞后于 durable state——不得假装已检查点</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        有界可恢复 Bash 输出：
+        <a href={`${import.meta.env.BASE_URL}history/pr/92`}>maka:pr:92</a>。Background shell_run
+        refs：
+        <a href={`${import.meta.env.BASE_URL}history/pr/547`}>maka:pr:547</a>。PTY + stdin
+        控制：
+        <a href={`${import.meta.env.BASE_URL}history/pr/778`}>maka:pr:778</a>。验证：
+        <code>shell-exec.test.ts</code> · <code>shell-tools.test.ts</code> ·
+        <code>shell-run-manager.test.ts</code> · <code>pty-screen-collector.test.ts</code> ·
+        <code>workspace-executor.test.ts</code>。提纲：
+        <code>docs/research/shell-pty-executor-deep-outline.md</code>（#56 → Task #68）。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="turn"
     label="§02 · Boundary"
     title="为什么 Turn 是自然的 Evidence 边界"
@@ -264,49 +421,130 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
 
   <Section
     id="stale"
-    label="§02 · Stale prune"
-    title="Stale prune：旧历史的另一条策略"
-    lede="两条策略，两种压力；混为一谈会在「当前 Turn」与「回放历史」之间偷换语义。"
+    label="§02 · Three lifecycles"
+    title="三条生命周期：Active · Stale · History compact"
+    lede="共享「prune / archive / placeholder」词表，却在何时触发、改写什么、如何失败上完全不同——塌成一个「compaction」故事是经典教学事故。"
   >
     <DiagramFigure
-      caption="图 6 · Active（同 Turn prepareStep）与 Stale（prior-history 物化）对照——目标、时机与误用风险不同。"
-      alt="两列：Active same Turn prepareStep；Stale prior history replay materialization。"
+      caption="图 6 · 三条生命周期并置：Active（同 Turn messages）· Stale（compact 输入投影）· History compact（checkpoint 覆盖前缀）。"
+      alt="三列：Active prune、Stale prune、History compact，各标 mutate 面、placeholder kind、fail-open。"
+    >
+      <ThreePruneLifecyclesFlow />
+    </DiagramFigure>
+
+    <DiagramFigure
+      caption="图 6b · Active vs Stale 双压对照（History compact 见下表与 §03）——勿在「当前 Turn」与「回放历史」之间偷换。"
+      alt="两列：Active same Turn prepareStep；Stale prior history。"
     >
       <ActiveVsStaleFlow />
     </DiagramFigure>
 
-    <div class="table-wrap" role="region" aria-label="Active 与 Stale 对照" tabindex="0">
+    <div class="table-wrap" role="region" aria-label="三条生命周期协议对照" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
             <th scope="col"></th>
-            <th scope="col">Active</th>
-            <th scope="col">Stale</th>
+            <th scope="col">Active prune</th>
+            <th scope="col">Stale prune</th>
+            <th scope="col">History compact</th>
           </tr>
         </thead>
         <tbody>
           <tr>
+            <th scope="row">代码</th>
+            <td><code>active-tool-result-prune.ts</code></td>
+            <td><code>tool-result-archive.ts</code> · <code>pruneStaleToolResultsBeforeCompact</code></td>
+            <td><code>history-compact*.ts</code>（正文 §03）</td>
+          </tr>
+          <tr>
             <th scope="row">时机</th>
-            <td>同 Turn，steps 之间（<code>prepareStep</code>）</td>
-            <td>Prior-history 物化时</td>
+            <td>同 Turn · <code>prepareStep</code></td>
+            <td>即将跑 compact 之前</td>
+            <td>Turn 边界 / mid-turn shaping</td>
           </tr>
           <tr>
-            <th scope="row">对象</th>
-            <td>刚产生的大结果</td>
-            <td>回放中旧的 oversized tool results</td>
+            <th scope="row">改写面</th>
+            <td>内存 <code>ModelMessage[]</code> 仅此一次请求</td>
+            <td>喂给 compactor 的 RuntimeEvent <strong>投影</strong></td>
+            <td>模型可见投影：覆盖前缀 → checkpoint 块</td>
           </tr>
           <tr>
-            <th scope="row">混用风险</th>
-            <td>在 Turn 中途错误改写「历史」</td>
-            <td>错过当前 Turn 的上下文压力</td>
+            <th scope="row">Placeholder kind</th>
+            <td><code>maka.active_archived_tool_result</code></td>
+            <td><code>maka.archived_tool_result</code></td>
+            <td><code>maka.history_compact_checkpoint</code></td>
+          </tr>
+          <tr>
+            <th scope="row">reason 码</th>
+            <td><code>active_current_turn_tool_result_pruned_before_next_step</code></td>
+            <td><code>stale_tool_result_pruned_before_compact</code></td>
+            <td>（checkpoint coverage / digest，非 tool-result reason）</td>
+          </tr>
+          <tr>
+            <th scope="row">保护带</th>
+            <td><code>minStepNumber</code>（默认 1，step 0 不动）</td>
+            <td><code>minRecentTurnsFull</code> 最近 N 个 turn 保持全文</td>
+            <td>安全 completed span · reserve tail · 不跨 tool pair</td>
+          </tr>
+          <tr>
+            <th scope="row">失败</th>
+            <td><code>archiveFailures</code> → <strong>保留原文</strong></td>
+            <td><code>archiveRef</code> 缺失/不匹配 → 保留 + <code>archiveWriteFailures</code></td>
+            <td>fail-open：无虚假 coverage（见 §03）</td>
+          </tr>
+          <tr>
+            <th scope="row">durable ledger</th>
+            <td>永不动</td>
+            <td>不假装改写权威账本；投影侧替换 result 视图</td>
+            <td>canonical RuntimeEvent ledger 仍权威；checkpoint 可校验</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <h3 class="subhead">Stale prune 协议（源码级）</h3>
     <p>
-      Active path 不会误改历史 replay 里的同名大结果；旧历史有独立 stale 策略。默认开启演进见
-      <a href={`${import.meta.env.BASE_URL}history/pr/621`}>maka:pr:621</a>（旁注，不展开整段产品史）。
+      <code>pruneStaleToolResultsBeforeCompact</code> 只处理
+      <code>function_response</code>、非 <code>partial</code>、且不在受保护 recent turns 内的 oversized
+      结果。替换前必须已有匹配的 <code>archiveRef</code>：
+      <code>archiveRefMatches</code> 要求 <code>bodySha256</code> / <code>originalBytes</code> /
+      <code>originalEstimatedTokens</code> / tool 身份一致——否则<strong>原样返回该事件</strong>并计数失败，从不静默截断。
+      回放水合路径 <code>retrieveArchivedToolResultsForReplay</code> 每次读取再算
+      <code>sha256(serializedResult)</code>，与 placeholder 不一致 → <code>corrupt</code>，不得把损坏内容冒充
+      raw。
     </p>
+
+    <h3 class="subhead">Lineage：prune 是表示变更，不是分叉史</h3>
+    <p>
+      Active path 的 <code>activeToolResultLineageIdentity()</code> 对<strong>原始序列化 body</strong>
+      取 hash，并在 raw 与 placeholder 之间共享——后续 stale / compact 的 lineage 跟踪把 prune 当作 representation
+      change，而不是另一条 divergent source history。同一次 prune pass 内，
+      <code>{'${toolCallId}:${bodySha256}'}</code> 复用同一 placeholder，避免双归档。
+    </p>
+
+    <h3 class="subhead">History compact 在本章只占边界位</h3>
+    <p>
+      第三条生命周期用 checkpoint（V2 <code>sourceDigest</code>、可选
+      <code>phase: mid_turn</code> + <code>headAnchor</code>）折叠<strong>已完成前缀</strong>；它不是「再跑一遍
+      tool-result archive」。协议正文、digest 匹配与 fail-open 矩阵见
+      <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection`}>§03</a>。本章要求读者先建立：
+      <strong>Active ≠ Stale ≠ Compact</strong>，再进入投影语义。
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Active：
+        <a href={`${import.meta.env.BASE_URL}history/pr/316`}>maka:pr:316</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/319`}>319</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/498`}>498</a>。Stale 默认开启旁注：
+        <a href={`${import.meta.env.BASE_URL}history/pr/621`}>621</a>；archive 模块拆分：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1237`}>1237</a>。History checkpoint V2：
+        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>729</a>（§03 正文）。测试钉：
+        <code>active-tool-result-prune.test.ts</code>、<code>tool-result-archive</code> 路径、
+        <code>history-compact-*.test.ts</code>。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -352,9 +590,19 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
             <td>correctness 优先于 token savings</td>
           </tr>
           <tr>
+            <td>Stale archiveRef mismatch</td>
+            <td>Keep event · count <code>archiveWriteFailures</code></td>
+            <td>不得静默截断 prior history</td>
+          </tr>
+          <tr>
             <td>Placeholder corrupt on hydrate</td>
-            <td>Explicit failure</td>
+            <td>Explicit <code>corrupt</code>（sha256 复核失败）</td>
             <td>不得把损坏内容冒充 raw</td>
+          </tr>
+          <tr>
+            <td>History compact no safe span</td>
+            <td>Fail-open · 保留 raw projection</td>
+            <td>不得伪造 checkpoint coverage（§03）</td>
           </tr>
           <tr>
             <td>Process stops mid-tool</td>
@@ -494,12 +742,17 @@ activeEstimatedTokensSaved</pre>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>协议深度：四表示表 · ToolRuntime · archive 菱形 · Active vs Stale · 失败矩阵 · 七不变量</li>
+      <li>
+        协议深度：四表示表 · ToolRuntime · Shell/PTY spawn · live≠result · 三条生命周期 · 失败矩阵 ·
+        七不变量
+      </li>
       <li>
         机制旁注
-        <a href={`${import.meta.env.BASE_URL}history/pr/316`}>maka:pr:316</a> /
-        <a href={`${import.meta.env.BASE_URL}history/pr/319`}>maka:pr:319</a>
-        （docs-land 769 次要）
+        <a href={`${import.meta.env.BASE_URL}history/pr/316`}>316</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/319`}>319</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/498`}>498</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/1237`}>1237</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>729</a>
       </li>
       <li>Current 积木已教；Target TurnEvidence envelope 显式标注未全量落地</li>
       <li>结构硬闸门仍必要；深度以读者能否复述 fail-open 为准——不宣称「清单绿 = 深度完成」</li>
@@ -518,6 +771,14 @@ activeEstimatedTokensSaved</pre>
   .figure-note strong {
     font-weight: 600;
     color: var(--ink);
+  }
+
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
   }
 
   .code-block {

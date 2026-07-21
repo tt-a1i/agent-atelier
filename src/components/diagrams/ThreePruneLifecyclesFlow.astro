@@ -1,0 +1,122 @@
+---
+/**
+ * §02 protocol — Active prune / Stale prune / History compact are three lifecycles.
+ */
+---
+
+<svg
+  class="tpl-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="tpl-kicker tpl-stage tpl-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · THREE LIFECYCLES · DO NOT COLLAPSE INTO “COMPACTION”
+  </text>
+  <line
+    class="tpl-stage tpl-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="tpl-col tpl-stage tpl-stage--1" transform="translate(8,52)">
+    <rect width="276" height="196" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="276" height="2" fill="var(--accent)"></rect>
+    <text class="tpl-idx" x="14" y="28" fill="var(--accent)">1 · ACTIVE PRUNE</text>
+    <text class="tpl-title" x="14" y="56" fill="var(--ink)">Same-Turn prepareStep</text>
+    <text class="tpl-line" x="14" y="86" fill="var(--mute)">Mutates: ModelMessage[] only</text>
+    <text class="tpl-line" x="14" y="108" fill="var(--mute)">kind: active_archived…</text>
+    <text class="tpl-line" x="14" y="130" fill="var(--mute)">Gate: archive → placeholder</text>
+    <text class="tpl-line" x="14" y="160" fill="var(--ink)">Fail-open: keep original</text>
+    <text class="tpl-line" x="14" y="182" fill="var(--mute)">Ledger never rewritten</text>
+  </g>
+
+  <g class="tpl-col tpl-stage tpl-stage--2" transform="translate(296,52)">
+    <rect width="276" height="196" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="276" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="tpl-idx" x="14" y="28" fill="var(--accent)">2 · STALE PRUNE</text>
+    <text class="tpl-title" x="14" y="56" fill="var(--ink)">Pre-compact projection</text>
+    <text class="tpl-line" x="14" y="86" fill="var(--mute)">Mutates: compact input view</text>
+    <text class="tpl-line" x="14" y="108" fill="var(--mute)">kind: archived_tool_result</text>
+    <text class="tpl-line" x="14" y="130" fill="var(--mute)">Protect: minRecentTurnsFull</text>
+    <text class="tpl-line" x="14" y="160" fill="var(--ink)">Mismatch ref → keep + count</text>
+    <text class="tpl-line" x="14" y="182" fill="var(--mute)">Hydrate re-verifies sha256</text>
+  </g>
+
+  <g class="tpl-col tpl-stage tpl-stage--3" transform="translate(584,52)">
+    <rect width="276" height="196" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="276" height="2" fill="var(--accent)" opacity="0.35"></rect>
+    <text class="tpl-idx" x="14" y="28" fill="var(--accent)">3 · HISTORY COMPACT</text>
+    <text class="tpl-title" x="14" y="56" fill="var(--ink)">Checkpoint projection</text>
+    <text class="tpl-line" x="14" y="86" fill="var(--mute)">Mutates: covered prefix →</text>
+    <text class="tpl-line" x="14" y="108" fill="var(--mute)">history_compact_checkpoint</text>
+    <text class="tpl-line" x="14" y="130" fill="var(--mute)">Digest + optional headAnchor</text>
+    <text class="tpl-line" x="14" y="160" fill="var(--ink)">Fail-open: no false coverage</text>
+    <text class="tpl-line" x="14" y="182" fill="var(--mute)">Body taught in §03</text>
+  </g>
+</svg>
+
+<style>
+  .tpl-flow {
+    font-family: var(--sans);
+  }
+  .tpl-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+  }
+  .tpl-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .tpl-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .tpl-line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tpl-stage {
+      opacity: 0;
+      animation: tpl-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .tpl-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .tpl-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .tpl-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .tpl-stage--3 {
+      animation-delay: 0.42s;
+    }
+    @keyframes tpl-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tpl-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

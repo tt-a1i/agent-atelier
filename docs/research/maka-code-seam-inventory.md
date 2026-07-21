@@ -164,4 +164,12 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 
 ## Ticket mapping (code-seam lane)
 
-Opened under #34 for Top 1–5; corpus lane tickets #46–#62 remain the broader frontier (integrate, do not duplicate).
+| Seam | Ticket | Kind |
+| ---: | --- | --- |
+| #1 T1/T2 + RecoveryResolver | [#63](https://github.com/tt-a1i/agent-atelier/issues/63) Task (narrative; completes #48 half) | ship §01 |
+| #2 Three prune lifecycles | [#64](https://github.com/tt-a1i/agent-atelier/issues/64) Task | ship §02 |
+| #3 Checkpoint V2 + headAnchor | [#65](https://github.com/tt-a1i/agent-atelier/issues/65) Research | outline → §03 |
+| #4 Mid-turn shaping ≠ verdict | [#66](https://github.com/tt-a1i/agent-atelier/issues/66) Research | outline → §03 |
+| #5 providerTools ≠ activeTools | [#67](https://github.com/tt-a1i/agent-atelier/issues/67) Research | outline → §01 |
+
+Corpus lane tickets #46–#62 remain the broader frontier — integrate, do not duplicate.

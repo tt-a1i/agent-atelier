@@ -1,0 +1,155 @@
+---
+/**
+ * §01 protocol — T1 prepare → impl → T2 outcome vs RecoveryResolver.
+ */
+---
+
+<svg
+  class="t12-flow"
+  viewBox="0 0 868 292"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="t12-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="t12-kicker t12-stage t12-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · T1 / IMPL / T2 · RESOLVER READS EVENTS ONLY
+  </text>
+  <line
+    class="t12-stage t12-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="t12-connectors t12-stage t12-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="198" y1="108" x2="222" y2="108" marker-end="url(#t12-arrow)"></line>
+    <line x1="388" y1="108" x2="412" y2="108" marker-end="url(#t12-arrow)"></line>
+    <line x1="578" y1="108" x2="602" y2="108" marker-end="url(#t12-arrow)"></line>
+  </g>
+
+  <g class="t12-node t12-stage t12-stage--1" transform="translate(8,48)">
+    <rect width="190" height="120" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="190" height="2" fill="var(--accent)"></rect>
+    <text class="t12-idx" x="12" y="28" fill="var(--accent)">T1 · PREPARE</text>
+    <text class="t12-line" x="12" y="56" fill="var(--ink)">function_call (+)</text>
+    <text class="t12-line" x="12" y="78" fill="var(--ink)">toolDispatch event</text>
+    <text class="t12-line" x="12" y="100" fill="var(--mute)">journal = prepared</text>
+  </g>
+
+  <g class="t12-node t12-stage t12-stage--2" transform="translate(222,48)">
+    <rect width="166" height="120" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="166" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="t12-idx" x="12" y="28" fill="var(--accent)">IMPL</text>
+    <text class="t12-line" x="12" y="56" fill="var(--ink)">tool.impl() only</text>
+    <text class="t12-line" x="12" y="78" fill="var(--ink)">after T1 succeeds</text>
+    <text class="t12-line" x="12" y="100" fill="var(--mute)">side effects unknown</text>
+  </g>
+
+  <g class="t12-node t12-stage t12-stage--3" transform="translate(412,48)">
+    <rect width="166" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="166" height="2" fill="var(--accent)" opacity="0.35"></rect>
+    <text class="t12-idx" x="12" y="28" fill="var(--accent)">T2 · OUTCOME</text>
+    <text class="t12-line" x="12" y="56" fill="var(--ink)">function_response</text>
+    <text class="t12-line" x="12" y="78" fill="var(--ink)">CAS → committed</text>
+    <text class="t12-line" x="12" y="100" fill="var(--mute)">then publish result</text>
+  </g>
+
+  <g class="t12-node t12-stage t12-stage--4" transform="translate(602,48)">
+    <rect width="258" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="258" height="2" fill="var(--accent)" opacity="0.25"></rect>
+    <text class="t12-idx" x="12" y="28" fill="var(--accent)">RESOLVER</text>
+    <text class="t12-line" x="12" y="56" fill="var(--ink)">call × dispatch × response</text>
+    <text class="t12-line" x="12" y="78" fill="var(--ink)">completed / indeterminate</text>
+    <text class="t12-line" x="12" y="100" fill="var(--mute)">corruption · fail-closed</text>
+  </g>
+
+  <g class="t12-crash t12-stage t12-stage--5" transform="translate(8,188)">
+    <text class="t12-idx" x="0" y="16" fill="var(--accent)">CRASH FAILPOINTS (SQLITE HARNESS)</text>
+    <text class="t12-crash__cell" x="0" y="44" fill="var(--ink)">inside_t1 → rollback · zero events</text>
+    <text class="t12-crash__cell" x="280" y="44" fill="var(--ink)">after_effect → prepared · unsettled</text>
+    <text class="t12-crash__cell" x="0" y="72" fill="var(--ink)">inside_t2 → T1 survives · still prepared</text>
+    <text class="t12-crash__cell" x="280" y="72" fill="var(--ink)">after_t2 → outcome_committed</text>
+  </g>
+</svg>
+
+<style>
+  .t12-flow {
+    font-family: var(--sans);
+  }
+  .t12-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .t12-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .t12-line {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    letter-spacing: -0.01em;
+  }
+  .t12-crash__cell {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .t12-stage {
+      opacity: 0;
+      animation: t12-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .t12-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .t12-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .t12-stage--2 {
+      animation-delay: 0.22s;
+    }
+    .t12-stage--3 {
+      animation-delay: 0.32s;
+    }
+    .t12-stage--4 {
+      animation-delay: 0.42s;
+    }
+    .t12-stage--5 {
+      animation-delay: 0.52s;
+    }
+    @keyframes t12-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .t12-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

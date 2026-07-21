@@ -1,0 +1,161 @@
+---
+/**
+ * §02 protocol — three Bash/workspace spawn paths + sandbox insert.
+ */
+---
+
+<svg
+  class="sh-flow"
+  viewBox="0 0 868 340"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="sh-kicker sh-stage sh-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · THREE SPAWN PATHS · SANDBOX INSERT ON MANAGED BASH ONLY
+  </text>
+  <line
+    class="sh-stage sh-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="sh-stage sh-stage--1" transform="translate(8,52)">
+    <rect width="260" height="88" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="sh-idx" x="12" y="24" fill="var(--accent)">A · MANAGED BASH</text>
+    <text class="sh-title" x="12" y="48" fill="var(--ink)">buildManagedBashTool</text>
+    <text class="sh-line" x="12" y="72" fill="var(--mute)">→ ShellRunProcessManager</text>
+  </g>
+
+  <path
+    class="sh-stage sh-stage--1"
+    d="M276 96 H312"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#sh-arrow)"
+  ></path>
+
+  <g class="sh-stage sh-stage--2" transform="translate(320,52)">
+    <rect width="248" height="88" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="sh-idx" x="12" y="24" fill="var(--accent)">INSERT</text>
+    <text class="sh-title" x="12" y="48" fill="var(--ink)">transformCommand?</text>
+    <text class="sh-line" x="12" y="72" fill="var(--mute)">sandboxCommand → Manager</text>
+  </g>
+
+  <path
+    class="sh-stage sh-stage--2"
+    d="M576 96 H612"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#sh-arrow)"
+  ></path>
+
+  <g class="sh-stage sh-stage--3" transform="translate(620,52)">
+    <rect width="240" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sh-idx" x="12" y="24" fill="var(--accent)">SPAWN</text>
+    <text class="sh-line" x="12" y="50" fill="var(--ink)">FG: pipes → terminal</text>
+    <text class="sh-line" x="12" y="72" fill="var(--ink)">BG: pipes | pty + ref</text>
+  </g>
+
+  <g class="sh-stage sh-stage--4" transform="translate(8,168)">
+    <rect width="412" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="sh-idx" x="14" y="26" fill="var(--accent)">B · LOCAL FOREGROUND</text>
+    <text class="sh-line" x="14" y="52" fill="var(--ink)">
+      runShellWithBoundedTail · no ShellRun store
+    </text>
+  </g>
+
+  <g class="sh-stage sh-stage--4" transform="translate(448,168)">
+    <rect width="412" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="sh-idx" x="14" y="26" fill="var(--accent)">C · WORKSPACE EXECUTOR</text>
+    <text class="sh-line" x="14" y="52" fill="var(--ink)">
+      Read/Write/Edit/Glob · isolation: none
+    </text>
+  </g>
+
+  <g class="sh-stage sh-stage--5" transform="translate(8,264)">
+    <rect width="852" height="60" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="sh-idx" x="14" y="24" fill="var(--accent)">PTY MUTUAL EXCLUSION</text>
+    <text class="sh-line" x="14" y="46" fill="var(--ink)">
+      pty + required sandbox → throw · pty + argv/fdInputs → throw before spawn · escalation → none
+    </text>
+  </g>
+
+  <defs>
+    <marker id="sh-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .sh-flow {
+    font-family: var(--sans);
+  }
+  .sh-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .sh-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .sh-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .sh-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sh-stage {
+      opacity: 0;
+      animation: sh-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .sh-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .sh-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .sh-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .sh-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .sh-stage--4 {
+      animation-delay: 0.5s;
+    }
+    .sh-stage--5 {
+      animation-delay: 0.62s;
+    }
+    @keyframes sh-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sh-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
