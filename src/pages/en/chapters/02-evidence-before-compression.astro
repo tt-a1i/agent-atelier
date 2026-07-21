@@ -5,7 +5,9 @@ import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipelineKeystone.astro";
 import FourRepsFlow from "../../../components/diagrams/FourRepsFlow.astro";
+import ToolRuntimeSwimlane from "../../../components/diagrams/ToolRuntimeSwimlane.astro";
 import ActivePruneFlow from "../../../components/diagrams/ActivePruneFlow.astro";
+import ActiveVsStaleFlow from "../../../components/diagrams/ActiveVsStaleFlow.astro";
 import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro";
 ---
 
@@ -23,17 +25,23 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
     id="scene"
     label="§02 · Scene"
     title="Start from a gigantic test log"
-    lede="The same Tool Result plays many roles — one JSON blob cannot carry all of them."
+    lede="The same Tool Result triggers four needs at once — one JSON blob cannot carry all of them."
   >
     <p>
-      Suppose the model calls Bash and tests dump 80,000 lines. The system must simultaneously: show
-      the model the critical errors, leave replayable facts in the Runtime, retrieve the full raw
-      text when needed, and keep the next step of the same Turn from carrying the entire original.
+      Suppose the user asks Maka to fix a failing test. The model calls Bash; the test process dumps
+      80,000 lines. That result must simultaneously:
     </p>
+    <ol class="plain-list numbered">
+      <li>Show the model the critical errors so it can choose the next step;</li>
+      <li>Leave replayable Bash call/result facts in the Runtime;</li>
+      <li>Keep full raw logs recoverable later — a one-line summary is not enough;</li>
+      <li>Keep the next model call in the same Turn from carrying all 80,000 lines again.</li>
+    </ol>
     <p>
       Stuffing forever into the prompt wrecks the budget; deleting destroys auditability; letting the
-      model claim “I verified” mixes observation with judgment. The real question: what must be
-      durable, what can be rebuilt, and what should live only briefly in the model’s working set?
+      model claim “I verified” mixes observation with judgment. The real question is not “how many
+      characters to truncate,” but: what must be durable, what can be rebuilt, and what should live
+      only briefly in the model’s working set?
     </p>
   </Section>
 
@@ -45,7 +53,7 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · A Tool Result splits into four representations; active prune rewrites Provider messages only — never Evidence."
+      caption="Fig. 1 · A Tool Result splits into four representations; only path 05 (Provider messages) is the active-prune rewrite surface — 01–04 are not “deletable evidence.”"
       alt="Pipeline from Tool execution to Runtime Event, Artifact, Turn Evidence, then Provider messages; 01–04 persist as evidence; 05 may be pruned; invariant: Prune the context, never prune the evidence."
     >
       <EvidencePipelineKeystone />
@@ -53,7 +61,8 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
 
     <p class="figure-note">
       Invariant: <strong>Prune the context, never prune the evidence.</strong>
-      The pipeline metaphor is local to §02 — not a site-wide composition rule.
+      Active prune rewrites only the terminal provider-visible projection — it is not a retention
+      policy.
     </p>
   </Section>
 
@@ -64,38 +73,120 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
     lede="Evidence compression may change how the model later sees a fact — not whether the fact occurred."
   >
     <DiagramFigure
-      caption="Fig. 2 · Same result as Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context."
+      caption="Fig. 2 · Same result as Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context — distinct authority and lifecycle."
       alt="Four columns: Runtime Fact, Artifact, Turn Evidence, Working context."
     >
       <FourRepsFlow />
     </DiagramFigure>
-    <ul class="plain-list">
-      <li>
-        <strong>Canonical Runtime Fact</strong> — what was called and returned (durable RuntimeEvent)
-      </li>
-      <li>
-        <strong>Raw Artifact</strong> — where the full payload lives (own lifecycle and checksum)
-      </li>
-      <li>
-        <strong>Turn Evidence</strong> — bounded, source-bearing observations worth later consumption
-      </li>
-      <li>
-        <strong>Model Working Context</strong> — the minimum the next step must see (ephemeral; may
-        prune)
-      </li>
-    </ul>
+
+    <div class="table-wrap" role="region" aria-label="Four representations: question, authority, lifecycle" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Representation</th>
+            <th scope="col">Question answered</th>
+            <th scope="col">Authority</th>
+            <th scope="col">Lifecycle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Canonical Runtime Fact</td>
+            <td>What was called and returned</td>
+            <td>Interaction semantics</td>
+            <td>Durable ledger</td>
+          </tr>
+          <tr>
+            <td>Raw Artifact</td>
+            <td>Where is the full payload; can it be verified</td>
+            <td>Raw bytes</td>
+            <td>Independent store + hash</td>
+          </tr>
+          <tr>
+            <td>Turn Evidence</td>
+            <td>Which public observations remain worth consuming</td>
+            <td>Source-bearing derived</td>
+            <td>Bounded / rebuildable</td>
+          </tr>
+          <tr>
+            <td>Model Working Context</td>
+            <td>Minimum the next step must see</td>
+            <td>Ephemeral projection</td>
+            <td>Recomputed per request</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <pre class="code-block" aria-label="Four-layer pipeline">Tool execution
   → RuntimeEvent(function_call / function_response)
   → Artifact(raw payload)
   → TurnEvidence(source-bearing bounded projection)
   → Provider Messages(current working set)</pre>
-    <aside class="history-aside">
-      <p class="history-aside__tag">Evolution aside</p>
-      <p>
-        Turn Evidence / active prune architecture chapter land:
-        <a href={`${localePath("en", "history/pr/769")}`}>maka:pr:769</a>.
-      </p>
-    </aside>
+
+    <p>
+      These are not simple copies: RuntimeEvent holds semantics; Artifact holds large payloads;
+      Evidence holds source, summary, and integrity; Provider Messages serve the current decision and
+      may be trimmed, compacted, or reordered.
+    </p>
+  </Section>
+
+  <Section
+    id="tool-runtime"
+    label="§02 · ToolRuntime"
+    title="ToolRuntime is the side-effect boundary"
+    lede="Not a thin wrapper around tool.impl — guard and permission failures still leave a pairable tool result."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · ToolRuntime in six beats: persist call → guards → permission → execute → normalize tool_result → async artifact."
+      alt="Six-step swimlane: Persist call, Guards, Permission, Execute, tool_result, async Artifact; footnotes on synthetic error results and pairing."
+    >
+      <ToolRuntimeSwimlane />
+    </DiagramFigure>
+    <ol class="plain-list numbered">
+      <li>Persist <code>tool_call</code> and emit <code>tool_start</code>;</li>
+      <li>Guards: loop gate, step availability, in-Turn concurrency caps;</li>
+      <li>Permission evaluate: allow / block / prompt (wait for the user when needed);</li>
+      <li>Run real <code>impl</code>: propagate abort; allow output deltas;</li>
+      <li>Normalize and persist <code>tool_result</code> (paired to the call by <code>toolCallId</code>);</li>
+      <li>Best-effort async artifact derive — a recorder failure must not mutate the result.</li>
+    </ol>
+    <p>
+      Unloaded tools, denied permission, repeated identical failures, sub-agent concurrency
+      overflow — these paths <strong>do not vanish silently</strong>. ToolRuntime writes a synthetic
+      error tool result so both the model and the RuntimeEvent ledger know the call was refused and
+      why. A function call without a result breaks history pairing and leaves Evidence unable to tell
+      “never executed” from “explicitly refused at the boundary.”
+    </p>
+  </Section>
+
+  <Section
+    id="layers"
+    label="§02 · Layers"
+    title="output / result / artifact are not the same thing"
+    lede="Prune never “deletes the tool output” — separate streaming progress, structured results, and independent payloads."
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>output delta</strong> — in-flight streaming progress; may feed the UI; not the
+        authoritative next-step fact.
+      </li>
+      <li>
+        <strong>tool result</strong> — structured outcome the model acts on next; enters the ledger
+        and pairing.
+      </li>
+      <li>
+        <strong>artifact</strong> — file, diff, or large payload worth independent storage and
+        display; own lifecycle and checksum.
+      </li>
+    </ul>
+    <p>
+      Current derivation is conservative: Write may derive a file, Edit a diff, Bash only explicit
+      stdout redirects. Recorder failures emit warnings only; slow recorders do not block returning
+      the result to the model. Ordinary ArtifactRecords today may not fully carry
+      <code>toolCallId</code> / RuntimeEvent refs — Target TurnEvidence must add that source linkage
+      rather than pretend it already exists.
+    </p>
   </Section>
 
   <Section
@@ -105,64 +196,340 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
     lede="Steps are too fine; Sessions are too wide; Turn is the operable midpoint."
   >
     <DiagramFigure
-      caption="Fig. 4 · Source chain: RuntimeEvent → Artifact → Turn Evidence → later consumers; raw remains fetchable."
+      caption="Fig. 4 · Source chain: RuntimeEvent → Artifact → Turn Evidence → later consumers; raw remains fetchable by ref."
       alt="Four steps: RuntimeEvent, Artifact ref, Turn Evidence, Later consumer."
     >
       <SourceChainFlow />
     </DiagramFigure>
     <p>
-      Model/tool events in this round share a turnId; tool call/result, permission, and artifacts can
-      belong to the same round; a Turn terminal fact marks completed / failed / aborted. The next
-      Turn can treat prior Evidence as bounded engineering memory without expanding every raw dump.
+      Model/tool events in this round share a <code>turnId</code>; tool call/result, permission, and
+      artifacts can belong to the same round; a Turn terminal fact marks completed / failed /
+      aborted. The next Turn can treat prior Evidence as bounded engineering memory without expanding
+      every raw dump.
     </p>
+    <p>Turn Evidence should be able to answer:</p>
+    <pre class="code-block" aria-label="Questions Evidence must answer">What was this Turn trying to accomplish?
+Which tools did it actually call?
+What public results were observed?
+Which artifacts were produced or mutated?
+Which outputs were truncated, archived, or omitted?
+Which canonical facts and raw payloads do the summaries point back to?</pre>
     <p>
-      Evidence describes sourced observations; it does not replace Runtime terminal status, nor claim
-      “an official verifier certainly passed.” Authoritative conclusions live elsewhere (see §05).
+      It must <strong>not</strong> answer “an official verifier certainly passed,” nor replace Runtime
+      terminal status. Evidence describes sourced observations; conclusions and authoritative outcomes
+      live elsewhere (see §05).
     </p>
   </Section>
 
   <Section
-    id="current"
-    label="§02 · Current"
-    title="Active prune rewrites Provider messages only"
-    lede="Inside the same Turn, before the next step is assembled; on failure, prefer token cost over deleting the ledger."
+    id="active"
+    label="§02 · Active prune"
+    title="Active prune: same-Turn request shaping"
+    lede="Archive before omission. Fail open. A provider request-shaping policy — not a retention policy."
   >
     <DiagramFigure
-      caption="Fig. 3 · Active prune: archive raw → bound view → rewrite provider messages; Evidence stays."
-      alt="Five steps: Large result, Archive raw, Bound view, Rewrite msgs, Evidence untouched."
+      caption="Fig. 5 · Active prune protocol: Hash → Archive OK? → placeholder / keep original → next provider step; ledger dashed bypass never moves."
+      alt="Decision diamond: Archive OK yields source-bearing placeholder, else keep original fail open; RuntimeEvent/Session ledger dashed as unrewritten."
     >
       <ActivePruneFlow />
     </DiagramFigure>
+
     <p>
-      On the Current path, ToolRuntime remains the side-effect boundary; RuntimeEvents store the
-      canonical semantics of tool interaction. Active Tool Result Prune runs between provider steps:
-      it only handles large finished results in the current Turn, replaces provider-visible messages
-      with bounded summaries/pointers, and <strong>does not rewrite</strong> the committed Event Log
-      / Artifacts.
+      Stale pruning handles prior-history replay; Active Tool Result Prune answers the sharper
+      question: Step 1 just produced a huge tool result — must Step 2 resend it verbatim? It runs in
+      the AI SDK <code>prepareStep</code> hook — between the end of one provider step and assembly of
+      the next — and only touches eligible large results from completed steps in the current Turn.
     </p>
+
+    <p>Protocol (numbered on the page):</p>
+    <ol class="plain-list numbered">
+      <li>
+        Eligible: completed steps in the current Turn; over the estimated-token threshold (Desktop
+        default ~2048 — a <strong>policy knob, not a protocol constant</strong>);
+      </li>
+      <li>Stable-serialize → compute <code>bodySha256</code> / bytes / estimate;</li>
+      <li>Host archive writer must return a non-empty <code>artifactId</code>;</li>
+      <li>Only then build the placeholder;</li>
+      <li>Replace only in this <code>prepareStep</code> messages view;</li>
+      <li>Ledger / Session persisted results stay <strong>untouched</strong>.</li>
+    </ol>
+
+    <p>Placeholder fields (<code>reason</code> enum stays English code in both locales):</p>
+    <pre class="code-block" aria-label="Active prune placeholder fields">artifactId, turnId, toolCallId, toolName,
+bodySha256, originalEstimatedTokens, originalBytes,
+rewriteVersion,
+reason = active_current_turn_tool_result_pruned_before_next_step</pre>
+
     <p>
-      Compact Evidence appears on Headless heavy-task paths, but a general TurnEvidence envelope
-      (full source linkage, shared across surfaces) remains Target — labeled below so proposals are
-      not written as shipped.
+      Active prune does <strong>not</strong>: delete the ledger; rewrite Session-persisted results;
+      summarize business meaning; claim placeholder == full evidence; omit on archive failure to save
+      tokens; handle every old historical result.
     </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Mechanism intro:
+        <a href={`${localePath("en", "history/pr/316")}`}>maka:pr:316</a>
+        (Add active tool result pruning). Archive-before-placeholder discipline:
+        <a href={`${localePath("en", "history/pr/319")}`}>maka:pr:319</a>
+        (require archived active tool pruning). Default-on:
+        <a href={`${localePath("en", "history/pr/498")}`}>maka:pr:498</a>. Docs land (secondary):
+        <a href={`${localePath("en", "history/pr/769")}`}>maka:pr:769</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="stale"
+    label="§02 · Stale prune"
+    title="Stale prune: a different policy for prior history"
+    lede="Two policies, two pressures — collapsing them swaps “current Turn” for “replay history.”"
+  >
+    <DiagramFigure
+      caption="Fig. 6 · Active (same-Turn prepareStep) vs Stale (prior-history materialization) — different targets, timing, and misuse risks."
+      alt="Two columns: Active same Turn prepareStep; Stale prior history replay materialization."
+    >
+      <ActiveVsStaleFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="Active vs Stale contrast" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Active</th>
+            <th scope="col">Stale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">When</th>
+            <td>Same Turn, between steps (<code>prepareStep</code>)</td>
+            <td>Prior-history materialization</td>
+          </tr>
+          <tr>
+            <th scope="row">Target</th>
+            <td>Just-produced large results</td>
+            <td>Old oversized tool results in replay</td>
+          </tr>
+          <tr>
+            <th scope="row">Risk if confused</th>
+            <td>Rewrite “history” mid-Turn incorrectly</td>
+            <td>Miss current-Turn context pressure</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The active path does not rewrite same-named large results inside history replay; prior history
+      has its own stale strategy. Default-on evolution:
+      <a href={`${localePath("en", "history/pr/621")}`}>maka:pr:621</a> (aside — not a full product
+      history).
+    </p>
+  </Section>
+
+  <Section
+    id="fail"
+    label="§02 · Fail-open"
+    title="Fail-open and the failure matrix"
+    lede="What happens when archive fails? Keep the full provider message. Correctness &gt; savings."
+  >
+    <p>
+      Any of these keep the original result: archive throws / returns nothing / empty
+      <code>artifactId</code>; unsupported payload shape; under threshold; tool call not in current
+      completed steps. Legal placeholders are recognized on later prepare passes and are not
+      re-archived; identical bodies reuse a stable artifact ID.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="Failure matrix" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Current behavior</th>
+            <th scope="col">Architectural meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Permission denied</td>
+            <td>Synthetic error tool result</td>
+            <td>Call ends explicitly; no real side effect</td>
+          </tr>
+          <tr>
+            <td>Tool throws</td>
+            <td>Normalized error + telemetry</td>
+            <td>Failure is a pairable fact, not a lost event</td>
+          </tr>
+          <tr>
+            <td>Artifact derive fails</td>
+            <td>Warning; result continues</td>
+            <td>Missing helper artifact must not change outcome</td>
+          </tr>
+          <tr>
+            <td>Active archive fails</td>
+            <td>Keep full provider message</td>
+            <td>Correctness over token savings</td>
+          </tr>
+          <tr>
+            <td>Placeholder corrupt on hydrate</td>
+            <td>Explicit failure</td>
+            <td>Never fake damaged bytes as raw evidence</td>
+          </tr>
+          <tr>
+            <td>Process stops mid-tool</td>
+            <td>Partial / operational recovery</td>
+            <td>Never synthesize success evidence</td>
+          </tr>
+          <tr>
+            <td>Official verifier is private</td>
+            <td>Exclude from model projection</td>
+            <td>authority ≠ visibility</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section
+    id="compact-current"
+    label="§02 · Current compact"
+    title="Current: Heavy-task compact evidence"
+    lede="Mature, but task/attempt-scoped — not yet universal Runtime TurnEvidence."
+  >
+    <p>
+      <code>heavy-task-evidence</code> already implements compact evidence rules: Bash records
+      command / cwd / exit / timeout with bounded stdout/stderr; Read/Grep/Glob record path, query,
+      and bounded observation; Write/Edit record size, path, and mutation summary only (no body / raw
+      diff); Artifact evidence stores metadata only; non-public or suspected official-verifier
+      content is omitted; prompts project only the recent ~8 envelopes; truncation records original /
+      visible / omitted bytes and ref kind.
+    </p>
+    <blockquote class="pull">
+      Compact Evidence answers “which recent public observations help the next round avoid repeat
+      work,” not “this is enough to prove an official pass.”
+    </blockquote>
+    <p>
+      Envelope durable identity is still primarily <code>taskRunId</code> plus optional
+      <code>attemptId</code>; <code>turnId</code> / <code>sessionId</code> / <code>toolCallId</code>
+      live in <code>source</code>. That fits Headless heavy-task, but is not universal TurnEvidence
+      across Runtime surfaces.
+    </p>
+  </Section>
+
+  <Section
+    id="target-envelope"
+    label="§02 · Target"
+    title="Target: TurnEvidence envelope"
+    lede="visibility × authority; source-bearing; projection is not a proof chain. Not claimed as fully landed."
+  >
+    <p>
+      Universal TurnEvidence should be a source-bearing derived record above RuntimeEvent and
+      Artifact — durable enough for efficient replay/export, yet re-verifiable from canonical facts
+      and raw artifacts; never a second source of truth. Conceptual fields include Turn identity,
+      <code>source</code> refs, <code>visibility</code> (model_visible / internal / restricted),
+      <code>authority</code> (observation / advisory / authoritative), bounded summary, and
+      <code>integrity</code> (hash / bytes / truncation).
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>Source-bearing</strong> — summaries must point back to RuntimeEvents, archive
+        artifacts (with hash), or accepted checks; otherwise they are low-authority observations.
+      </li>
+      <li>
+        <strong>Visibility ≠ authority</strong> — public and model-visible may still be mere
+        observation; an official verifier may be authoritative yet must not leak into the prompt.
+      </li>
+      <li>
+        <strong>Projection, not proof chain</strong> — derived inside the Runtime; the model may
+        consume it, but does not author authority.
+      </li>
+    </ul>
     <div class="stub">
       <p class="stub__tag">Current vs Target</p>
       <p>
-        Current: active prune + RuntimeEvent/Artifact fact boundary. Target: unified TurnEvidence
-        envelope and full source chain. Teaching and figures center the invariant; Target is not
-        disguised as implemented.
+        Current building blocks: ToolRuntime + RuntimeEvent + ArtifactStore + active prune +
+        heavy-task compact evidence. Target: unified Turn-scoped envelope and complete source
+        linkage. Default token thresholds are policy knobs, not protocol constants. Teaching centers
+        the invariants; Target is not disguised as shipped.
       </p>
     </div>
   </Section>
 
+  <Section
+    id="invariants"
+    label="§02 · Invariants"
+    title="Seven invariants that must never break"
+    lede="Do not sacrifice these while chasing tokens. You should be able to recite them."
+  >
+    <ol class="plain-list numbered invariants">
+      <li>
+        <strong>Prune projection, never ledger</strong> — rewrite only the provider-visible
+        projection; never replace a ledger function response with a placeholder.
+      </li>
+      <li>
+        <strong>Archive before omission</strong> — only after the full raw payload is persisted and a
+        verifiable artifact ref exists may a placeholder omit the large body.
+      </li>
+      <li>
+        <strong>Failure keeps evidence</strong> — archive / compaction / artifact failures must not
+        forge a recoverable ref; active prune keeps the original.
+      </li>
+      <li>
+        <strong>Evidence must name its source</strong> — untraceable summaries are low-authority
+        observations only.
+      </li>
+      <li>
+        <strong>Tool call/result pairing remains valid</strong> — deny, throw, cancel, and guard
+        failure still produce matching results; prune/replay must not break the pair.
+      </li>
+      <li>
+        <strong>Authority never leaks into visibility</strong> — official/private evidence does not
+        enter the prompt because it is authoritative; public summaries do not become official proof
+        because they are visible.
+      </li>
+      <li>
+        <strong>Rewrites are idempotent and diagnosable</strong> — placeholders are recognizable;
+        repeated projection does not re-archive; rewrite / failure / tokens saved are observable.
+      </li>
+    </ol>
+  </Section>
+
+  <Section
+    id="observe"
+    label="§02 · Observability"
+    title="Observability: why the request got smaller"
+    lede="Diagnostics explain the shrink; they do not replace correctness tests."
+  >
+    <pre class="code-block" aria-label="Active prune diagnostics">activePrunedToolResults
+activeArchiveFailures
+activeEstimatedTokensSaved</pre>
+    <p>
+      Purpose: explain why a request got smaller and whether recovery paths were lost along the way.
+      Cache hit/miss / request-shape attribution belongs to the later cache teaching ticket (map #34 ·
+      #38) — do not confuse it with prune correctness. Mid-turn capacity / newest-step interaction:
+      <a href={`${localePath("en", "history/pr/1077")}`}>maka:pr:1077</a> (advanced aside).
+    </p>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>Keystone + four-reps + active prune + source chain</li>
       <li>
-        Aside: <a href={`${localePath("en", "history/pr/769")}`}>maka:pr:769</a>
+        Protocol depth: four-reps table · ToolRuntime · archive diamond · Active vs Stale · failure
+        matrix · seven invariants
       </li>
-      <li>Current prune/event boundary vs Target TurnEvidence envelope labeled</li>
-      <li>Acceptance checklist hard gate met (zh+en same ship)</li>
+      <li>
+        Mechanism asides
+        <a href={`${localePath("en", "history/pr/316")}`}>maka:pr:316</a> /
+        <a href={`${localePath("en", "history/pr/319")}`}>maka:pr:319</a>
+        (docs-land 769 secondary)
+      </li>
+      <li>Current building blocks taught; Target TurnEvidence envelope explicitly not fully landed</li>
+      <li>
+        Structure hard gates remain necessary; depth = can the reader restate fail-open — not “checklist
+        green = depth done”
+      </li>
     </ul>
   </div>
 </ChapterShell>
@@ -202,6 +569,14 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
     margin-bottom: 0.45rem;
   }
 
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+
+  .invariants li {
+    margin-bottom: 0.65rem;
+  }
+
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
@@ -210,5 +585,59 @@ import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro"
 
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+
+  .table-wrap {
+    margin: 1rem 0 1.35rem;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--hair);
+  }
+
+  .proto-table {
+    width: 100%;
+    min-width: 36rem;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .proto-table th,
+  .proto-table td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--hair);
+    text-align: left;
+    vertical-align: top;
+    max-width: 14em;
+  }
+
+  .proto-table thead th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+    background: var(--soft);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .proto-table tbody th[scope="row"] {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .proto-table tbody tr:last-child th,
+  .proto-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .proto-table--fail {
+    min-width: 40rem;
+  }
+
+  .proto-table code {
+    font-size: 0.8em;
   }
 </style>

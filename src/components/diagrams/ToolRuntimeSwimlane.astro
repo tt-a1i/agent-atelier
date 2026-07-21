@@ -1,0 +1,196 @@
+---
+/**
+ * §02 protocol — ToolRuntime as side-effect boundary (six teachable beats).
+ */
+---
+
+<svg
+  class="tr-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="tr-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="tr-kicker tr-stage tr-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · TOOLRUNTIME · SIDE-EFFECT BOUNDARY
+  </text>
+  <line
+    class="tr-stage tr-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="tr-connectors tr-stage tr-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="142" y1="118" x2="166" y2="118" marker-end="url(#tr-arrow)"></line>
+    <line x1="300" y1="118" x2="324" y2="118" marker-end="url(#tr-arrow)"></line>
+    <line x1="458" y1="118" x2="482" y2="118" marker-end="url(#tr-arrow)"></line>
+    <line x1="616" y1="118" x2="640" y2="118" marker-end="url(#tr-arrow)"></line>
+    <line x1="774" y1="118" x2="798" y2="118" marker-end="url(#tr-arrow)"></line>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--1" transform="translate(8,52)">
+    <rect width="134" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="134" height="2" fill="var(--accent)"></rect>
+    <text class="tr-node__idx" x="10" y="24" fill="var(--accent)">01</text>
+    <text class="tr-node__name" x="10" y="48" fill="var(--ink)">Persist call</text>
+    <text class="tr-node__hint" x="10" y="74" fill="var(--mute)">tool_call</text>
+    <text class="tr-node__hint" x="10" y="92" fill="var(--mute)">+ tool_start</text>
+    <text class="tr-node__hint" x="10" y="118" fill="var(--ink)">ledger first</text>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--2" transform="translate(166,52)">
+    <rect width="134" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="134" height="2" fill="var(--accent)"></rect>
+    <text class="tr-node__idx" x="10" y="24" fill="var(--accent)">02</text>
+    <text class="tr-node__name" x="10" y="48" fill="var(--ink)">Guards</text>
+    <text class="tr-node__hint" x="10" y="74" fill="var(--mute)">loop / avail</text>
+    <text class="tr-node__hint" x="10" y="92" fill="var(--mute)">concurrency</text>
+    <text class="tr-node__hint" x="10" y="118" fill="var(--ink)">may block</text>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--3" transform="translate(324,52)">
+    <rect width="134" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="134" height="2" fill="var(--accent)"></rect>
+    <text class="tr-node__idx" x="10" y="24" fill="var(--accent)">03</text>
+    <text class="tr-node__name" x="10" y="48" fill="var(--ink)">Permission</text>
+    <text class="tr-node__hint" x="10" y="74" fill="var(--mute)">allow / block</text>
+    <text class="tr-node__hint" x="10" y="92" fill="var(--mute)">/ prompt</text>
+    <text class="tr-node__hint" x="10" y="118" fill="var(--ink)">first-class</text>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--4" transform="translate(482,52)">
+    <rect width="134" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="134" height="2" fill="var(--accent)"></rect>
+    <text class="tr-node__idx" x="10" y="24" fill="var(--accent)">04</text>
+    <text class="tr-node__name" x="10" y="48" fill="var(--ink)">Execute</text>
+    <text class="tr-node__hint" x="10" y="74" fill="var(--mute)">impl + abort</text>
+    <text class="tr-node__hint" x="10" y="92" fill="var(--mute)">output deltas</text>
+    <text class="tr-node__hint" x="10" y="118" fill="var(--ink)">side effects</text>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--5" transform="translate(640,52)">
+    <rect width="134" height="132" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="134" height="2" fill="var(--accent)"></rect>
+    <text class="tr-node__idx" x="10" y="24" fill="var(--accent)">05</text>
+    <text class="tr-node__name" x="10" y="48" fill="var(--ink)">tool_result</text>
+    <text class="tr-node__hint" x="10" y="74" fill="var(--mute)">normalize</text>
+    <text class="tr-node__hint" x="10" y="92" fill="var(--mute)">pair by id</text>
+    <text class="tr-node__hint" x="10" y="118" fill="var(--ink)">incl. synthetic</text>
+  </g>
+
+  <g class="tr-node tr-stage tr-stage--6" transform="translate(798,52)">
+    <rect
+      width="62"
+      height="132"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="62" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="tr-node__idx" x="8" y="24" fill="var(--accent)">06</text>
+    <text class="tr-node__name" x="8" y="52" fill="var(--ink)">Art.</text>
+    <text class="tr-node__hint" x="8" y="80" fill="var(--mute)">async</text>
+    <text class="tr-node__hint" x="8" y="98" fill="var(--mute)">best-</text>
+    <text class="tr-node__hint" x="8" y="116" fill="var(--mute)">effort</text>
+  </g>
+
+  <text class="tr-foot tr-stage tr-stage--6" x="8" y="220" fill="var(--mute)">
+    Guard / permission failure still writes a synthetic error tool_result — never an unpaired call.
+  </text>
+  <text class="tr-foot tr-stage tr-stage--6" x="8" y="244" fill="var(--mute)">
+    Artifact derive must not mutate the result when the recorder fails.
+  </text>
+</svg>
+
+<style>
+  .tr-flow {
+    font-family: var(--sans);
+  }
+  .tr-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .tr-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .tr-node__name {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .tr-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .tr-foot {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tr-stage {
+      opacity: 0;
+      animation: tr-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .tr-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .tr-stage--1 {
+      animation-delay: 0.1s;
+    }
+    .tr-stage--2 {
+      animation-delay: 0.2s;
+    }
+    .tr-stage--3 {
+      animation-delay: 0.3s;
+    }
+    .tr-stage--4 {
+      animation-delay: 0.4s;
+    }
+    .tr-stage--5 {
+      animation-delay: 0.5s;
+    }
+    .tr-stage--6 {
+      animation-delay: 0.6s;
+    }
+    @keyframes tr-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tr-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

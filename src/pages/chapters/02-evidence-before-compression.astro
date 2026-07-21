@@ -4,7 +4,9 @@ import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipelineKeystone.astro";
 import FourRepsFlow from "../../components/diagrams/FourRepsFlow.astro";
+import ToolRuntimeSwimlane from "../../components/diagrams/ToolRuntimeSwimlane.astro";
 import ActivePruneFlow from "../../components/diagrams/ActivePruneFlow.astro";
+import ActiveVsStaleFlow from "../../components/diagrams/ActiveVsStaleFlow.astro";
 import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
 ---
 
@@ -21,14 +23,19 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
     id="scene"
     label="§02 · Scene"
     title="从一份巨大的测试日志开始"
-    lede="同一个 Tool Result 在系统里扮演多种角色——不能用一个 JSON 扛全部责任。"
+    lede="同一个 Tool Result 同时触发四个需求——不能用一个 JSON 扛全部责任。"
   >
     <p>
-      假设模型调用 Bash，测试吐出 80,000 行输出。系统同时要：让模型看见关键错误、在 Runtime
-      里留下可回放事实、必要时取出完整原文、且同一 Turn 的下一步不再携带整份原文。
+      假设用户让 Maka 修复失败测试。模型调用 Bash，测试进程吐出 80,000 行输出。这份结果同时要满足：
     </p>
+    <ol class="plain-list numbered">
+      <li>模型需要看见关键错误，才能决定下一步；</li>
+      <li>Runtime 需要记录 Bash 调用与结果，才能回放真实执行历史；</li>
+      <li>用户以后可能要求查看完整日志——系统不能只剩一句摘要；</li>
+      <li>同一个 Turn 的下一次模型调用，不应再次携带 80,000 行原文。</li>
+    </ol>
     <p>
-      永久塞进 prompt 会拖垮预算；直接删掉会毁掉审计；让模型自称「已验证」又会把观察与判断混在一起。真正的问题是：哪些必须
+      永久塞进 prompt 会拖垮预算；直接删掉会毁掉审计；让模型自称「已验证」又会把观察与判断混在一起。真正的问题不是「截断到多少字符」，而是：哪些必须
       durable，哪些可以重建，哪些只该短暂存在于模型工作集？
     </p>
   </Section>
@@ -41,7 +48,7 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
   >
     <DiagramFigure
       prototype
-      caption="图 1 · 一次 Tool Result 拆成四层表示；active prune 只改写 Provider messages，不删 Evidence。"
+      caption="图 1 · 一次 Tool Result 拆成四层表示；路径 05（Provider messages）才是 active prune 的改写面——01–04 不是「可删证据」。"
       alt="流水线：Tool execution 到 Runtime Event、Artifact、Turn Evidence，再到 Provider messages；01–04 持久为证据，05 可被 prune 改写；底部不变式 Prune the context, never prune the evidence。"
     >
       <EvidencePipelineKeystone />
@@ -49,7 +56,7 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
 
     <p class="figure-note">
       不变式：<strong>Prune the context, never prune the evidence.</strong>
-      流水线隐喻只服务 §02——不是全站统一构图。
+      Active prune 只改写流水线末端的 provider-visible 投影；它不是数据保留策略。
     </p>
   </Section>
 
@@ -60,37 +67,113 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
     lede="Evidence compression 可以改变模型以后怎样看见事实，但不能改变事实是否发生过。"
   >
     <DiagramFigure
-      caption="图 2 · 同一结果拆成 Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context。"
+      caption="图 2 · 同一结果拆成 Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context——权威与生命周期不同。"
       alt="四列对照：Runtime Fact、Artifact、Turn Evidence、Working context。"
     >
       <FourRepsFlow />
     </DiagramFigure>
-    <ul class="plain-list">
-      <li>
-        <strong>Canonical Runtime Fact</strong> — 调用了什么、返回了什么（durable RuntimeEvent）
-      </li>
-      <li>
-        <strong>Raw Artifact</strong> — 完整原文/生成物在哪里（独立生命周期与校验）
-      </li>
-      <li>
-        <strong>Turn Evidence</strong> — 本 Turn 值得后续消费的公开观察（source-bearing、有界）
-      </li>
-      <li>
-        <strong>Model Working Context</strong> — 下一 step 最少要看到什么（临时投影，可 prune）
-      </li>
-    </ul>
+
+    <div class="table-wrap" role="region" aria-label="四种表示：问题、权威、生命周期" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">表示</th>
+            <th scope="col">回答的问题</th>
+            <th scope="col">权威</th>
+            <th scope="col">生命周期</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Canonical Runtime Fact</td>
+            <td>调用了什么、返回了什么</td>
+            <td>交互语义事实</td>
+            <td>Durable ledger</td>
+          </tr>
+          <tr>
+            <td>Raw Artifact</td>
+            <td>原文在哪、可否校验</td>
+            <td>原始载荷</td>
+            <td>独立存储 + hash</td>
+          </tr>
+          <tr>
+            <td>Turn Evidence</td>
+            <td>哪些公开观察值得继续消费</td>
+            <td>Source-bearing 派生</td>
+            <td>Bounded / 可重建</td>
+          </tr>
+          <tr>
+            <td>Model Working Context</td>
+            <td>下一步最少要看什么</td>
+            <td>临时投影</td>
+            <td>每次 request 重算</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <pre class="code-block" aria-label="四层流水线">Tool execution
   → RuntimeEvent(function_call / function_response)
   → Artifact(raw payload)
   → TurnEvidence(source-bearing bounded projection)
   → Provider Messages(current working set)</pre>
-    <aside class="history-aside">
-      <p class="history-aside__tag">演进旁注</p>
-      <p>
-        Turn Evidence / active prune 架构章合入：
-        <a href={`${import.meta.env.BASE_URL}history/pr/769`}>maka:pr:769</a>。
-      </p>
-    </aside>
+
+    <p>
+      它们不是简单复制：RuntimeEvent 保存语义；Artifact 保存大载荷；Evidence 保存来源、摘要与完整性；Provider
+      Messages 只为当前决策服务，可被裁剪、压缩或重新排序。
+    </p>
+  </Section>
+
+  <Section
+    id="tool-runtime"
+    label="§02 · ToolRuntime"
+    title="ToolRuntime 是副作用边界"
+    lede="不是 tool.impl 的薄包装；guard / permission 失败也必须留下可配对的 tool result。"
+  >
+    <DiagramFigure
+      caption="图 3 · ToolRuntime 六拍：持久化调用 → guards → permission → 执行 → 归一化 tool_result → 异步 artifact。"
+      alt="六步泳道：Persist call、Guards、Permission、Execute、tool_result、异步 Artifact；注脚强调合成错误结果与 pairing。"
+    >
+      <ToolRuntimeSwimlane />
+    </DiagramFigure>
+    <ol class="plain-list numbered">
+      <li>持久化 <code>tool_call</code>，发出 <code>tool_start</code>；</li>
+      <li>Guards：loop gate、本 step 可用性、Turn 内并发上限；</li>
+      <li>Permission evaluate：allow / block / prompt（必要时等待用户）；</li>
+      <li>执行真实 <code>impl</code>：传播 abort，允许 output delta；</li>
+      <li>归一化并持久化 <code>tool_result</code>（与 call 按 <code>toolCallId</code> 配对）；</li>
+      <li>Best-effort 异步派生 artifact——recorder 失败不得改写 result。</li>
+    </ol>
+    <p>
+      工具未加载、权限拒绝、相同失败反复出现、子 Agent 超并发——这些路径<strong>不会静默消失</strong>。ToolRuntime
+      写入 synthetic error tool result，让模型与 RuntimeEvent ledger 都知道「调用被拒绝及原因」。没有 result 的
+      function call 会破坏历史配对，也会让 Evidence 无法区分「从未执行」与「边界明确拒绝」。
+    </p>
+  </Section>
+
+  <Section
+    id="layers"
+    label="§02 · Layers"
+    title="output / result / artifact 不是同一件事"
+    lede="Prune 从不「删除 tool output」——先分清瞬时进度、结构化结果与独立载荷。"
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>output delta</strong> — 运行中的瞬时进度（streaming）；可进 UI，不是下一 step 的权威事实。
+      </li>
+      <li>
+        <strong>tool result</strong> — 模型下一步行动所依据的结构化结果；进入 ledger 与 pairing。
+      </li>
+      <li>
+        <strong>artifact</strong> — 值得独立保存与展示的文件、diff 或大载荷；有自己的生命周期与校验。
+      </li>
+    </ul>
+    <p>
+      Current 派生是保守的：Write 可派生文件，Edit 可派生 diff，Bash 只处理显式 stdout
+      redirect。Recorder 失败只产生 warning；慢 recorder 也不阻塞结果返回模型。因此普通
+      ArtifactRecord 今日未必完整带齐 <code>toolCallId</code> / RuntimeEvent
+      ref——Target TurnEvidence 必须补上 source linkage，而不能假装它已存在。
+    </p>
   </Section>
 
   <Section
@@ -100,57 +183,323 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
     lede="Step 太细，Session 太宽；Turn 是工程上可操作的中点。"
   >
     <DiagramFigure
-      caption="图 4 · Source chain：RuntimeEvent → Artifact → Turn Evidence → 后续消费者；可回取原文。"
+      caption="图 4 · Source chain：RuntimeEvent → Artifact → Turn Evidence → 后续消费者；原文可按 ref 回取。"
       alt="四步：RuntimeEvent、Artifact ref、Turn Evidence、Later consumer。"
     >
       <SourceChainFlow />
     </DiagramFigure>
     <p>
-      本轮 model/tool events 共享 turnId；tool call/result、permission 与 artifacts 可归属同一轮；Turn
-      terminal fact 给出完成/失败/中止。下一轮可以把上一轮 Evidence 当作有界工程记忆，而不必展开全部原始输出。
+      本轮 model/tool events 共享 <code>turnId</code>；tool call/result、permission 与 artifacts
+      可归属同一轮；Turn terminal fact 给出完成/失败/中止。下一轮可以把上一轮 Evidence
+      当作有界工程记忆，而不必展开全部原始输出。
     </p>
+    <p>Turn Evidence 应当能回答：</p>
+    <pre class="code-block" aria-label="Evidence 必须能回答的问题">这个 Turn 想完成什么？
+它实际调用了哪些工具？
+观察到了什么公开结果？
+产生或修改了哪些 artifact？
+哪些输出被截断、归档或省略？
+这些摘要能指回哪些 canonical facts 和 raw payloads？</pre>
     <p>
-      Evidence 描述有来源的观察；它不替代 Runtime terminal status，也不宣称「官方 verifier
-      一定通过」。权威结论属于其他层（见 §05）。
+      它<strong>不</strong>应该回答「官方 verifier 一定会通过」，也不替代 Runtime terminal
+      status。Evidence 描述有来源的观察；结论与权威结果属于其他层（见 §05）。
     </p>
   </Section>
 
   <Section
-    id="current"
-    label="§02 · Current"
-    title="Active prune 只改 Provider messages"
-    lede="同一 Turn 内、下一步组装之前；失败时宁可牺牲 token 节省，也不删 ledger。"
+    id="active"
+    label="§02 · Active prune"
+    title="Active prune：同 Turn 的 request shaping"
+    lede="Archive before omission. Fail open. 它是 provider request shaping policy，不是数据保留策略。"
   >
     <DiagramFigure
-      caption="图 3 · Active prune：归档原文 → 有界视图 → 只改写 provider messages；Evidence 不动。"
-      alt="五步：Large result、Archive raw、Bound view、Rewrite msgs、Evidence untouched。"
+      caption="图 5 · Active prune 协议：Hash → Archive 成功？→ placeholder / 保留原文 → 下一 provider step；ledger 虚线旁路永不动。"
+      alt="决策菱形：Archive OK 则 source-bearing placeholder，否则 keep original fail open；RuntimeEvent/Session ledger 虚线标注未改写。"
     >
       <ActivePruneFlow />
     </DiagramFigure>
+
     <p>
-      Current 路径里，ToolRuntime 仍是副作用边界；RuntimeEvent 保存工具交互的 canonical
-      semantics。Active Tool Result Prune 跑在 provider step 之间：只处理当前 Turn 已完成的大结果，把
-      provider-visible messages 换成有界摘要/指针，<strong>不改写</strong>已提交的 Event Log / Artifact。
+      Stale pruning 处理旧历史的 replay；Active Tool Result Prune 解决更紧迫的问题：Step 1
+      刚产生巨大 tool result，Step 2 是否必须原样再发给 provider？它跑在 AI SDK
+      <code>prepareStep</code> 中——一次 provider step 结束与下一 step request 组装之间——只处理当前 Turn
+      已完成 steps 中的 eligible 大结果。
     </p>
+
+    <p>协议（编号落地）：</p>
+    <ol class="plain-list numbered">
+      <li>
+        Eligible：当前 Turn 已完成 steps；超过估算 token 阈值（Desktop 默认约 2048——<strong>policy
+        knob，不是协议常数</strong>）；
+      </li>
+      <li>稳定序列化 → 计算 <code>bodySha256</code> / bytes / estimate；</li>
+      <li>Host archive writer 必须返回非空 <code>artifactId</code>；</li>
+      <li>只有此时才构造 placeholder；</li>
+      <li>只在本次 <code>prepareStep</code> 返回的 messages 视图中替换；</li>
+      <li>Ledger / Session 已持久化的 result <strong>不动</strong>。</li>
+    </ol>
+
+    <p>Placeholder 字段（reason 枚举保持英文码）：</p>
+    <pre class="code-block" aria-label="Active prune placeholder 字段">artifactId, turnId, toolCallId, toolName,
+bodySha256, originalEstimatedTokens, originalBytes,
+rewriteVersion,
+reason = active_current_turn_tool_result_pruned_before_next_step</pre>
+
+    <p>Active prune <strong>不会</strong>：删除 ledger；改写 Session 已存 result；总结业务语义；宣称 placeholder
+      == 完整 evidence；在 archive 失败时为省 token 强行省略；处理所有旧历史结果。</p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Active prune 机制引入：
+        <a href={`${import.meta.env.BASE_URL}history/pr/316`}>maka:pr:316</a>
+        （Add active tool result pruning）。Archive-before-placeholder 纪律收紧：
+        <a href={`${import.meta.env.BASE_URL}history/pr/319`}>maka:pr:319</a>
+        （require archived active tool pruning）。默认开启：
+        <a href={`${import.meta.env.BASE_URL}history/pr/498`}>maka:pr:498</a>。架构文档合入（次要）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/769`}>maka:pr:769</a>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="stale"
+    label="§02 · Stale prune"
+    title="Stale prune：旧历史的另一条策略"
+    lede="两条策略，两种压力；混为一谈会在「当前 Turn」与「回放历史」之间偷换语义。"
+  >
+    <DiagramFigure
+      caption="图 6 · Active（同 Turn prepareStep）与 Stale（prior-history 物化）对照——目标、时机与误用风险不同。"
+      alt="两列：Active same Turn prepareStep；Stale prior history replay materialization。"
+    >
+      <ActiveVsStaleFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="Active 与 Stale 对照" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Active</th>
+            <th scope="col">Stale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">时机</th>
+            <td>同 Turn，steps 之间（<code>prepareStep</code>）</td>
+            <td>Prior-history 物化时</td>
+          </tr>
+          <tr>
+            <th scope="row">对象</th>
+            <td>刚产生的大结果</td>
+            <td>回放中旧的 oversized tool results</td>
+          </tr>
+          <tr>
+            <th scope="row">混用风险</th>
+            <td>在 Turn 中途错误改写「历史」</td>
+            <td>错过当前 Turn 的上下文压力</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p>
-      Compact Evidence 等能力已在 Headless heavy-task 等路径出现，但通用 TurnEvidence
-      envelope（补齐 source linkage、全 surface 共用）仍属 Target——下文显式标注，避免把提案写成已落地。
+      Active path 不会误改历史 replay 里的同名大结果；旧历史有独立 stale 策略。默认开启演进见
+      <a href={`${import.meta.env.BASE_URL}history/pr/621`}>maka:pr:621</a>（旁注，不展开整段产品史）。
     </p>
+  </Section>
+
+  <Section
+    id="fail"
+    label="§02 · Fail-open"
+    title="Fail-open 与失败矩阵"
+    lede="Archive 失败时发生什么？保留完整 provider message。Correctness &gt; savings。"
+  >
+    <p>
+      下面任一情况保留原始结果：archive 抛错 / 无返回 / <code>artifactId</code> 为空；payload
+      非受支持 shape；未超阈值；tool call 不属于当前 completed steps。合法 placeholder 在后续
+      prepare passes 中可识别，不会重复 archive；相同 body 的 artifact ID 稳定复用。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="失败矩阵" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Current 行为</th>
+            <th scope="col">架构含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Permission denied</td>
+            <td>Synthetic error tool result</td>
+            <td>调用明确结束，无真实副作用</td>
+          </tr>
+          <tr>
+            <td>Tool throws</td>
+            <td>Normalized error + telemetry</td>
+            <td>失败是可配对事实，不是丢失事件</td>
+          </tr>
+          <tr>
+            <td>Artifact derive fails</td>
+            <td>Warning；result 继续</td>
+            <td>辅助 artifact 缺失不改执行事实</td>
+          </tr>
+          <tr>
+            <td>Active archive fails</td>
+            <td>Keep full provider message</td>
+            <td>correctness 优先于 token savings</td>
+          </tr>
+          <tr>
+            <td>Placeholder corrupt on hydrate</td>
+            <td>Explicit failure</td>
+            <td>不得把损坏内容冒充 raw</td>
+          </tr>
+          <tr>
+            <td>Process stops mid-tool</td>
+            <td>Partial / operational recovery</td>
+            <td>不得合成成功 evidence</td>
+          </tr>
+          <tr>
+            <td>Official verifier is private</td>
+            <td>Exclude from model projection</td>
+            <td>authority ≠ visibility</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section
+    id="compact-current"
+    label="§02 · Current compact"
+    title="Current：Heavy-task compact evidence"
+    lede="成熟，但 task/attempt 作用域——尚未等同通用 Runtime TurnEvidence。"
+  >
+    <p>
+      <code>heavy-task-evidence</code> 已实现一套 compact evidence 规则：Bash 记 command / cwd / exit /
+      timeout 与有界 stdout/stderr；Read/Grep/Glob 记路径、查询与有界观察；Write/Edit
+      只记大小、路径与 mutation summary（不捕获 body / raw diff）；Artifact evidence 只存
+      metadata；非公开或疑似 official-verifier 内容省略；prompt 只投影最近约 8 个 envelopes；截断记录
+      original / visible / omitted bytes 与 ref kind。
+    </p>
+    <blockquote class="pull">
+      Compact Evidence 回答「最近有哪些公开观察能帮助下一轮少做重复工作」，而不是「这些信息足以证明
+      official pass」。
+    </blockquote>
+    <p>
+      Envelope 的 durable identity 仍以 <code>taskRunId</code> 与可选 <code>attemptId</code> 为主；
+      <code>turnId</code> / <code>sessionId</code> / <code>toolCallId</code> 在
+      <code>source</code> 中。这对 Headless heavy-task 合适，但不是所有 Runtime surface 的通用
+      TurnEvidence。
+    </p>
+  </Section>
+
+  <Section
+    id="target-envelope"
+    label="§02 · Target"
+    title="Target：TurnEvidence envelope"
+    lede="visibility × authority；source-bearing；投影不是证明链。未宣称已全量落地。"
+  >
+    <p>
+      通用 TurnEvidence 应是 RuntimeEvent 与 Artifact 之上的 source-bearing derived
+      record——可持久化以便高效 replay/export，也必须能从 canonical facts 与 raw artifacts
+      重新验证；不能成为第二份事实源。概念字段包括：Turn identity、<code>source</code> refs、
+      <code>visibility</code>（model_visible / internal / restricted）、
+      <code>authority</code>（observation / advisory / authoritative）、bounded summary、
+      <code>integrity</code>（hash / bytes / truncation）。
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>Source-bearing</strong> — 摘要必须能指回 RuntimeEvent、archive artifact（含
+        hash）、或 accepted check；否则只能是低权威 observation。
+      </li>
+      <li>
+        <strong>Visibility ≠ authority</strong> —
+        可公开且 model-visible 却只是 observation；official verifier 可 authoritative 却不得泄漏进
+        prompt。
+      </li>
+      <li>
+        <strong>Projection, not proof chain</strong> —
+        Runtime 内部派生；模型可消费，但不负责宣布权威。
+      </li>
+    </ul>
     <div class="stub">
       <p class="stub__tag">Current vs Target</p>
       <p>
-        Current：active prune + RuntimeEvent/Artifact 事实边界。Target：统一 TurnEvidence
-        envelope 与完整 source chain。教学与图示以不变式为中心，Target 不伪装成已实现。
+        Current 积木：ToolRuntime + RuntimeEvent + ArtifactStore + active prune + heavy-task compact
+        evidence。Target：统一 Turn-scoped envelope 与完整 source linkage。默认 token 阈值是 policy
+        knob，不是协议常数。教学以不变式为中心；Target 不伪装成已实现。
       </p>
     </div>
   </Section>
 
+  <Section
+    id="invariants"
+    label="§02 · Invariants"
+    title="必须保护的七条不变量"
+    lede="追逐 tokens 时不可打破。读完应能默写。"
+  >
+    <ol class="plain-list numbered invariants">
+      <li>
+        <strong>Prune projection, never ledger</strong> — 只改 provider-visible 投影；不得把 ledger
+        里的 function response 换成 placeholder。
+      </li>
+      <li>
+        <strong>Archive before omission</strong> —
+        完整原文已持久化且拿到可校验 artifact ref 之后，才能用 placeholder 省略大 payload。
+      </li>
+      <li>
+        <strong>Failure keeps evidence</strong> —
+        archive / compaction / artifact 失败时不得伪造可恢复引用；active prune 保留原文。
+      </li>
+      <li>
+        <strong>Evidence must name its source</strong> — 无法回溯来源的摘要只能是低权威 observation。
+      </li>
+      <li>
+        <strong>Tool call/result pairing remains valid</strong> —
+        拒绝、异常、取消、guard failure 也要匹配 result；prune/replay 不得拆散 pair。
+      </li>
+      <li>
+        <strong>Authority never leaks into visibility</strong> —
+        官方/私有 evidence 不因权威自动进 prompt；公开摘要不因可见而变成 official proof。
+      </li>
+      <li>
+        <strong>Rewrites are idempotent and diagnosable</strong> —
+        placeholder 可识别；重复 projection 不反复 archive；rewrite / failure / tokens saved 可观测。
+      </li>
+    </ol>
+  </Section>
+
+  <Section
+    id="observe"
+    label="§02 · Observability"
+    title="可观测：为什么 request 变小了"
+    lede="诊断解释缩小过程，不能替代 correctness tests。"
+  >
+    <pre class="code-block" aria-label="Active prune diagnostics">activePrunedToolResults
+activeArchiveFailures
+activeEstimatedTokensSaved</pre>
+    <p>
+      用途：解释一次 request 为何变小，以及缩小过程中有没有损失恢复路径。缓存命中 / miss /
+      request-shape 归因见后续 cache 教学票（map #34 · #38），勿与 prune 正确性混为一谈。中期
+      capacity / newest-step 交互见
+      <a href={`${import.meta.env.BASE_URL}history/pr/1077`}>maka:pr:1077</a>（高级旁注）。
+    </p>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + 四表示流 + active prune + source chain</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/769`}>maka:pr:769</a></li>
-      <li>Current prune/事件边界 vs Target TurnEvidence envelope 已区分</li>
-      <li>验收清单硬闸门已过（中英同船）</li>
+      <li>协议深度：四表示表 · ToolRuntime · archive 菱形 · Active vs Stale · 失败矩阵 · 七不变量</li>
+      <li>
+        机制旁注
+        <a href={`${import.meta.env.BASE_URL}history/pr/316`}>maka:pr:316</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/319`}>maka:pr:319</a>
+        （docs-land 769 次要）
+      </li>
+      <li>Current 积木已教；Target TurnEvidence envelope 显式标注未全量落地</li>
+      <li>结构硬闸门仍必要；深度以读者能否复述 fail-open 为准——不宣称「清单绿 = 深度完成」</li>
     </ul>
   </div>
 </ChapterShell>
@@ -190,6 +539,14 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
     margin-bottom: 0.45rem;
   }
 
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+
+  .invariants li {
+    margin-bottom: 0.65rem;
+  }
+
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
@@ -198,5 +555,59 @@ import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
 
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+
+  .table-wrap {
+    margin: 1rem 0 1.35rem;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--hair);
+  }
+
+  .proto-table {
+    width: 100%;
+    min-width: 36rem;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .proto-table th,
+  .proto-table td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--hair);
+    text-align: left;
+    vertical-align: top;
+    max-width: 14em;
+  }
+
+  .proto-table thead th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+    background: var(--soft);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .proto-table tbody th[scope="row"] {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .proto-table tbody tr:last-child th,
+  .proto-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .proto-table--fail {
+    min-width: 40rem;
+  }
+
+  .proto-table code {
+    font-size: 0.8em;
   }
 </style>
