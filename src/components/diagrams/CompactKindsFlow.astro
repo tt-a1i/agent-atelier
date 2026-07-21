@@ -1,0 +1,131 @@
+---
+/**
+ * §03 flow figure — three context-shrinking mechanisms that must not be conflated.
+ */
+---
+
+<svg
+  class="compact-kinds"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="ck-kicker ck-stage ck-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · THREE COMPACTS · NOT ONE FEATURE
+  </text>
+  <line
+    class="ck-stage ck-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Column 1: History LLM compaction -->
+  <g class="ck-col ck-stage ck-stage--1" transform="translate(8,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)" stroke-width="1"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="ck-col__idx" x="14" y="28" fill="var(--accent)">A · CHAPTER BODY</text>
+    <text class="ck-col__title" x="14" y="54" fill="var(--ink)">History LLM</text>
+    <text class="ck-col__title" x="14" y="74" fill="var(--ink)">compaction</text>
+    <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: old event prefix</text>
+    <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: between Turns</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: V2 checkpoint</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">→ AgentRun ledger event</text>
+  </g>
+
+  <!-- Column 2: Active prune -->
+  <g class="ck-col ck-stage ck-stage--2" transform="translate(298,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ck-col__idx" x="14" y="28" fill="var(--accent)">B · SEE §02</text>
+    <text class="ck-col__title" x="14" y="54" fill="var(--ink)">Active Tool</text>
+    <text class="ck-col__title" x="14" y="74" fill="var(--ink)">Result Prune</text>
+    <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: current Turn results</text>
+    <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: before next step</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: archive + evidence</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">→ rewrite messages only</text>
+  </g>
+
+  <!-- Column 3: semanticCompact -->
+  <g class="ck-col ck-stage ck-stage--3" transform="translate(588,52)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="ck-col__idx" x="14" y="28" fill="var(--accent)">C · ADJACENT</text>
+    <text class="ck-col__title" x="14" y="54" fill="var(--ink)">semanticCompact</text>
+    <text class="ck-col__title" x="14" y="74" fill="var(--ink)">attention shaping</text>
+    <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: mid-turn span</text>
+    <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: prepareStep</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: best-effort block</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">≠ V2 history checkpoint</text>
+  </g>
+</svg>
+
+<style>
+  .compact-kinds {
+    font-family: var(--sans);
+  }
+
+  .ck-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+
+  .ck-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .ck-col__title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .ck-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ck-stage {
+      opacity: 0;
+      animation: ck-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .ck-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .ck-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .ck-stage--2 {
+      animation-delay: 0.3s;
+    }
+    .ck-stage--3 {
+      animation-delay: 0.44s;
+    }
+
+    @keyframes ck-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ck-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

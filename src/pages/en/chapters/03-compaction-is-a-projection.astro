@@ -1,5 +1,94 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import CompactionProjectionKeystone from "../../../components/diagrams/CompactionProjectionKeystone.astro";
+import CompactKindsFlow from "../../../components/diagrams/CompactKindsFlow.astro";
+import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactFlow.astro";
 ---
 
-<ChapterShell chapterId="03" locale="en" />
+<ChapterShell chapterId="03" locale="en">
+  <div slot="thesis">
+    <p lang="zh-CN">
+      （正文仍以中文源稿为准）上下文窗口会满；Compaction 让模型合法地忘记旧轮次，同时历史事实仍可从
+      log / 证据层找回——忘记的是投影，不是世界。
+    </p>
+    <p>
+      Structural parity with the zh draft: scene → keystone → three layers → high water → rolling →
+      three compact kinds → failure → not-what. Full EN prose is not same-ship yet — chapter remains
+      WIP.
+    </p>
+  </div>
+
+  <Section
+    id="keystone"
+    label="§03 · Keystone"
+    title="Compaction projects the log"
+    lede="Scene-local metaphor; fixed system is NewsLiquid tokens, hand keystones, and motion discipline."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · Canonical log → durable checkpoint → ephemeral provider request; source log remains replayable."
+      alt="Runtime Events Log fans into HistoryCompactCheckpoint and recent raw Events tail; Materialize feeds a dashed Provider request; invariant: Compaction projects the log and never mutates canonical RuntimeEvents."
+    >
+      <CompactionProjectionKeystone />
+    </DiagramFigure>
+  </Section>
+
+  <Section
+    id="high-water"
+    label="§03 · Trigger"
+    title="High water → fold → durable → replay"
+    lede="EN captions only; narrative body lives in the zh chapter until bilingual same-ship."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · LLM produces summary value; Runtime owns coverage, durability, and replay gates."
+      alt="Five-step flow: Past high water, LLM summary, Durable append, Coverage gate, Replay with raw tail."
+    >
+      <HighWaterCompactFlow />
+    </DiagramFigure>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Architecture chapter land:
+        <a href="/history/pr/772">maka:pr:772</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="kinds"
+    label="§03 · Boundaries"
+    title="Three compacts, not one feature"
+    lede="History LLM compaction ≠ active prune ≠ semanticCompact."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Same direction (do not mutate source), different durability contracts."
+      alt="Three columns comparing History LLM compaction, Active Tool Result Prune, and semanticCompact."
+    >
+      <CompactKindsFlow />
+    </DiagramFigure>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Structure + figures mirrored from zh; full EN prose pending</li>
+      <li>
+        Aside target: <a href="/history/pr/772">maka:pr:772</a>
+      </li>
+      <li>Do not mark checklist complete</li>
+    </ul>
+  </div>
+</ChapterShell>
+
+<style>
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+</style>

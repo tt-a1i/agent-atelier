@@ -1,39 +1,298 @@
 ---
 import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import CompactionProjectionKeystone from "../../components/diagrams/CompactionProjectionKeystone.astro";
+import CompactKindsFlow from "../../components/diagrams/CompactKindsFlow.astro";
+import HighWaterCompactFlow from "../../components/diagrams/HighWaterCompactFlow.astro";
 ---
 
 <ChapterShell chapterId="03">
   <div slot="thesis">
     <p>
-      上下文窗口会满；「记住一切」是幻觉。Compaction
-      让模型合法地忘记旧轮次，同时历史事实仍可从 log / 证据层找回——忘记的是投影，不是世界。
+      上下文窗口会满；「记住一切」是幻觉。Compaction 让模型合法地忘记旧轮次，同时历史事实仍可从
+      log / 证据层找回——忘记的是投影，不是世界。关键句：
+      <strong>compaction is the Events Log's projection.</strong>
     </p>
   </div>
 
   <Section
-    id="projection"
-    label="§03 · Projection"
-    title="忘记上下文 ≠ 丢失事实"
-    lede="投影可以重算；canonical log 不能被摘要覆盖。"
+    id="scene"
+    label="§03 · Scene"
+    title="从一个长期会话开始"
+    lede="完整历史仍有价值；下一次调用却不能、也不该把几千条事实重新塞进 prompt。"
   >
     <p>
-      本章承接 §01 的事实边界与 §02 的证据纪律：压缩策略决定模型下一轮看见什么，但不能把「曾经发生过」从系统里抹掉。
+      假设用户和 Maka 连续工作了两小时：读项目、跑出大量测试输出、改文件、讨论错误方向并回退、完成第一轮修复，又要求处理下一个失败案例。完整
+      Runtime Events Log 也许有几千条事实——精确命令、当时看见的 tool result、用户强调的约束、一条后来才重新有用的线索——都仍属真实历史。
+    </p>
+    <p>
+      但下一次模型调用真正需要的，往往只是：当前目标、已完成与进行中、不可推翻的决策、当前文件与运行状态、下一步、以及摘要不够时去哪里找原文。最危险的实现是把「需要继续工作」和「需要保留真相」混成同一件事：生成一段摘要，然后删除或覆盖原始事件。模型漏掉一条约束，系统就再也没有稳定来源纠正它。
+    </p>
+    <blockquote class="pull">
+      问题不是「怎样把聊天压得更短」，而是：怎样在保留完整事件事实的前提下，为下一次模型决策计算一个更小的
+      continuation view？
+    </blockquote>
+  </Section>
+
+  <Section
+    id="keystone"
+    label="§03 · Keystone"
+    title="Compaction 不是 mutation，而是 projection"
+    lede="本图只服务本章场景；隐喻可换，NewsLiquid 令牌与手写关键图纪律不变。"
+  >
+    <DiagramFigure
+      prototype
+      caption="图 1 · 日志投影成 durable checkpoint，再与 raw tail 物化成本次 Provider request；源日志仍可回放与重投影。"
+      alt="从 Runtime Events Log 分出 HistoryCompactCheckpoint 与 recent raw Events tail，经 Materialize 进入虚线框 Provider request；不变式：Compaction 投影日志，不改写 canonical RuntimeEvents。"
+    >
+      <CompactionProjectionKeystone />
+    </DiagramFigure>
+
+    <p class="figure-note">
+      用数据库语言说，checkpoint 更接近 materialized view，而不是 WAL truncation——可以失效、重建，不能宣布
+      source log 不再重要。
+    </p>
+
+    <pre class="code-block" aria-label="投影关系">Canonical history = RuntimeEvents[0..n]
+
+Compact checkpoint = Project(
+  RuntimeEvents[0..k],
+  compaction policy,
+  summarizer
+)
+
+Next model context = Materialize(
+  compact checkpoint,
+  RuntimeEvents[k+1..n],
+  provider capabilities,
+  current context budget
+)</pre>
+  </Section>
+
+  <Section
+    id="three-layers"
+    label="§03 · Layers"
+    title="三个不可互换的对象"
+    lede="摘要只是 text；安全的 compaction projection 还必须绑定 coverage。"
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>Runtime Events Log</strong> — 用户、模型、工具与 Runtime
+        已发生的语义事实；是事实源；不允许为了省上下文而丢失细节。
+      </li>
+      <li>
+        <strong>History Compact Checkpoint</strong> — 一段已校验事件前缀的 continuation summary
+        与覆盖信息；durable projection，不是第二真相。
+      </li>
+      <li>
+        <strong>Provider Request Messages</strong> — 本次 LLM
+        调用实际消费的工作上下文；ephemeral projection，可因预算重算。
+      </li>
+    </ul>
+    <p>
+      普通「摘要」只有文字。安全的 checkpoint 至少还要回答：覆盖哪个 Session、多少有序
+      RuntimeEvents / Turn、前缀结束在哪个 <code>runId / turnId / runtimeEventId</code>、source
+      digest 是什么、是否是上一 checkpoint 的合法 successor、在当前 token policy
+      下是否仍能进入 prompt。没有 coverage 的摘要只是笔记；没有 digest 的摘要无法证明自己仍对应当前日志。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Compaction / 上下文投影相关演进，浏览
-        <a href="/history">/history</a>
-        中 runtime / docs 区域的合并 PR。
+        LLM compaction 架构章合入：
+        <a href="/history/pr/772">maka:pr:772</a>
+        （docs: add LLM compaction architecture chapter）。后续 V2 checkpoint / rolling / replay
+        收紧见
+        <a href="/history/pr/729">maka:pr:729</a>、
+        <a href="/history/pr/955">maka:pr:955</a>、
+        <a href="/history/pr/1090">maka:pr:1090</a>
+        等。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="high-water"
+    label="§03 · Trigger"
+    title="High water 决定是否投影"
+    lede="触发语义稳定：越过水位 → 折叠更旧前缀 → 保留 raw tail → 仅在 checkpoint+tail 仍合身时接受。"
+  >
+    <DiagramFigure
+      caption="图 2 · High water 触发折叠：LLM 只生成 summary value；未 durable 不得作为 replacement replay。"
+      alt="五步流水线：Past high water、LLM summary、Durable append、Coverage gate、Replay + raw tail。"
+    >
+      <HighWaterCompactFlow />
+    </DiagramFigure>
+
+    <p>
+      自动 history compaction 由 <code>ContextBudgetPolicy</code>
+      驱动：根据模型 context window 计算 prior-history budget，当可 compact 历史越过 high water
+      时进入折叠；默认希望保留有界 raw tail（按完整 Turn 从新到旧选取，避免劈开 tool
+      call/result pair）。具体 token 数字是默认 policy，不是协议常量——真正稳定的是触发语义与失败语义。
+    </p>
+    <p>
+      LLM 在这里生成「让另一个 LLM 继续工作」的结构化 continuation summary（Goal / Done / Key
+      Decisions / Next Steps / Critical Context）。但哪些事件属于 covered prefix、digest
+      是什么、能否替代当前日志、保留哪段 raw tail、是否已 durable——全部由 deterministic Runtime
+      code 决定。
+      <strong>LLM 是 projection value 的生成器，不是 projection authority。</strong>
+    </p>
+  </Section>
+
+  <Section
+    id="rolling"
+    label="§03 · Rolling"
+    title="Rolling checkpoint：不要反复总结整个世界"
+    lede="长期 Session 会多次越过水位；每次从零重压既贵又会反复改写旧事实。"
+  >
+    <pre class="code-block" aria-label="Rolling checkpoint">Checkpoint N
+  summary = S(events[0..k])
+
+Newly evicted = events[k+1..m]
+
+Checkpoint N+1
+  summary = S(Checkpoint N.summary, newly evicted)
+  coverage = events[0..m]
+  previousCheckpointId = Checkpoint N.id</pre>
+    <p>
+      Summarizer 只接收 previous summary 与 newly folded events；已被覆盖的 raw events
+      不会再次送给 LLM。新 checkpoint 则对完整 covered prefix 重算 coverage 与
+      <code>sourceDigest</code>。关键提交点是
+      <code>history_compact_checkpoint_recorded</code>——新 summary 只有在 durable recorder
+      成功之后，才能作为 replacement 进入同一次 provider request。
+    </p>
+    <p>
+      Coverage 必须是<strong>有序前缀</strong>，不是任意事件集合的搜索摘要。前缀约束让 replay
+      变成 <code>checkpoint + uncovered raw suffix</code>，让 high water 单调可比较，也让 rolling
+      能明确 newly folded 是哪些事件。prefix / digest 任一失败 → 拒绝 checkpoint，而不是「看起来像同一段历史」。
+    </p>
+  </Section>
+
+  <Section
+    id="kinds"
+    label="§03 · Boundaries"
+    title="不要把三种 compact 混成一个功能"
+    lede="它们都缩小 provider messages，但 source、生命周期与 durability 强度不同。"
+  >
+    <DiagramFigure
+      caption="图 3 · History LLM compaction（本章）≠ Active prune（§02）≠ semanticCompact（注意力整形）。"
+      alt="三列对照：History LLM compaction、Active Tool Result Prune、semanticCompact attention shaping。"
+    >
+      <CompactKindsFlow />
+    </DiagramFigure>
+
+    <p>
+      承接 §02：active prune 改写的是当前 Turn 的 provider-visible tool result 表示，raw
+      先归档，证据层不删。本章主体是 prior-history LLM compaction——Turn 之间构建 prior history
+      时，用 V2 checkpoint 替代旧事件前缀。
+      <code>semanticCompact</code> 是 mid-turn attention shaping，recorder 多为
+      best-effort，<strong>不等于</strong>「durable append 成功后才进入 replay」的 V2 history
+      checkpoint 协议。
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§03 · Failure"
+    title="宁可少看，也不要看一份假历史"
+    lede="Fail open to a safe source-derived context, not to an invented summary."
+  >
+    <ul class="plain-list">
+      <li>LLM 返回空 summary → 不记录新 checkpoint；初次 compact 只保留安全 raw tail。</li>
+      <li>
+        Rolling summarizer 失败 → 若旧 checkpoint 仍匹配且合身，可复用并拼接能容纳的最新完整 raw
+        Turns；<strong>绝不</strong>扩大旧 checkpoint 的 coverage claim。
+      </li>
+      <li>Durable append 失败 → 不使用 candidate；未提交 projection 不得进入模型后再声称可恢复。</li>
+      <li>Prefix / digest 不匹配或超出当前 budget → 拒绝 replay；历史上合法 ≠ 当前可用。</li>
+      <li>Bounded projection 损坏 → 从 canonical AgentRun ledger 扫描恢复；缓存不是唯一事实源。</li>
+    </ul>
     <div class="stub">
-      <p class="stub__tag">Stub · 待展开</p>
+      <p class="stub__tag">Current · V2 优先</p>
       <p>
-        计划：token 预算面积图 + 压缩前后 Provider messages 对照；标注触发条件与「留什么 /
-        丢什么」。
+        V2 ledger-backed <code>HistoryCompactCheckpoint</code> 是首选主路径；V1 artifact-backed
+        <code>HistoryCompactBlock</code> 仍作只读兼容。教学以投影不变量为中心，不把默认 token
+        数字写成协议常量。
       </p>
     </div>
   </Section>
+
+  <Section
+    id="not"
+    label="§03 · Not"
+    title="Compaction 不是什么"
+    lede="划清边界，避免把摘要抬成记忆、删除或官方结论。"
+  >
+    <ul class="plain-list">
+      <li><strong>不是 Memory</strong> — 服务当前 Session continuation，不是跨 Session 知识库。</li>
+      <li><strong>不是删除历史</strong> — covered events 只离开本次 working set，不离开 canonical ledger。</li>
+      <li><strong>不是语义无损</strong> — digest 证明覆盖哪段 source，不证明 summary 无遗漏。</li>
+      <li><strong>不是 bit-exact replay</strong> — 可重建语义来源，不保证逐字相同 summary。</li>
+      <li><strong>不是官方结论</strong> — summary 里的「测试已通过」仍只是概括；authority 在 source / verifier / terminal fact（见 §05）。</li>
+    </ul>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>已有：章首关键图（日志→checkpoint→request）+ high-water 流图 + 三种 compact 对照</li>
+      <li>
+        已有：演进旁注
+        <a href="/history/pr/772">maka:pr:772</a>
+        及关联 PR
+      </li>
+      <li>待补：更多体量流程（冷启动恢复、manual compact lifecycle）；全文 EN 同船</li>
+      <li>本页不标 checklist 完成</li>
+    </ul>
+  </div>
 </ChapterShell>
+
+<style>
+  .figure-note {
+    margin: -0.35rem 0 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 38em;
+  }
+
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+</style>

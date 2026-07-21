@@ -1,0 +1,227 @@
+---
+/**
+ * §03 specimen keystone — scene-local metaphor: Events Log → durable checkpoint → provider request.
+ * Visual system (tokens / hand SVG / reduced-motion) is fixed; metaphors are not.
+ */
+---
+
+<svg
+  class="compact-projection"
+  viewBox="0 0 868 372"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="cp-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="cp-kicker cp-stage cp-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §03 · COMPACTION IS A PROJECTION
+  </text>
+  <text class="cp-title cp-stage cp-stage--0" x="8" y="52" fill="var(--ink)">
+    Canonical log → durable view → ephemeral request
+  </text>
+  <line
+    class="cp-stage cp-stage--0"
+    x1="8"
+    y1="70"
+    x2="860"
+    y2="70"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Connectors: log fans to checkpoint + raw tail, both into materialize -->
+  <g class="cp-connectors cp-stage cp-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <path d="M 196 148 C 230 148, 250 118, 284 118" marker-end="url(#cp-arrow)"></path>
+    <path d="M 196 148 C 230 148, 250 188, 284 188" marker-end="url(#cp-arrow)"></path>
+    <line x1="476" y1="118" x2="520" y2="148" marker-end="url(#cp-arrow)"></line>
+    <line x1="476" y1="188" x2="520" y2="148" marker-end="url(#cp-arrow)"></line>
+    <line x1="668" y1="148" x2="712" y2="148" marker-end="url(#cp-arrow)"></line>
+  </g>
+
+  <!-- 01 Runtime Events Log -->
+  <g class="cp-node cp-stage cp-stage--1" transform="translate(8,98)">
+    <rect width="188" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="188" height="2" fill="var(--accent)"></rect>
+    <text class="cp-node__idx" x="14" y="28" fill="var(--accent)">01</text>
+    <text class="cp-node__name" x="14" y="52" fill="var(--ink)">Runtime Events</text>
+    <text class="cp-node__name" x="14" y="70" fill="var(--ink)">Log</text>
+    <text class="cp-node__hint" x="14" y="90" fill="var(--mute)">canonical · immutable</text>
+  </g>
+
+  <!-- 02 Checkpoint -->
+  <g class="cp-node cp-stage cp-stage--2" transform="translate(284,78)">
+    <rect width="192" height="80" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="192" height="2" fill="var(--accent)"></rect>
+    <text class="cp-node__idx" x="14" y="26" fill="var(--accent)">02</text>
+    <text class="cp-node__name" x="14" y="48" fill="var(--ink)">HistoryCompact</text>
+    <text class="cp-node__name" x="14" y="66" fill="var(--ink)">Checkpoint</text>
+  </g>
+
+  <!-- 03 Raw tail -->
+  <g class="cp-node cp-stage cp-stage--2" transform="translate(284,168)">
+    <rect width="192" height="80" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="192" height="2" fill="var(--accent)"></rect>
+    <text class="cp-node__idx" x="14" y="26" fill="var(--accent)">03</text>
+    <text class="cp-node__name" x="14" y="48" fill="var(--ink)">Recent raw</text>
+    <text class="cp-node__name" x="14" y="66" fill="var(--ink)">Events tail</text>
+  </g>
+
+  <!-- 04 Materialize -->
+  <g class="cp-node cp-stage cp-stage--3" transform="translate(520,108)">
+    <rect width="148" height="80" rx="1" fill="var(--soft)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="cp-node__idx" x="14" y="26" fill="var(--accent)">04</text>
+    <text class="cp-node__name" x="14" y="48" fill="var(--ink)">Materialize</text>
+    <text class="cp-node__hint" x="14" y="70" fill="var(--mute)">policy + budget</text>
+  </g>
+
+  <!-- 05 Provider request — ephemeral -->
+  <g class="cp-node cp-node--ephemeral cp-stage cp-stage--4" transform="translate(712,108)">
+    <rect
+      width="148"
+      height="80"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-width="1"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="cp-node__idx" x="14" y="26" fill="var(--accent)">05</text>
+    <text class="cp-node__name" x="14" y="48" fill="var(--ink)">Provider</text>
+    <text class="cp-node__name" x="14" y="66" fill="var(--ink)">request</text>
+  </g>
+
+  <!-- Band labels -->
+  <g class="cp-bands cp-stage cp-stage--4">
+    <line x1="8" y1="268" x2="476" y2="268" stroke="var(--hair)" stroke-width="1"></line>
+    <line x1="520" y1="268" x2="860" y2="268" stroke="var(--accent)" stroke-width="1" opacity="0.45"></line>
+    <text class="cp-band" x="8" y="286" fill="var(--mute)">01 source facts · 02 durable projection · 03 uncovered raw</text>
+    <text class="cp-band cp-band--accent" x="520" y="286" fill="var(--accent)">04–05 ephemeral working set</text>
+  </g>
+
+  <!-- Invariant callout -->
+  <g class="cp-callout cp-stage cp-stage--5" transform="translate(8,304)">
+    <rect width="852" height="52" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="3" height="52" fill="var(--accent)"></rect>
+    <text class="cp-callout__label" x="20" y="22" fill="var(--accent)">INVARIANT</text>
+    <text class="cp-callout__body" x="20" y="42" fill="var(--ink)">
+      Compaction projects the log — it never mutates or deletes canonical RuntimeEvents.
+    </text>
+  </g>
+</svg>
+
+<style>
+  .compact-projection {
+    font-family: var(--sans);
+  }
+
+  .cp-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+
+  .cp-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .cp-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .cp-node__name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .cp-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+
+  .cp-band {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .cp-band--accent {
+    letter-spacing: 0.05em;
+  }
+
+  .cp-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .cp-callout__body {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cp-stage {
+      opacity: 0;
+      animation: cp-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .cp-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .cp-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .cp-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .cp-stage--3 {
+      animation-delay: 0.42s;
+    }
+    .cp-stage--4 {
+      animation-delay: 0.56s;
+    }
+    .cp-stage--5 {
+      animation-delay: 0.72s;
+    }
+
+    @keyframes cp-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cp-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
