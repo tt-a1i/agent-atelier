@@ -49,13 +49,13 @@ const copy =
         tocLabel: "Six chapters",
         tocTitle: "Chapter index",
         tocLede:
-          "Routes match Maka ARCHITECTURE English titles 1:1. Chapters marked Done have passed the acceptance checklist hard gate on both locales.",
+          "Routes match Maka ARCHITECTURE English titles 1:1. Done = structure hard gate (necessary, not sufficient). Mechanism depth is a separate pass — in progress.",
         tracksLabel: "Dual track",
         tracksTitle: "Cognitive track and history track",
         tracksLede:
-          "Milestones teach structure; full commit/PR lineage lives at /history.",
+          "Milestones teach structure and protocols; full commit/PR lineage lives at /history.",
         tracksBody:
-          "The cognitive track advances through six milestone chapters instead of dumping every commit into the TOC. To ask when a mechanism matured, open /history (PR-first snapshot) or follow sparse in-chapter evolution asides.",
+          "The cognitive track advances through six milestone chapters instead of dumping every commit into the TOC. To ask when a mechanism matured, open /history (PR-first snapshot) or follow sparse in-chapter evolution asides. Depth mining now covers the whole maka-agent corpus (docs + design-bearing code), not only the six ARCHITECTURE essays.",
         pull: "This site is for readers who want to understand how an Agent keeps its ledger, thins context, reviews failure, and improves in a falsifiable way — not only how to call an API.",
         pathsLabel: "Reading paths",
         pathsTitle: "Choose a path by problem",
@@ -65,20 +65,22 @@ const copy =
         dualAlt:
           "Two columns: Cognitive track §01–§06 milestones versus History track /history archive with PR-first filters and cross-links.",
         wipNote: allChaptersDone
-          ? "§01–§06 meet the hard gate (narrative, keystone+flows, asides, a11y, bilingual, chrome). /history is PR-first with nested member commits and an unlinked-commit bucket."
+          ? "Structure hard gate green for §01–§06. Depth pass in progress: protocol rewrites landed for prune / compaction / request-shape / TaskRun / self-check / AHE; corpus-wide dig (sandbox, computer-use, recovery, ledgers, …) still open — see map #34."
           : "Acceptance checklist is a hard gate. TOC WIP means unfinished — not a completed curriculum.",
+        depthNote:
+          "Already deepened: §01 spine + #request-shape cost diagnostics; §02 prune/evidence protocol; §03 compaction projection; §04–§06 TaskRun / self-check / AHE boundary. Still empty or thin vs full maka corpus: sandbox Seatbelt, computer-use contracts, recovery failpoints, session task ledger ≠ TaskRun, MCP/swarm/skills, storage/shell stacks.",
         paths: [
           {
             title: "First time in the Runtime",
-            body: "Read §01 → §02 → §03. Facts, then tool evidence, then history projection.",
+            body: "Read §01 → §02 → §03. Facts, then tool evidence, then history projection. Inside §01, do not skip #request-shape (cache / prefixHash).",
           },
           {
-            title: "Tool, context, or compaction",
-            body: "Start at §01 for the fact boundary, then §02 → §03. Add §04 if long-running tasks consume the evidence.",
+            title: "Tool, context, compaction, or cost",
+            body: "§01 (#request-shape) → §02 → §03. Prune/compact change provider-visible shape; cost attribution lives in §01.",
           },
           {
             title: "Headless, Self-check, or AHE",
-            body: "§01 → §04 (fuller Hybrid bridge) → §05 → §06. §05–§06 stay lean and checklist-complete; depth via /history asides.",
+            body: "§01 → §04 → §05 → §06. All six are in the even-depth pass — not Hybrid-lean stubs. Corpus seams beyond these essays are still being mined.",
           },
         ],
       }
@@ -99,12 +101,12 @@ const copy =
         tocLabel: "六章",
         tocTitle: "六章索引",
         tocLede:
-          "路由与 Maka ARCHITECTURE 英文章名 1:1；标「完成」的章节已在中英双语通过验收清单硬闸门。",
+          "路由与 Maka ARCHITECTURE 英文章名 1:1。「完成」= 结构硬闸门（必要但不充分）。机制深度是另一条关卡——进行中。",
         tracksLabel: "双轨",
         tracksTitle: "认知轨与演进轨",
-        tracksLede: "里程碑讲透结构；完整 commit/PR 谱系在 /history。",
+        tracksLede: "里程碑讲结构与协议；完整 commit/PR 谱系在 /history。",
         tracksBody:
-          "认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入 /history（PR-first 快照），或在章内稀疏的演进旁注中跳转。",
+          "认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入 /history（PR-first 快照），或在章内稀疏的演进旁注中跳转。深度挖掘范围已抬到整个 maka-agent 语料（文档 + 设计代码），不止六篇 ARCHITECTURE 章。",
         pull: "目标读者不是「只会调 API 的人」，而是想弄清 Agent 内部账本怎么记、上下文怎么瘦、失败怎么复盘、系统如何可证伪地改进的人。",
         pathsLabel: "阅读路径",
         pathsTitle: "按问题选择阅读路径",
@@ -114,23 +116,27 @@ const copy =
         dualAlt:
           "两列对照：认知轨 §01–§06 里程碑，与演进轨 /history 档案（PR-first、筛选、交叉引用）。",
         wipNote: allChaptersDone
-          ? "§01–§06 已过硬闸门（叙事、关键图+体量流、旁注预算、无障碍、双语、chrome）。/history 为 PR-first，含嵌套成员 commit 与未关联提交桶。"
+          ? "结构硬闸门已绿。深度关卡进行中：prune / compaction / request-shape / TaskRun / self-check / AHE 协议重写已上线；语料级深挖（sandbox、computer-use、recovery、ledgers…）仍开放——见 map #34。"
           : "验收清单是硬闸门。目录上的 WIP 表示未完成，不是已结业课程。",
+        depthNote:
+          "已加深：§01 主链 + #request-shape 成本诊断；§02 prune/证据协议；§03 compaction 投影；§04–§06 TaskRun / self-check / AHE 边界。相对完整 maka 语料仍空/薄：Seatbelt 沙箱、computer-use 合同、recovery failpoint、session task ledger≠TaskRun、MCP/swarm/skills、storage/shell 栈。",
         paths: [
           {
             title: "第一次进入 Runtime",
-            body: "按 §01 → §02 → §03。先事实日志，再工具证据，再历史投影。",
+            body: "按 §01 → §02 → §03。先事实日志，再工具证据，再历史投影。§01 内不要跳过 #request-shape（cache / prefixHash）。",
           },
           {
-            title: "改 Tool、上下文或 Compaction",
-            body: "先读 §01 立事实边界，再读 §02 → §03；若影响长程任务证据消费，补 §04。",
+            title: "改 Tool、上下文、Compaction 或成本",
+            body: "§01（#request-shape）→ §02 → §03。prune/compact 改变 provider-visible shape；成本归因在 §01。",
           },
           {
             title: "改 Headless、Self-check 或 AHE",
-            body: "§01 → §04（Hybrid 加厚桥）→ §05 → §06。§05–§06 保持 lean 且清单完整；更深细节走 /history 旁注。",
+            body: "§01 → §04 → §05 → §06。六章都在 even-depth 关卡内——不是 Hybrid lean stubs。章外语料缝仍在挖掘。",
           },
         ],
       };
+
+const requestShapeHref = `${chapterHref("01-log-is-the-runtime", locale)}#request-shape`;
 ---
 
 <ReportLayout
@@ -248,25 +254,14 @@ const copy =
       <DiagramFigure caption={copy.dualCaption} alt={copy.dualAlt}>
         <EntryDualTrackFlow />
       </DiagramFigure>
-      <p>
-        {
-          locale === "en" ? (
-            <span>
-              The cognitive track advances through six milestone chapters instead of dumping every
-              commit into the TOC. To ask when a mechanism matured, open{" "}
-              <a href={historyHref}>/history</a> (PR-first snapshot) or follow sparse in-chapter
-              evolution asides.
-            </span>
-          ) : (
-            <span>
-              认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入
-              <a href={historyHref}>/history</a>
-              （PR-first 快照），或在章内稀疏的演进旁注中跳转。
-            </span>
-          )
-        }
-      </p>
+      <p>{copy.tracksBody}</p>
       <p class="entry-wip-note">{copy.wipNote}</p>
+      <p class="entry-depth-note">
+        {copy.depthNote}{" "}
+        <a href={requestShapeHref}>§01 · #request-shape</a>
+        {" · "}
+        <a href={historyHref}>/history</a>
+      </p>
       <blockquote class="pull">{copy.pull}</blockquote>
     </Section>
   </article>
@@ -440,13 +435,18 @@ const copy =
     max-width: 40em;
   }
 
-  .entry-wip-note {
+  .entry-wip-note,
+  .entry-depth-note {
     margin: 1rem 0 0;
-    max-width: 40em;
+    max-width: 42em;
     font-family: var(--mono);
     font-size: 0.78rem;
     line-height: 1.55;
     color: var(--mute);
+  }
+
+  .entry-depth-note {
+    color: var(--ink);
   }
 
   @media (max-width: 640px) {
