@@ -1,5 +1,6 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import { localePath } from "../../../lib/i18n";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeystone.astro";
@@ -118,9 +119,9 @@ Long task progress
       <p class="history-aside__tag">History aside</p>
       <p>
         Task ledger / Headless orchestration mechanisms:
-        <a href={`${import.meta.env.BASE_URL}en/history/pr/567`}>maka:pr:567</a>. Architecture chapter
+        <a href={localePath("en", "history/pr/567")}>maka:pr:567</a>. Architecture chapter
         land:
-        <a href={`${import.meta.env.BASE_URL}en/history/pr/773`}>maka:pr:773</a>
+        <a href={localePath("en", "history/pr/773")}>maka:pr:773</a>
         (docs: durable task loop chapter).
       </p>
     </aside>
@@ -476,8 +477,8 @@ Long task progress
     <ul class="outline-list">
       <li>Keystone + durable boundary + Attempt + three budgets + park/grant + Target checkpoint</li>
       <li>Three continuations (Harbor Turn / Autonomous Attempt / parked CLI) kept semantically distinct</li>
-      <li>History asides <a href={`${import.meta.env.BASE_URL}en/history/pr/567`}>maka:pr:567</a> ·
-        <a href={`${import.meta.env.BASE_URL}en/history/pr/773`}>maka:pr:773</a></li>
+      <li>History asides <a href={localePath("en", "history/pr/567")}>maka:pr:567</a> ·
+        <a href={localePath("en", "history/pr/773")}>maka:pr:773</a></li>
       <li>Current ledger vs Target cross-process takeover: field-level invariants written (CN+EN ship together)</li>
     </ul>
   </div>

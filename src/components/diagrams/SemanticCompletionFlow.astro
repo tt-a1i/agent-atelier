@@ -1,0 +1,86 @@
+---
+/**
+ * §05 protocol — semantic complete requires multiple gates; always advisory.
+ */
+---
+
+<svg
+  class="sc-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="sc-kicker sc-stage sc-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · SEMANTIC COMPLETE · ALL GATES · ADVISORY=TRUE
+  </text>
+  <line class="sc-stage sc-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="sc-stage sc-stage--1" transform="translate(8,52)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sc-idx" x="10" y="24" fill="var(--accent)">1</text>
+    <text class="sc-line" x="10" y="52" fill="var(--ink)">accepted public</text>
+    <text class="sc-line" x="10" y="72" fill="var(--ink)">self-check = pass</text>
+  </g>
+  <path class="sc-stage sc-stage--1" d="M176 96 H196" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#sc-arrow)"></path>
+
+  <g class="sc-stage sc-stage--2" transform="translate(204,52)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sc-idx" x="10" y="24" fill="var(--accent)">2</text>
+    <text class="sc-line" x="10" y="52" fill="var(--ink)">sandbox +</text>
+    <text class="sc-line" x="10" y="72" fill="var(--ink)">workspace guard</text>
+  </g>
+  <path class="sc-stage sc-stage--2" d="M372 96 H392" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#sc-arrow)"></path>
+
+  <g class="sc-stage sc-stage--3" transform="translate(400,52)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sc-idx" x="10" y="24" fill="var(--accent)">3</text>
+    <text class="sc-line" x="10" y="52" fill="var(--ink)">plan audit clean</text>
+    <text class="sc-line" x="10" y="72" fill="var(--mute)">no scratch escape</text>
+  </g>
+  <path class="sc-stage sc-stage--3" d="M568 96 H588" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#sc-arrow)"></path>
+
+  <g class="sc-stage sc-stage--4" transform="translate(596,52)">
+    <rect width="264" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sc-idx" x="10" y="24" fill="var(--accent)">4</text>
+    <text class="sc-line" x="10" y="52" fill="var(--ink)">todos + phase gates</text>
+    <text class="sc-line" x="10" y="72" fill="var(--mute)">runnable · public_check</text>
+  </g>
+
+  <path class="sc-stage sc-stage--5" d="M434 148 V176" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#sc-arrow)"></path>
+
+  <g class="sc-stage sc-stage--5" transform="translate(196,184)">
+    <rect width="476" height="96" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="476" height="2" fill="var(--accent)"></rect>
+    <text class="sc-title" x="16" y="34" fill="var(--ink)">Semantic complete · advisory=true</text>
+    <text class="sc-line" x="16" y="64" fill="var(--mute)">any blocker → incomplete · pass string alone never enough</text>
+    <text class="sc-line" x="16" y="84" fill="var(--mute)">never upgrades to independent authority</text>
+  </g>
+
+  <defs>
+    <marker id="sc-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .sc-flow { font-family: var(--sans); }
+  .sc-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .sc-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .sc-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .sc-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .sc-stage { opacity: 0; animation: sc-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .sc-stage--0 { animation-delay: 0.04s; }
+    .sc-stage--1 { animation-delay: 0.14s; }
+    .sc-stage--2 { animation-delay: 0.24s; }
+    .sc-stage--3 { animation-delay: 0.34s; }
+    .sc-stage--4 { animation-delay: 0.44s; }
+    .sc-stage--5 { animation-delay: 0.56s; }
+    @keyframes sc-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sc-stage { opacity: 1; animation: none; }
+  }
+</style>

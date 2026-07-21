@@ -1,0 +1,75 @@
+---
+/**
+ * §05 failure matrix — plan consistency audit risk flags for strong pass.
+ */
+---
+
+<svg
+  class="pa-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="pa-kicker pa-stage pa-stage--0" x="8" y="20" fill="var(--accent)">
+    MATRIX · PLAN CONSISTENCY AUDIT · STRONG-PASS BLOCKERS
+  </text>
+  <line class="pa-stage pa-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="pa-col pa-stage pa-stage--1" transform="translate(8,52)">
+    <rect width="200" height="168" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="pa-idx" x="12" y="28" fill="var(--accent)">BLOCK</text>
+    <text class="pa-title" x="12" y="56" fill="var(--ink)">missing plan</text>
+    <text class="pa-line" x="12" y="90" fill="var(--mute)">no accepted plan</text>
+    <text class="pa-line" x="12" y="114" fill="var(--mute)">pass cannot be strong</text>
+    <text class="pa-line" x="12" y="148" fill="var(--ink)">deferred enforcement</text>
+  </g>
+  <g class="pa-col pa-stage pa-stage--2" transform="translate(224,52)">
+    <rect width="200" height="168" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="pa-idx" x="12" y="28" fill="var(--accent)">BLOCK</text>
+    <text class="pa-title" x="12" y="56" fill="var(--ink)">unplanned path</text>
+    <text class="pa-line" x="12" y="90" fill="var(--mute)">guard saw new path</text>
+    <text class="pa-line" x="12" y="114" fill="var(--mute)">not in plan</text>
+    <text class="pa-line" x="12" y="148" fill="var(--ink)">≠ automatic deliverable</text>
+  </g>
+  <g class="pa-col pa-stage pa-stage--3" transform="translate(440,52)">
+    <rect width="200" height="168" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="pa-idx" x="12" y="28" fill="var(--accent)">BLOCK</text>
+    <text class="pa-title" x="12" y="56" fill="var(--ink)">scratch escape</text>
+    <text class="pa-line" x="12" y="90" fill="var(--mute)">generated outside</text>
+    <text class="pa-line" x="12" y="114" fill="var(--mute)">scratch / allowed</text>
+    <text class="pa-line" x="12" y="148" fill="var(--ink)">hygiene fails</text>
+  </g>
+  <g class="pa-col pa-stage pa-stage--4" transform="translate(656,52)">
+    <rect width="204" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="204" height="2" fill="var(--accent)" opacity="0.5"></rect>
+    <text class="pa-idx" x="12" y="28" fill="var(--accent)">OK / DIAG</text>
+    <text class="pa-title" x="12" y="56" fill="var(--ink)">planned artifact</text>
+    <text class="pa-line" x="12" y="90" fill="var(--mute)">declared final path</text>
+    <text class="pa-line" x="12" y="114" fill="var(--mute)">added as expected</text>
+    <text class="pa-line" x="12" y="148" fill="var(--ink)">not pollution</text>
+  </g>
+</svg>
+
+<style>
+  .pa-flow { font-family: var(--sans); }
+  .pa-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .pa-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .pa-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .pa-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pa-stage { opacity: 0; animation: pa-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .pa-stage--0 { animation-delay: 0.04s; }
+    .pa-stage--1 { animation-delay: 0.14s; }
+    .pa-stage--2 { animation-delay: 0.26s; }
+    .pa-stage--3 { animation-delay: 0.38s; }
+    .pa-stage--4 { animation-delay: 0.5s; }
+    @keyframes pa-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pa-stage { opacity: 1; animation: none; }
+  }
+</style>

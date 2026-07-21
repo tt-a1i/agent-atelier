@@ -7,13 +7,17 @@ import SelfCheckKeystone from "../../../components/diagrams/SelfCheckKeystone.as
 import RepairBudgetFlow from "../../../components/diagrams/RepairBudgetFlow.astro";
 import AuthoritySplitFlow from "../../../components/diagrams/AuthoritySplitFlow.astro";
 import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceFlow.astro";
+import SemanticCompletionFlow from "../../../components/diagrams/SemanticCompletionFlow.astro";
+import PlanAuditRiskFlow from "../../../components/diagrams/PlanAuditRiskFlow.astro";
 ---
 
 <ChapterShell chapterId="05" locale="en">
   <div slot="thesis">
     <p>
-      An Agent may inspect its own output, but must not write “I think I’m done” as final authority.
-      Self-check is a bounded feedback loop: it helps repair; it does not take over facts. Key line:
+      How can Maka let an Agent inspect its own work, find gaps, and attempt repair — without letting
+      “I checked” become self-authorization? Not by asking the model “are you sure?”, but by organizing
+      Self-check as a planned, public-evidence, hygiene-aware, durable, repair-capped feedback loop. Key
+      line:
       <strong>Self-check can produce evidence and feedback; it cannot manufacture trust.</strong>
     </p>
   </div>
@@ -21,18 +25,19 @@ import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceF
   <Section
     id="scene"
     label="§05 · Scene"
-    title="Start from “I’ve already checked”"
-    lede="Free-form reflection restates intent; unbounded check–fix becomes a second Agent loop without budget."
+    title="Start from “I already checked”"
+    lede="Free reflection restates intent; unbounded check–repair becomes a second Agent loop without budget."
   >
     <p>
-      Suppose after a complex migration the Agent replies “done — the code should work.” It has not
-      answered: which final artifacts were checked, which public commands ran, exit codes, whether
-      temporary output stayed in scratch, whether the final workspace was polluted, whether new files
-      are planned deliverables or accidental side effects, whether evidence came only from public task
-      materials, and how many repair rounds failure allows.
+      Suppose the Agent finishes a complex migration and replies “done — the code should work.” That
+      sentence has almost no engineering value. It does not answer: which final artifacts were checked,
+      which public commands ran, what exit codes were, whether temp output stayed in scratch, whether
+      the final workspace was polluted, whether new files were planned deliverables or accidents,
+      whether evidence came only from public task material, or how many repairs are allowed after
+      failure.
     </p>
     <blockquote class="pull">
-      How do you give the model a chance to discover its own mistakes while putting self-check inputs,
+      How do we give the model a chance to find its own mistakes, while putting self-check inputs,
       evidence, side effects, and retry counts into a protocol the Runtime can inspect?
     </blockquote>
   </Section>
@@ -45,58 +50,73 @@ import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceF
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · Plan → Evidence → Source Guard → Semantic gate → bounded repair; the model cannot grant infinite self-proof."
-      alt="Five-step feedback plane: Plan, Evidence, Source Guard, Semantic gate, Bounded repair; invariant: Self-check produces evidence and feedback, not trust."
+      caption="Fig. 1 · Plan → Evidence → Source Guard → Semantic gate → bounded repair; the model cannot decide infinite self-proof."
+      alt="Five-step feedback plane: Plan, Evidence, Source Guard, Semantic gate, Bounded repair; invariant: Self-check cannot manufacture trust."
     >
       <SelfCheckKeystone />
     </DiagramFigure>
 
     <ul class="plain-list">
-      <li>
-        <strong>Self-check Plan</strong> — what to check and where temporary output goes (model
-        submits; Runtime admits)
-      </li>
-      <li><strong>Public Evidence</strong> — what was actually executed or observed (with source refs)</li>
-      <li>
-        <strong>Source Guard</strong> — whether only public task materials are cited (deterministic policy)
-      </li>
-      <li>
-        <strong>Hygiene / Consistency Audit</strong> — whether work left scratch or produced unplanned side effects
-      </li>
-      <li>
-        <strong>Repair Gate</strong> — whether one extra check/repair Turn is allowed (capped)
-      </li>
+      <li><strong>Self-check Plan</strong> — what to check and where temp output goes (model submits; Runtime admits)</li>
+      <li><strong>Public Evidence</strong> — what was actually run or observed (with source refs)</li>
+      <li><strong>Source Guard</strong> — whether strings cite only public task material (deterministic policy)</li>
+      <li><strong>Hygiene / Consistency Audit</strong> — scratch escape and unplanned side effects</li>
+      <li><strong>Repair Gate</strong> — whether one extra check/repair Turn is allowed (hard cap)</li>
     </ul>
+    <DiagramFigure
+      caption="Fig. 2 · Model reports · Runtime admits · official truth lives elsewhere."
+      alt="Three columns: Model advisory, Runtime gates, Authority elsewhere."
+    >
+      <AuthoritySplitFlow />
+    </DiagramFigure>
   </Section>
 
   <Section
     id="plan"
     label="§05 · Plan"
     title="Why a Self-check Plan must come first"
-    lede="Checking itself has side effects; post-hoc rationalization cannot distinguish prior intent."
+    lede="Checks produce side effects; post-hoc rationalization cannot substitute for a prior plan."
   >
     <DiagramFigure
-      caption="Fig. 4 · Plan submit → Runtime admit → Evidence submit → Strong pass?; missing plan can block."
+      caption="Fig. 3 · Plan submit → Runtime admit → Evidence submit → Strong pass?; missing plan can block a strong pass."
       alt="Four steps: Plan submit, Runtime admit, Evidence submit, Strong pass."
     >
       <PlanThenEvidenceFlow />
     </DiagramFigure>
     <p>
-      Compiles may write object files; scripts may overwrite deliverables; “verification output” may
+      Compiles write object files; scripts may overwrite deliverables; even a “verification output” can
       change the workspace listing. If the Agent only explains “those files were temporary” after the
-      check, Runtime cannot tell prior plan from post-hoc story. Hence
-      <code>self_check_plan_submit</code> first: declare finalArtifacts, selfCheckScratch,
-      workspaceGuardPlan — a stable baseline for later audit. Without a plan, facts may still enter
-      Task Events, but a strong pass gate can block with <code>missing_self_check_plan</code> — the
-      tool layer may record; the gate layer decides whether semantic completion is supported.
+      check, Runtime cannot tell prior plan from after-the-fact story. Hence
+      <code>self_check_plan_submit</code> declares three groups:
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>finalArtifacts</strong> (at least one) — <code>path</code> / <code>purpose</code> /
+        <code>publicReason</code>
+      </li>
+      <li>
+        <strong>selfCheckScratch</strong> — scratch root, optional expected generated paths, public
+        reason (gate prompts often recommend <code>/tmp/maka-self-check/...</code>)
+      </li>
+      <li>
+        <strong>workspaceGuardPlan</strong> — which paths will be checked, which additions are expected,
+        which generated paths may appear outside scratch, and why that fits the task
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="Plan as audit baseline">observed change
+  → compare with accepted plan
+  → planned final artifact, expected output, or unexplained side effect?</pre>
+    <p>
+      Without a plan, facts may still be recorded into Task Events, but the strong-pass gate blocks with
+      <code>missing_self_check_plan</code> — the tool layer may record; the gate decides whether semantic
+      completion is supported (deferred enforcement).
     </p>
     <aside class="history-aside">
-      <p class="history-aside__tag">Evolution aside</p>
+      <p class="history-aside__tag">History aside</p>
       <p>
-        Self-check architecture chapter land:
-        <a href={`${localePath("en", "history/pr/774")}`}>maka:pr:774</a>
-        (docs: add self-check architecture chapter). Later evidence-freshness binding:
-        <a href={`${localePath("en", "history/pr/954")}`}>maka:pr:954</a>.
+        Self-check architecture chapter:
+        <a href={localePath("en", "history/pr/774")}>maka:pr:774</a>. Later freshness tightening:
+        <a href={localePath("en", "history/pr/954")}>maka:pr:954</a>.
       </p>
     </aside>
   </Section>
@@ -104,71 +124,254 @@ import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceF
   <Section
     id="schema"
     label="§05 · Schema"
-    title="Make Self-check a finite object first"
-    lede="Schema solves persistence and prompt safety; it does not alone prove evidence authenticity."
+    title="Make Self-check a bounded object first"
+    lede="Schema solves persistability and prompt safety; it alone does not prove evidence authenticity."
   >
-    <DiagramFigure
-      caption="Fig. 2 · Model reports · Runtime admits · official truth lives elsewhere."
-      alt="Three columns: Model advisory, Runtime gates, Authority elsewhere."
-    >
-      <AuthoritySplitFlow />
-    </DiagramFigure>
+    <p>Current <code>self_check_submit</code> is not free text. Requirements include:</p>
+    <ul class="plain-list">
+      <li><code>status</code> is only <code>pass / fail / inconclusive</code></li>
+      <li><code>publicReason</code> non-empty, ≤ 2,000 characters</li>
+      <li>at least one command or artifact evidence item</li>
+      <li>command ≤ 1,000 chars; output excerpt ≤ 2,000 chars</li>
+      <li>≤ 25 command and ≤ 25 artifact evidence items; ≤ 20 artifact refs</li>
+      <li>path ≤ 500 chars; metadata ≤ 30 keys, depth depth ≤ 3, string values ≤ 500</li>
+    </ul>
     <p>
-      <code>self_check_submit</code> is not free text: status is only
-      <code>pass / fail / inconclusive</code>; publicReason is bounded; at least one command or
-      artifact evidence item; character/count caps on fields. Today many fields are model-submitted
-      tool args — schema blocks unbounded payloads but cannot alone prove a command truly ran or a
-      hash truly matches current bytes (Target: upgrade toward executor-owned, high-water-bound
-      evidence).
+      Command evidence may carry <code>command</code> / <code>exitCode?</code> / <code>timedOut?</code> /
+      <code>outputExcerpt?</code> / <code>artifactRefs?</code>. Artifact evidence may carry
+      <code>path</code> / <code>kind</code> / <code>exists?</code> / <code>sizeBytes?</code> /
+      <code>hash?</code> / bounded metadata. Fields are mostly model-submitted via tool args — schema
+      blocks unbounded payloads, but does not by itself prove a command ran or a hash matches current
+      bytes.
     </p>
-    <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
-      <p>
-        Current: Heavy-task Self-check is a strictly limited advisory mechanism, not an independent
-        proof of task correctness. Target: promote declarations to executor-owned evidence — do not
-        disguise as already shipped.
-      </p>
-    </div>
   </Section>
 
   <Section
-    id="authority"
-    label="§05 · Authority"
-    title="Chain authority back to facts"
-    lede="Completion must not listen only to self-narration; official conclusions live in logs, external acceptance, and terminal facts."
+    id="guard"
+    label="§05 · Source Guard"
+    title="What may enter the feedback loop"
+    lede="A lexical admission filter — not an access-control system, and not a complete information-flow proof."
+  >
+    <p>
+      <code>validateHeavyTaskPublicStrings()</code> walks nearly every string in plan and Self-check:
+      reason, command, output excerpt, artifact path, metadata, scratch path, workspace-guard commands,
+      and side-effect paths. Known lexical categories reject material such as: hidden tests /
+      references / artifacts; private thresholds or scoring criteria; raw assertion-derived
+      expected/actual; evaluator-only files; private/official execution details; private benchmark
+      identifiers.
+    </p>
+    <pre class="code-block" aria-label="Source Guard result">HeavyTaskSourceGuardResult
+  status: accepted | rejected
+  checkedAt
+  categories[]
+  publicReason</pre>
+    <p>
+      The recorder appends <code>heavy_task_self_check_plan_recorded</code> or
+      <code>heavy_task_self_check_recorded</code> only when the guard accepts. Projection re-runs
+      <code>isAcceptedHeavyTaskSelfCheck()</code>; old states that no longer pass the public guard are
+      ignored with a warning. The guard cannot stop an Agent that already has overly broad Tool access
+      from reading private files — isolation and tool exposure must be solved at earlier boundaries.
+    </p>
+  </Section>
+
+  <Section
+    id="hygiene"
+    label="§05 · Hygiene"
+    title="Execution Hygiene and Plan Consistency Audit"
+    lede="Check side effects are part of the protocol; planned artifacts ≠ accidental changes."
   >
     <DiagramFigure
-      caption="Fig. 3 · Gate fails → check repair budget → bounded Repair Turn → re-check; stop when the cap is exhausted."
+      caption="Fig. 4 · Plan-audit risks: missing plan / unplanned path / scratch escape block strong pass; planned artifact is diagnostic only."
+      alt="Four-column risk matrix: missing plan, unplanned path, scratch escape, planned artifact."
+    >
+      <PlanAuditRiskFlow />
+    </DiagramFigure>
+    <p>
+      <code>executionHygiene</code> reports sandbox root / strategy, cleanup,
+      <code>workspaceSideEffects</code> (<code>none | cleaned | present | unknown</code>), and workspace
+      guard (checked paths, before/after listing, added/modified/removed). Strong pass requires a
+      sandbox root and <code>workspaceGuard.checked === true</code>; non-empty
+      <code>remainingSideEffectPaths</code> always blocks. These fields are still mostly model-submitted
+      today — Runtime runs a consistency audit; it must not be treated as executor-signed filesystem
+      truth.
+    </p>
+    <p>
+      Main risk flags from <code>auditSelfCheckPlanConsistency()</code>:
+      <code>missing_self_check_plan</code> (blocks),
+      <code>planned_final_artifact_added</code> (does not block; diagnostic),
+      <code>unplanned_added_path</code> (blocks),
+      <code>scratch_escape</code> (blocks). Final artifacts are supposed to appear — not every workspace
+      delta is pollution — but “I happened to create a new file” does not automatically become a final
+      artifact. The difference is whether the plan came first and declared the path.
+    </p>
+  </Section>
+
+  <Section
+    id="observation"
+    label="§05 · Observation"
+    title="Machine Workspace Observation is neutral corroboration"
+    lede="A diagnostic listing — not a full workspace attestation."
+  >
+    <p>
+      Before the first gate evaluation, <code>TaskAgentController</code> may call
+      <code>observeHeavyTaskWorkspace()</code>: only with an isolated executor; roots from accepted-plan
+      final-artifact parents and Self-check checked paths; only <code>/app/...</code>; ≤ 12 roots; one
+      listing level per root; 30s command timeout; recorded as
+      <code>heavy_task_workspace_observation_recorded</code> with <code>source.kind=system</code>. It does
+      not read file bodies or compute a full manifest/hash. Today it does not alone block an otherwise
+      satisfying pass — diagnostic, not full attestation.
+    </p>
+  </Section>
+
+  <Section
+    id="semantic"
+    label="§05 · Semantic"
+    title="Semantic completion needs many conditions at once"
+    lede="status=pass is only one item; the final status always carries advisory=true."
+  >
+    <DiagramFigure
+      caption="Fig. 5 · Semantic-complete protocol: accepted pass → sandbox/guard → plan audit → todos/phase gates; any blocker → incomplete."
+      alt="Four gates feed semantic complete, labeled advisory=true."
+    >
+      <SemanticCompletionFlow />
+    </DiagramFigure>
+    <p>
+      <code>evaluateHeavyTaskCompletionStatus()</code> yields semantic complete only when all of the
+      following hold (teaching enumeration):
+    </p>
+    <ol class="plain-list numbered">
+      <li>Heavy-task mode enabled</li>
+      <li>Latest accepted public Self-check exists with status <code>pass</code></li>
+      <li>Sandbox execution evidence present; workspace guard executed</li>
+      <li>No uncleared or unplanned blocking workspace delta; plan consistent with evidence</li>
+      <li>Non-empty latest todos; all completed, or cancelled with nonblocking evidence</li>
+      <li>
+        Early phase-gate todos <code>runnable_artifact</code> and <code>public_check</code> both completed
+      </li>
+    </ol>
+    <p>
+      The gate derives an Acceptance Checklist from visible contracts (final artifacts, parse hints,
+      phase-gate todos, hygiene requirements) rather than inventing a hard contract from fragile NL
+      heuristics. Known limitation of required-artifact address checks: with multiple final artifacts,
+      hitting <strong>at least one</strong> path/basename in evidence text is enough — not yet
+      per-check all coverage (Target).
+    </p>
+  </Section>
+
+  <Section
+    id="repair"
+    label="§05 · Repair"
+    title="Bounded repair: allow correction, forbid infinite self-loops"
+    lede="maxRepairAttempts is fixed at 1; repair is a new Turn inside the same Attempt, not a new Task Attempt."
+  >
+    <DiagramFigure
+      caption="Fig. 6 · Gate fails → check repair budget → bounded Repair Turn → re-check; stop when the budget is spent."
       alt="Five steps: Gate fails, Budget check, Repair Turn, Re-check, Stop loop."
     >
       <RepairBudgetFlow />
     </DiagramFigure>
     <p>
-      Building on §02: evidence must not be pruned away, nor overwritten by a self-narration. Building
-      on §04: Self-check happens inside Attempt / Task loops under a repair budget. “Tests passed”
-      from the model is still a report over public materials; Source Guard rejects private materials
-      from feedback; when gates fail and budget is exhausted the self-check loop stops — it never
-      grants infinite self-authority.
+      <code>evaluateHeavyTaskSelfCheckGate()</code> yields
+      <code>allow</code> / <code>repair</code> / <code>cap reached</code>. Current
+      <code>TaskAgentController</code> sequence:
+    </p>
+    <ol class="plain-list numbered">
+      <li>Main Invocation ends</li>
+      <li>Record machine workspace observation</li>
+      <li>Evaluate gate; append <code>heavy_task_self_check_gate_recorded</code></li>
+      <li>
+        If action=repair: create a new Turn/AgentRun on the same Session / workspace; prompt includes
+        blocker, checklist, latest Self-check summary, and machine observation
+      </li>
+      <li>After the repair Turn, observe and gate again; repairAttemptsUsed=1 — no third Turn</li>
+    </ol>
+    <p>
+      Accepted plan / Self-check become Task Events, project to
+      <code>latestHeavyTaskSelfCheckPlan</code> / <code>latestHeavyTaskSelfCheck</code>, and enter the
+      bounded compact-evidence window (later Attempts typically render ~5 command and ~5 artifact
+      evidence items). Old Self-checks are not mutated — a new event only changes the latest
+      projection.
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§05 · Failure"
+    title="Missing evidence should lower confidence, not invent facts"
+    lede="Fail closed on admission; fail open on inventing success."
+  >
+    <ul class="plain-list">
+      <li>Invalid plan schema → validation error; no accepted plan; never “the model probably meant the same.”</li>
+      <li>Source guard rejected → no accepted Self-check append; sensitive content did not become public feedback.</li>
+      <li>No evidence → schema rejects; a <code>pass</code> string alone is not evidence.</li>
+      <li><code>fail/inconclusive</code> → semantic incomplete; may trigger one repair; need not fake pass.</li>
+      <li>Missing sandbox/guard, unplanned path, or scratch escape → strong pass blocked.</li>
+      <li>Machine observation failure → store error excerpt; observation failure ≠ workspace clean.</li>
+      <li>Still incomplete after repair → record final gate state; no infinite repair.</li>
+      <li>Replayed Self-check fails public revalidation → projection ignores it with a warning.</li>
+    </ul>
+    <div class="stub">
+      <p class="stub__tag">Current trust boundary</p>
+      <p>
+        Model-reported evidence is not yet executor-attested; freshness high water is missing (a
+        Write/Edit after Self-check may leave an old pass as latest); observation is one directory
+        level; source guard is a known-pattern set; artifact coverage is any, not all. Target:
+        RuntimeEvent/artifact-linked observations, workspace manifest diffs, per-check coverage,
+        mutation-stale conclusions, versioned repair policy (hard cap still Runtime-enforced).
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="not"
+    label="§05 · Not"
+    title="What Self-check is not"
+    lede="Draw the boundary so feedback is not sold as authority, an infinite loop, or workspace rollback."
+  >
+    <ul class="plain-list">
+      <li><strong>Not “think again”</strong> — reflection without plan / evidence / hygiene is not an accepted Self-check.</li>
+      <li><strong>Not a hidden information channel</strong> — only public task-derived facts.</li>
+      <li><strong>Not an infinite repair loop</strong> — at most one extra repair Turn today.</li>
+      <li><strong>Not workspace rollback</strong> — audit can surface side effects; it cannot restore files.</li>
+      <li><strong>Not the final source of truth</strong> — always advisory; RuntimeEvents / Tool Results / Task Events / artifacts keep their own boundaries (back-links to §02 / §06).</li>
+    </ul>
+    <p class="figure-note">
+      Invariants: Plan precedes trust; Evidence required; Public-only admission; Append before project;
+      Advisory forever; Hygiene is part of the check; Planned ≠ accidental; Repair is bounded; Machine
+      facts stay neutral; Invalid states remain observable.
     </p>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>Keystone + authority split + repair budget + plan→evidence</li>
-      <li>
-        Aside: <a href={`${localePath("en", "history/pr/774")}`}>maka:pr:774</a>
-      </li>
-      <li>Self-check is bounded advisory, not final authority</li>
-      <li>Hybrid: lean + checklist-complete; deeper evolution via /history asides</li>
+      <li>Keystone + plan/schema/guard/hygiene + semantic gates + repair cap=1</li>
+      <li>Plan-audit risk matrix and semantic-completion protocol figures</li>
+      <li>History asides <a href={localePath("en", "history/pr/774")}>maka:pr:774</a> ·
+        <a href={localePath("en", "history/pr/954")}>maka:pr:954</a></li>
+      <li>Current advisory vs Target executor-owned high-water evidence written (CN+EN ship together)</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
   .plain-list {
     margin: 0.75rem 0 1.1rem;
     padding-left: 1.2rem;
-    max-width: 40em;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
   }
   .plain-list li {
     margin-bottom: 0.45rem;
@@ -189,5 +392,11 @@ import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceF
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+  .figure-note {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 40em;
   }
 </style>

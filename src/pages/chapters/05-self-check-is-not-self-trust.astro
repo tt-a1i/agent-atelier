@@ -6,13 +6,15 @@ import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro
 import RepairBudgetFlow from "../../components/diagrams/RepairBudgetFlow.astro";
 import AuthoritySplitFlow from "../../components/diagrams/AuthoritySplitFlow.astro";
 import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow.astro";
+import SemanticCompletionFlow from "../../components/diagrams/SemanticCompletionFlow.astro";
+import PlanAuditRiskFlow from "../../components/diagrams/PlanAuditRiskFlow.astro";
 ---
 
 <ChapterShell chapterId="05">
   <div slot="thesis">
     <p>
-      Agent 可以检查自己的产出，但不能把「我觉得做完了」写成最终权威。Self-check
-      是有界反馈环：帮助修复，不接管事实。关键句：
+      Maka 如何允许 Agent 检查自己的工作、发现缺口并尝试修复，又不让「我检查过了」变成自我授权？答案不是再问模型「你确定吗」，而是把
+      Self-check 组织成有计划、有公开证据、有 workspace hygiene、可持久化、且修复次数受限的反馈循环。关键句：
       <strong>Self-check can produce evidence and feedback; it cannot manufacture trust.</strong>
     </p>
   </div>
@@ -24,7 +26,7 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
     lede="自由 reflection 复述意图；无限检查—修复会变成没有预算的第二 Agent loop。"
   >
     <p>
-      假设 Agent 完成复杂迁移后回复「已经完成，代码应该可以正常工作」。它没有回答：检查了哪些最终
+      假设 Agent 完成复杂迁移后回复「已经完成，代码应该可以正常工作」。这句话几乎没有工程价值。它没有回答：检查了哪些最终
       artifact、执行了什么公开命令、exit code、是否只在 scratch 产生临时输出、有没有污染最终
       workspace、新增文件是计划内 deliverable 还是意外 side effect、证据是否只来自公开任务材料、失败后允许多少次
       repair。
@@ -54,8 +56,14 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
       <li><strong>Public Evidence</strong> — 实际执行或观察了什么（带 source refs）</li>
       <li><strong>Source Guard</strong> — 是否只引用公开任务材料（deterministic policy）</li>
       <li><strong>Hygiene / Consistency Audit</strong> — 是否越出 scratch、产生未计划 side effects</li>
-      <li><strong>Repair Gate</strong> — 是否允许一次额外检查/修复 Turn（有 cap）</li>
+      <li><strong>Repair Gate</strong> — 是否允许一次额外检查/修复 Turn（有硬 cap）</li>
     </ul>
+    <DiagramFigure
+      caption="图 2 · Model reports · Runtime admits · official truth lives elsewhere。"
+      alt="三列：Model advisory、Runtime gates、Authority elsewhere。"
+    >
+      <AuthoritySplitFlow />
+    </DiagramFigure>
   </Section>
 
   <Section
@@ -65,7 +73,7 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
     lede="检查本身也会产生副作用；事后合理化无法区分事先计划。"
   >
     <DiagramFigure
-      caption="图 4 · Plan submit → Runtime admit → Evidence submit → Strong pass?；缺 plan 可挡强通过。"
+      caption="图 3 · Plan submit → Runtime admit → Evidence submit → Strong pass?；缺 plan 可挡强通过。"
       alt="四步：Plan submit、Runtime admit、Evidence submit、Strong pass。"
     >
       <PlanThenEvidenceFlow />
@@ -73,16 +81,35 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
     <p>
       编译可能写出 object files，脚本可能覆盖 deliverable，「验证输出」也可能改变 workspace listing。若完成检查后才解释「那些文件都是临时的」，Runtime
       无法区分事先计划与事后合理化。因此先有
-      <code>self_check_plan_submit</code>：声明 finalArtifacts、selfCheckScratch、workspaceGuardPlan，给后续
-      audit 一个稳定基线。没有 plan 时事实仍可进入 Task Events，但 strong pass gate 可以
-      <code>missing_self_check_plan</code> 阻塞——工具层允许记录，gate 层决定是否支持语义完成。
+      <code>self_check_plan_submit</code>，声明三组信息：
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>finalArtifacts</strong>（至少一项）— <code>path</code> / <code>purpose</code> /
+        <code>publicReason</code>
+      </li>
+      <li>
+        <strong>selfCheckScratch</strong> — scratch root、可选 expected generated paths、公开理由（gate
+        prompt 常推荐 <code>/tmp/maka-self-check/...</code>）
+      </li>
+      <li>
+        <strong>workspaceGuardPlan</strong> — 准备检查哪些 paths、哪些新增是预期的、哪些生成物允许出现在
+        scratch 之外、为什么符合任务
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="Plan 作为 audit 基线">observed change
+  → compare with accepted plan
+  → planned final artifact, expected output, or unexplained side effect?</pre>
+    <p>
+      没有 plan 时事实仍可被 recorder 接收并进入 Task Events，但 strong pass gate 会以
+      <code>missing_self_check_plan</code> 阻塞——工具层允许记录，gate 层决定是否支持语义完成（deferred
+      enforcement）。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Self-check 架构章合入：
-        <a href={`${import.meta.env.BASE_URL}history/pr/774`}>maka:pr:774</a>
-        （docs: add self-check architecture chapter）。证据新鲜度绑定等后续收紧见
+        Self-check 架构章：
+        <a href={`${import.meta.env.BASE_URL}history/pr/774`}>maka:pr:774</a>。证据新鲜度等后续收紧：
         <a href={`${import.meta.env.BASE_URL}history/pr/954`}>maka:pr:954</a>。
       </p>
     </aside>
@@ -94,62 +121,246 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
     title="先把 Self-check 变成有限对象"
     lede="Schema 解决可持久化与 prompt safety，不单独证明证据真实性。"
   >
-    <DiagramFigure
-      caption="图 2 · Model reports · Runtime admits · official truth lives elsewhere。"
-      alt="三列：Model advisory、Runtime gates、Authority elsewhere。"
-    >
-      <AuthoritySplitFlow />
-    </DiagramFigure>
     <p>
-      <code>self_check_submit</code> 不是自由文本：status 仅
-      <code>pass / fail / inconclusive</code>；publicReason 有界；至少一项 command 或 artifact
-      evidence；各项字符/条数上限。当前字段多由模型经 tool args 提交——schema 阻止无界 payload，却不能单独证明
-      command 真的执行过或 hash 真的来自当前 bytes（Target：进一步升级为 executor-owned、high-water-bound
-      evidence）。
+      <code>self_check_submit</code> 不是自由文本。Current schema 要求：
     </p>
-    <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
-      <p>
-        Current：Heavy-task Self-check 是严格受限的 advisory mechanism，不是任务正确性的独立证明。Target：把声明升级为
-        executor-owned evidence——不得伪装成已落地。
-      </p>
-    </div>
+    <ul class="plain-list">
+      <li><code>status</code> 只能是 <code>pass / fail / inconclusive</code></li>
+      <li><code>publicReason</code> 非空且最多 2,000 characters</li>
+      <li>至少一项 command evidence 或 artifact evidence</li>
+      <li>command ≤ 1,000 chars；output excerpt ≤ 2,000 chars</li>
+      <li>command / artifact evidence 各最多 25 项；artifact refs 最多 20</li>
+      <li>path ≤ 500 chars；metadata 最多 30 keys、递归深度 ≤ 3、string value ≤ 500</li>
+    </ul>
+    <p>
+      Command evidence 可带 <code>command</code> / <code>exitCode?</code> / <code>timedOut?</code> /
+      <code>outputExcerpt?</code> / <code>artifactRefs?</code>。Artifact evidence 可带
+      <code>path</code> / <code>kind</code> / <code>exists?</code> / <code>sizeBytes?</code> /
+      <code>hash?</code> / bounded metadata。当前字段多由模型经 tool args
+      提交——schema 阻止无界 payload，却不能单独证明 command 真的执行过或 hash 真的来自当前 bytes。
+    </p>
   </Section>
 
   <Section
-    id="authority"
-    label="§05 · Authority"
-    title="回链事实权威"
-    lede="完成条件不能只听自述；官方结论在日志、外部验收与 terminal fact。"
+    id="guard"
+    label="§05 · Source Guard"
+    title="哪些内容可以进入反馈循环"
+    lede="Lexical admission filter —— 不是访问控制系统，也不是完备信息流证明。"
+  >
+    <p>
+      <code>validateHeavyTaskPublicStrings()</code> 遍历 plan 与 Self-check 中几乎所有字符串：reason、command、output
+      excerpt、artifact path、metadata、scratch path、workspace guard commands 与 side-effect paths。已知
+      lexical categories 会拒绝类似：hidden tests / references / artifacts、private thresholds 或 scoring
+      criteria、raw assertion-derived expected/actual、evaluator-only files、private/official execution
+      details、private benchmark identifiers。
+    </p>
+    <pre class="code-block" aria-label="Source Guard 结果">HeavyTaskSourceGuardResult
+  status: accepted | rejected
+  checkedAt
+  categories[]
+  publicReason</pre>
+    <p>
+      Recorder 只有在 guard accepted 时才 append
+      <code>heavy_task_self_check_plan_recorded</code> 或
+      <code>heavy_task_self_check_recorded</code>。Projection 读取时再次
+      <code>isAcceptedHeavyTaskSelfCheck()</code>；不再满足 public guard 的旧状态会被忽略并产生
+      warning。Guard 不能阻止已拥有过宽 Tool access 的 Agent 读取私有文件——隔离与 tool exposure
+      必须在更早边界解决。
+    </p>
+  </Section>
+
+  <Section
+    id="hygiene"
+    label="§05 · Hygiene"
+    title="Execution Hygiene 与 Plan Consistency Audit"
+    lede="「检查副作用」是协议的一部分；计划内产物 ≠ 意外变化。"
   >
     <DiagramFigure
-      caption="图 3 · Gate 失败 → 检查 repair 预算 → 有界 Repair Turn → 再检；预算耗尽则停环。"
+      caption="图 4 · Plan audit 风险：missing plan / unplanned path / scratch escape 阻塞 strong pass；planned artifact 仅 diagnostic。"
+      alt="四列风险矩阵：missing plan、unplanned path、scratch escape、planned artifact。"
+    >
+      <PlanAuditRiskFlow />
+    </DiagramFigure>
+    <p>
+      <code>executionHygiene</code> 让 Agent 报告 sandbox root / strategy、cleanup、
+      <code>workspaceSideEffects</code>（<code>none | cleaned | present | unknown</code>）与 workspace
+      guard（checked paths、before/after listing、added/modified/removed）。Strong pass 要求至少有
+      sandbox root，且 <code>workspaceGuard.checked === true</code>；若
+      <code>remainingSideEffectPaths</code> 非空则必然阻塞。这些字段当前仍主要由模型提交——Runtime
+      做 consistency audit，不能当作 executor 签名的 filesystem truth。
+    </p>
+    <p>
+      <code>auditSelfCheckPlanConsistency()</code> 的主要 risk flags：
+      <code>missing_self_check_plan</code>（阻塞）、
+      <code>planned_final_artifact_added</code>（不阻塞，diagnostic）、
+      <code>unplanned_added_path</code>（阻塞）、
+      <code>scratch_escape</code>（阻塞）。Final artifact 本应新增，不能把所有 workspace delta
+      都当成污染；但「刚好生成了一个新文件」也不能自动成为 final artifact——区别来自 plan 是否在前、path
+      是否被声明。
+    </p>
+  </Section>
+
+  <Section
+    id="observation"
+    label="§05 · Observation"
+    title="Machine Workspace Observation 是中立旁证"
+    lede="Diagnostic listing，不是完整 workspace attestation。"
+  >
+    <p>
+      第一次 gate evaluation 前，<code>TaskAgentController</code> 可经
+      <code>observeHeavyTaskWorkspace()</code> 获取 machine observation：仅在存在 isolated executor
+      时运行；roots 来自 accepted plan final-artifact 父目录与 Self-check checked paths；只接受
+      <code>/app/...</code>；最多 12 roots；每 root 只列一层；command timeout 30s；以
+      <code>source.kind=system</code> 写入
+      <code>heavy_task_workspace_observation_recorded</code>。不读文件正文，不算完整
+      manifest/hash。当前不会单独阻塞一个其他条件都满足的 pass——是 diagnostic，不是完整 attestation。
+    </p>
+  </Section>
+
+  <Section
+    id="semantic"
+    label="§05 · Semantic"
+    title="Semantic Completion 需要多项条件同时成立"
+    lede="status=pass 只是其中一项；最终状态始终 advisory=true。"
+  >
+    <DiagramFigure
+      caption="图 5 · Semantic complete 协议：accepted pass → sandbox/guard → plan audit → todos/phase gates；任一 blocker → incomplete。"
+      alt="四道门汇入 semantic complete，标注 advisory=true。"
+    >
+      <SemanticCompletionFlow />
+    </DiagramFigure>
+    <p>
+      <code>evaluateHeavyTaskCompletionStatus()</code> 仅在以下条件全部成立时得到 semantic complete（教学枚举）：
+    </p>
+    <ol class="plain-list numbered">
+      <li>Heavy-task mode enabled</li>
+      <li>存在 latest accepted public Self-check，且 status 为 <code>pass</code></li>
+      <li>有 sandbox execution evidence；workspace guard 已执行</li>
+      <li>没有未清理或未计划的 blocking workspace delta；plan 与 evidence 一致</li>
+      <li>存在 non-empty latest todos；全部 completed，或 cancelled 且带 nonblocking evidence</li>
+      <li>
+        <code>runnable_artifact</code> 与 <code>public_check</code> 两类 early phase-gate todo 都已
+        completed
+      </li>
+    </ol>
+    <p>
+      Gate 从可见合同派生 Acceptance Checklist（final artifacts、parse hint、phase-gate todos、hygiene
+      requirement），而不是用脆弱自然语言 heuristic 发明 hard contract。当前 required-artifact address
+      check 的明确限制：多个 final artifacts 时，evidence text 命中<strong>至少一个</strong>
+      path/basename 即可——尚未 per-check all coverage（Target）。
+    </p>
+  </Section>
+
+  <Section
+    id="repair"
+    label="§05 · Repair"
+    title="Bounded Repair：允许纠错，不允许无限自循环"
+    lede="maxRepairAttempts 固定为 1；repair 是同一 Attempt 内的新 Turn，不是新 Task Attempt。"
+  >
+    <DiagramFigure
+      caption="图 6 · Gate 失败 → 检查 repair 预算 → 有界 Repair Turn → 再检；预算耗尽则停环。"
       alt="五步：Gate fails、Budget check、Repair Turn、Re-check、Stop loop。"
     >
       <RepairBudgetFlow />
     </DiagramFigure>
     <p>
-      承接 §02：证据不可被 prune 删掉，也不该被一段自述覆盖。承接 §04：Self-check
-      发生在 Attempt / Task 循环内，受 repair budget 约束。模型写「测试已通过」仍只是对公开材料的报告；Source
-      Guard 拒绝私有材料进入反馈；gate 失败且预算耗尽时停止自检环，而不是无限自我授权。
+      <code>evaluateHeavyTaskSelfCheckGate()</code> 输出
+      <code>allow</code> / <code>repair</code> / <code>cap reached</code>。Current
+      <code>TaskAgentController</code> 序列：
+    </p>
+    <ol class="plain-list numbered">
+      <li>主 Invocation 结束</li>
+      <li>记录 machine workspace observation</li>
+      <li>evaluate gate，append <code>heavy_task_self_check_gate_recorded</code></li>
+      <li>若 action=repair：同一 Session / workspace 创建新 Turn/AgentRun；prompt 含 blocker、checklist、latest Self-check summary、machine observation</li>
+      <li>repair Turn 后再次 observation 与 gate；此时 repairAttemptsUsed=1，不再创建第三个 Turn</li>
+    </ol>
+    <p>
+      Accepted plan / Self-check 成为 Task Event 后投影为
+      <code>latestHeavyTaskSelfCheckPlan</code> / <code>latestHeavyTaskSelfCheck</code>，并进入 bounded
+      compact evidence window（后续 Attempt 最多渲染约 5 条 command / 5 条 artifact
+      evidence）。旧 Self-check 不被修改——新 event 只改变 latest 投影。
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§05 · Failure"
+    title="缺失证据应降低信心，不应制造事实"
+    lede="Fail closed on admission; fail open on inventing success."
+  >
+    <ul class="plain-list">
+      <li>Plan schema 无效 → validation error，不记录 accepted plan；不得「模型大概表达了同样意思」。</li>
+      <li>Source guard rejected → 不 append accepted Self-check；敏感内容未成为 public feedback。</li>
+      <li>无 evidence → Schema 拒绝；<code>pass</code> 字符串本身不是 evidence。</li>
+      <li><code>fail/inconclusive</code> → Semantic incomplete，可触发一次 repair；不必伪装成 pass。</li>
+      <li>缺 sandbox/guard、unplanned path、scratch escape → strong pass blocked。</li>
+      <li>Machine observation 失败 → 保存 error excerpt；观察失败 ≠ workspace clean。</li>
+      <li>Repair 后仍不完整 → 记录最终 gate state，不再无限 repair。</li>
+      <li>Replayed Self-check 不再通过 public revalidation → projection 忽略并 warning。</li>
+    </ul>
+    <div class="stub">
+      <p class="stub__tag">Current 信任边界</p>
+      <p>
+        Model-reported evidence 还不是 executor-attested；缺 freshness high water（Self-check 后的
+        Write/Edit 可能让旧 pass 仍显示为 latest）；observation 只看一层目录；source guard 是已知模式集合；artifact
+        coverage 是 any 不是 all。Target：RuntimeEvent/artifact-linked observations、workspace manifest
+        diff、per-check coverage、mutation 使旧 conclusion stale、versioned repair policy（硬 cap
+        仍由 Runtime 强制）。
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="not"
+    label="§05 · Not"
+    title="Self-check 不是什么"
+    lede="划清边界，避免把反馈抬成权威、无限环或 workspace rollback。"
+  >
+    <ul class="plain-list">
+      <li><strong>不是「再想一遍」</strong> — 无 plan / evidence / hygiene 的 reflection 不构成 accepted Self-check。</li>
+      <li><strong>不是隐藏信息通道</strong> — 只能消费公开 task-derived facts。</li>
+      <li><strong>不是无限 repair loop</strong> — 当前最多一个额外 repair Turn。</li>
+      <li><strong>不是 workspace rollback</strong> — audit 可发现 side effects，不能自动恢复文件。</li>
+      <li><strong>不是最终事实源</strong> — 始终 advisory；RuntimeEvents / Tool Results / Task Events / artifacts 保留各自边界（并回链 §02 / §06）。</li>
+    </ul>
+    <p class="figure-note">
+      不变量：Plan precedes trust；Evidence required；Public-only admission；Append before
+      project；Advisory forever；Hygiene is part of the check；Planned ≠ accidental；Repair is
+      bounded；Machine facts stay neutral；Invalid states remain observable。
     </p>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + authority 分流 + repair budget + plan→evidence 流</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/774`}>maka:pr:774</a></li>
-      <li>Self-check 为受限 advisory，不是最终 authority</li>
-      <li>Hybrid：本章 lean、清单完整；更深演进见 /history 旁注</li>
+      <li>关键图 + plan/schema/guard/hygiene + semantic gates + repair cap=1</li>
+      <li>Plan audit 风险矩阵与 semantic completion 协议图</li>
+      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/774`}>maka:pr:774</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/954`}>maka:pr:954</a></li>
+      <li>Current advisory vs Target executor-owned high-water evidence 已写清（中英同船）</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
   .plain-list {
     margin: 0.75rem 0 1.1rem;
     padding-left: 1.2rem;
-    max-width: 40em;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
   }
   .plain-list li {
     margin-bottom: 0.45rem;
@@ -170,5 +381,11 @@ import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+  .figure-note {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 40em;
   }
 </style>
