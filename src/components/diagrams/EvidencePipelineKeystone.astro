@@ -1,0 +1,216 @@
+---
+/**
+ * §02 specimen keystone — scene-local metaphor: Turn-level evidence pipeline.
+ * Visual system (tokens / hand SVG / reduced-motion) is fixed; metaphors are not.
+ */
+---
+
+<svg
+  class="evidence-pipeline"
+  viewBox="0 0 860 320"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="ep-arrow"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.2 L 8 5 L 0 8.8 Z" fill="var(--accent)"></path>
+    </marker>
+    <linearGradient id="ep-rail" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.15"></stop>
+      <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.45"></stop>
+      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.15"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Atmosphere -->
+  <rect
+    class="ep-stage ep-stage--0"
+    x="24"
+    y="28"
+    width="812"
+    height="200"
+    rx="2"
+    fill="var(--soft)"
+    opacity="0.45"
+  ></rect>
+
+  <text class="ep-kicker ep-stage ep-stage--0" x="40" y="52" fill="var(--accent)">
+    SCENE · §02 Evidence Before Compression
+  </text>
+  <text class="ep-title ep-stage ep-stage--0" x="40" y="78" fill="var(--ink)">
+    One Tool Result → four representations
+  </text>
+
+  <!-- Rail -->
+  <line
+    class="ep-rail ep-stage ep-stage--1"
+    x1="70"
+    y1="168"
+    x2="790"
+    y2="168"
+    stroke="url(#ep-rail)"
+    stroke-width="2"
+    marker-end="url(#ep-arrow)"
+  ></line>
+
+  <!-- Nodes -->
+  <g class="ep-node ep-stage ep-stage--1" transform="translate(70,118)">
+    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+    ></rect>
+    <rect width="118" height="4" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">01</text>
+    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Tool</text>
+    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">execution</text>
+    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">side effects</text>
+  </g>
+
+  <g class="ep-node ep-stage ep-stage--2" transform="translate(220,118)">
+    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+    ></rect>
+    <rect width="118" height="4" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">02</text>
+    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Runtime</text>
+    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">Event</text>
+    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">canonical fact</text>
+  </g>
+
+  <g class="ep-node ep-stage ep-stage--3" transform="translate(370,118)">
+    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+    ></rect>
+    <rect width="118" height="4" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">03</text>
+    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Artifact</text>
+    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">raw payload</text>
+    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">durable blob</text>
+  </g>
+
+  <g class="ep-node ep-stage ep-stage--4" transform="translate(520,118)">
+    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+    ></rect>
+    <rect width="118" height="4" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">04</text>
+    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Turn</text>
+    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">Evidence</text>
+    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">bounded · sourced</text>
+  </g>
+
+  <g class="ep-node ep-stage ep-stage--5" transform="translate(670,118)">
+    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+    ></rect>
+    <rect width="118" height="4" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">05</text>
+    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Provider</text>
+    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">messages</text>
+    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">working set</text>
+  </g>
+
+  <!-- Invariant callout -->
+  <g class="ep-callout ep-stage ep-stage--6" transform="translate(40,248)">
+    <rect width="780" height="48" rx="2" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="4" height="48" fill="var(--accent)"></rect>
+    <text class="ep-callout__label" x="18" y="20" fill="var(--accent)">INVARIANT</text>
+    <text class="ep-callout__body" x="18" y="38" fill="var(--ink)">
+      Prune the context, never prune the evidence — active prune rewrites step 05 only.
+    </text>
+  </g>
+</svg>
+
+<style>
+  .evidence-pipeline {
+    font-family: var(--sans);
+  }
+
+  .ep-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .ep-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .ep-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .ep-node__name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .ep-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .ep-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .ep-callout__body {
+    font-family: var(--serif);
+    font-size: 14px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Opacity-only so SVG transform= on nodes is not clobbered */
+    .ep-stage {
+      opacity: 0;
+      animation: ep-fade 0.65s ease forwards;
+    }
+
+    .ep-stage--0 {
+      animation-delay: 0.05s;
+    }
+    .ep-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .ep-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .ep-stage--3 {
+      animation-delay: 0.4s;
+    }
+    .ep-stage--4 {
+      animation-delay: 0.52s;
+    }
+    .ep-stage--5 {
+      animation-delay: 0.64s;
+    }
+    .ep-stage--6 {
+      animation-delay: 0.8s;
+    }
+
+    @keyframes ep-fade {
+      to {
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ep-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

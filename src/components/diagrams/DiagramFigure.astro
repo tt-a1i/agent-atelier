@@ -1,0 +1,71 @@
+---
+interface Props {
+  caption: string;
+  alt?: string;
+  prototype?: boolean;
+}
+
+const { caption, alt, prototype = false } = Astro.props;
+---
+
+<figure class:list={["diagram-figure", { "diagram-figure--prototype": prototype }]}>
+  <div class="diagram-figure__frame" role="img" aria-label={alt ?? caption}>
+    <slot />
+  </div>
+  <figcaption class="diagram-figure__caption">
+    {prototype && <span class="diagram-figure__badge">Prototype</span>}
+    {caption}
+  </figcaption>
+</figure>
+
+<style>
+  .diagram-figure {
+    margin: 1.75rem 0 2rem;
+    max-width: 100%;
+  }
+
+  .diagram-figure__frame {
+    border: 1px solid var(--hair);
+    border-top: 2px solid var(--accent);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--soft) 70%, white) 0%,
+      var(--bg) 48%,
+      var(--softer) 100%
+    );
+    padding: 1.25rem 1rem 1rem;
+    overflow-x: auto;
+  }
+
+  .diagram-figure__frame :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: min(100%, 720px);
+  }
+
+  .diagram-figure__caption {
+    margin: 0.65rem 0 0;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--serif);
+    font-size: 0.92rem;
+    font-style: italic;
+    color: var(--mute);
+    line-height: 1.45;
+  }
+
+  .diagram-figure__badge {
+    display: inline-block;
+    margin-right: 0.45rem;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
+    padding: 0.1rem 0.35rem;
+    vertical-align: 0.08em;
+  }
+</style>

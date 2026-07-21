@@ -1,0 +1,61 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipelineKeystone.astro";
+
+const nav = [
+  { href: "/", label: "导读" },
+  { href: "/chapters/02-evidence-before-compression", label: "§02" },
+];
+---
+
+<ReportLayout
+  title="§02 Evidence Before Compression · Agent Atelier"
+  description="Maka 如何在压缩上下文之前保留 Turn 级工具证据——视觉系统标本页。"
+  nav={nav}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">§02 · Evidence Before Compression · Draft</p>
+      <h1>Evidence Before Compression</h1>
+      <p class="masthead__sub">
+        当一次 Tool 调用既改变世界又产生巨量输出时，如何留下「发生过什么」的证据，同时不拖垮同一 Turn
+        的下一次推理？
+      </p>
+      <div class="masthead__meta">
+        <span>标本图 · 证据流水线</span>
+        <span>视觉系统验证 · #7</span>
+        <span>章节正文 · WIP</span>
+      </div>
+    </header>
+
+    <Section
+      id="keystone"
+      label="§02 · Keystone"
+      title="Turn 内的证据流水线"
+      lede="本图只服务本章场景；其他章节可选用不同隐喻。固定的是 NewsLiquid 令牌、手写关键图与动效纪律。"
+    >
+      <DiagramFigure
+        prototype
+        caption="图 1 · 一次 Tool Result 拆成四层表示；active prune 只改写 Provider messages，不删 Evidence。"
+        alt="流水线：Tool execution 到 Runtime Event、Artifact、Turn Evidence，再到 Provider messages；底部不变式 Prune the context, never prune the evidence。"
+      >
+        <EvidencePipelineKeystone />
+      </DiagramFigure>
+
+      <p>
+        不变式：<strong>Prune the context, never prune the evidence.</strong> 这是 §02
+        的教学锚点，也是本标本选择「流水线」隐喻的原因——不是全站统一构图。
+      </p>
+
+      <div class="stub">
+        <p class="stub__tag">Prototype note</p>
+        <p>
+          本页用于验证图示系统（关键图 SVG + figure chrome +
+          reduced-motion）。完整章节叙事、体量 D2 图与双语同船交付仍按验收清单推进，尚未标完成。
+        </p>
+      </div>
+    </Section>
+  </article>
+</ReportLayout>
