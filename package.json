@@ -12,6 +12,7 @@
     "astro": "astro",
     "history:ingest": "node scripts/maka-history-ingest.mjs",
     "history:smoke": "node scripts/maka-history-smoke.mjs",
+    "history:filter-smoke": "node scripts/history-filter-smoke.mjs",
     "i18n:smoke": "node scripts/i18n-smoke.mjs"
   },
   "dependencies": {

@@ -149,3 +149,91 @@ export function prAreaChips(pr: MakaPr, limit = 3): string[] {
 }
 
 export const HISTORY_PAGE_SIZE = 50;
+
+export type HistoryTimeRange = "30d" | "90d" | "year" | "all";
+
+export interface HistoryPrFilters {
+  area?: string;
+  author?: string;
+  range?: HistoryTimeRange;
+  q?: string;
+}
+
+function prAreas(pr: MakaPr): string[] {
+  const set = new Set<string>();
+  for (const sha of pr.commitShas) {
+    const c = getCommitBySha(sha);
+    if (!c) continue;
+    for (const p of c.pathPrefixes) set.add(p);
+  }
+  return [...set];
+}
+
+export function listPrAuthors(prs = loadPrs()): string[] {
+  return [...new Set(prs.map((p) => p.author).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+
+export function listPrAreas(prs = loadPrs()): string[] {
+  const set = new Set<string>();
+  for (const pr of prs) {
+    for (const a of prAreas(pr)) set.add(a);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function rangeStartMs(range: HistoryTimeRange | undefined, now = Date.now()): number | null {
+  if (!range || range === "all") return null;
+  const day = 24 * 60 * 60 * 1000;
+  if (range === "30d") return now - 30 * day;
+  if (range === "90d") return now - 90 * day;
+  if (range === "year") return now - 365 * day;
+  return null;
+}
+
+export function filterPrs(prs: MakaPr[], filters: HistoryPrFilters): MakaPr[] {
+  const area = filters.area?.trim() || "";
+  const author = filters.author?.trim() || "";
+  const q = filters.q?.trim().toLowerCase() || "";
+  const start = rangeStartMs(filters.range);
+
+  return prs.filter((pr) => {
+    if (author && pr.author !== author) return false;
+    if (area && !prAreas(pr).includes(area)) return false;
+    if (start != null) {
+      const t = Date.parse(pr.mergedAt);
+      if (!Number.isFinite(t) || t < start) return false;
+    }
+    if (q) {
+      const hay = `${pr.title} #${pr.number} ${pr.author}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+export function parseHistoryFilters(params: URLSearchParams): HistoryPrFilters {
+  const rangeRaw = params.get("range") ?? "all";
+  const range: HistoryTimeRange =
+    rangeRaw === "30d" || rangeRaw === "90d" || rangeRaw === "year" || rangeRaw === "all"
+      ? rangeRaw
+      : "all";
+  return {
+    area: params.get("area") ?? undefined,
+    author: params.get("author") ?? undefined,
+    range,
+    q: params.get("q") ?? undefined,
+  };
+}
+
+export function historyFilterQuery(filters: HistoryPrFilters, page?: number): string {
+  const sp = new URLSearchParams();
+  if (filters.area) sp.set("area", filters.area);
+  if (filters.author) sp.set("author", filters.author);
+  if (filters.range && filters.range !== "all") sp.set("range", filters.range);
+  if (filters.q) sp.set("q", filters.q);
+  if (page && page > 1) sp.set("page", String(page));
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}

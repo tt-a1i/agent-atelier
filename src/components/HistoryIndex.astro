@@ -5,6 +5,8 @@ import { localePath, type Locale } from "../lib/i18n";
 import {
   HISTORY_PAGE_SIZE,
   hasMakaHistorySnapshot,
+  listPrAreas,
+  listPrAuthors,
   loadMeta,
   loadPrs,
   prAreaChips,
@@ -21,27 +23,19 @@ const base = localePath(locale, "history");
 const ready = hasMakaHistorySnapshot();
 const meta = ready ? loadMeta() : null;
 const allPrs = ready ? loadPrs() : [];
+const authors = ready ? listPrAuthors(allPrs) : [];
+const areas = ready ? listPrAreas(allPrs) : [];
 
-const pageParam = Number(Astro.url.searchParams.get("page") ?? "1");
-const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1;
-const totalPages = Math.max(1, Math.ceil(allPrs.length / HISTORY_PAGE_SIZE));
-const safePage = Math.min(page, totalPages);
-const start = (safePage - 1) * HISTORY_PAGE_SIZE;
-const pagePrs = allPrs.slice(start, start + HISTORY_PAGE_SIZE);
+/** Compact rows for client-side filter/pagination (static-hosting safe). */
+const prIndex = allPrs.map((pr) => ({
+  n: pr.number,
+  t: pr.title,
+  a: pr.author,
+  m: pr.mergedAt,
+  areas: prAreaChips(pr, 12),
+}));
 
 const dateLocale = locale === "en" ? "en-US" : "zh-CN";
-
-function fmtDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat(dateLocale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
 
 const copy =
   locale === "en"
@@ -50,28 +44,57 @@ const copy =
         description: "Merged PR timeline for maka-agent (pinned snapshot, PR-first).",
         h1: "Maka lineage",
         sub: "Browse development by merged PR; member commits nest on detail pages. Cognitive chapters stay milestone-shaped — this track is the full archive.",
-        wip: "PR-first listing and detail routes ship. Filters (area / author / time / search) and first-parent / full-DAG views are still WIP — not complete.",
+        wip: "Filters (area / author / time / search) run client-side against the pin (static-safe). First-parent / full-DAG advanced views remain WIP — not complete.",
         empty: "No data/maka-history/ snapshot found. Run npm run history:ingest first.",
         prev: "← Prev",
         next: "Next →",
         pager: "Pagination",
+        filters: "Filters",
+        area: "Area",
+        author: "Author",
+        range: "Time",
+        search: "Search",
+        apply: "Apply",
+        reset: "Reset",
+        all: "All",
+        d30: "30 days",
+        d90: "90 days",
+        year: "1 year",
+        showing: "Showing",
+        of: "of",
+        prs: "PRs",
+        filtered: "(filtered)",
+        none: "No PRs match these filters.",
+        loading: "Loading timeline…",
       }
     : {
         title: "History · Maka 演进轨 · Agent Atelier",
         description: "Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。",
         h1: "Maka 演进史",
         sub: "默认按已合并 PR 浏览发展链路；成员 commit 嵌套在详情页。认知轨章节保持里程碑叙事，这里提供完整可追溯档案。",
-        wip: "已实现 PR-first 列表与详情路由。筛选（area / author / time / search）与 first-parent / full-DAG 高级视图尚未上线——勿当作完成。",
+        wip: "area / author / time / search 在客户端对 pin 筛选（静态托管可用）。first-parent / full-DAG 高级视图仍未上线——勿当作完成。",
         empty: "尚未找到 data/maka-history/ 快照。请先运行 npm run history:ingest。",
         prev: "← 上一页",
         next: "下一页 →",
         pager: "分页",
+        filters: "筛选",
+        area: "区域",
+        author: "作者",
+        range: "时间",
+        search: "搜索",
+        apply: "应用",
+        reset: "重置",
+        all: "全部",
+        d30: "30 天",
+        d90: "90 天",
+        year: "一年",
+        showing: "显示",
+        of: "/",
+        prs: "条 PR",
+        filtered: "（已筛选）",
+        none: "没有匹配当前筛选的 PR。",
+        loading: "正在载入时间线…",
       };
-
-function pageHref(p: number): string {
-  if (p <= 1) return base;
-  return `${base}?page=${p}`;
-}
 ---
 
 <ReportLayout
@@ -90,7 +113,7 @@ function pageHref(p: number): string {
         meta && (
           <div class="masthead__meta">
             <span>Archive pin · {meta.source.sourceShort}</span>
-            <span>extracted · {fmtDate(meta.extractedAt)}</span>
+            <span>extracted · {meta.extractedAt.slice(0, 10)}</span>
             <span>
               {meta.counts.prs} PRs · {meta.counts.commits} commits
             </span>
@@ -100,7 +123,7 @@ function pageHref(p: number): string {
     </header>
 
     <aside class="stub" aria-label="WIP">
-      <p class="stub__tag">WIP · v1 listing</p>
+      <p class="stub__tag">WIP · filters v1</p>
       <p>{copy.wip}</p>
     </aside>
 
@@ -110,75 +133,349 @@ function pageHref(p: number): string {
           {copy.empty} <code>data/maka-history/</code> / <code>npm run history:ingest</code>
         </p>
       ) : (
-        <div>
-          <ol class="history-list" start={start + 1}>
-            {pagePrs.map((pr) => {
-              const chips = prAreaChips(pr);
-              return (
-                <li class="history-row">
-                  <a class="history-row__link" href={`${base}/pr/${pr.number}`}>
-                    <span class="history-row__num">#{pr.number}</span>
-                    <span class="history-row__title">{pr.title}</span>
-                  </a>
-                  <div class="history-row__meta">
-                    <span>{pr.author}</span>
-                    <span>{fmtDate(pr.mergedAt)}</span>
-                    {chips.length > 0 && (
-                      <span class="history-row__chips">
-                        {chips.map((c) => (
-                          <span class="chip">{c}</span>
-                        ))}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+        <div
+          id="history-app"
+          data-base={base}
+          data-detail-base="/history"
+          data-page-size={String(HISTORY_PAGE_SIZE)}
+          data-date-locale={dateLocale}
+          data-i18n={JSON.stringify({
+            showing: copy.showing,
+            of: copy.of,
+            prs: copy.prs,
+            filtered: copy.filtered,
+            none: copy.none,
+            prev: copy.prev,
+            next: copy.next,
+          })}
+        >
+          <script
+            type="application/json"
+            id="history-pr-index"
+            is:inline
+            set:html={JSON.stringify(prIndex)}
+          />
 
-          <nav class="history-pager" aria-label={copy.pager}>
-            {safePage > 1 ? (
-              <a href={pageHref(safePage - 1)}>{copy.prev}</a>
-            ) : (
-              <span class="history-pager__disabled">{copy.prev}</span>
-            )}
-            <span class="history-pager__status">
-              {safePage} / {totalPages}
-            </span>
-            {safePage < totalPages ? (
-              <a href={pageHref(safePage + 1)}>{copy.next}</a>
-            ) : (
-              <span class="history-pager__disabled">{copy.next}</span>
-            )}
-          </nav>
+          <form class="history-filters" id="history-filter-form" aria-label={copy.filters}>
+            <label class="history-filters__field">
+              <span>{copy.area}</span>
+              <select name="area" id="hf-area">
+                <option value="">{copy.all}</option>
+                {areas.map((a) => (
+                  <option value={a}>{a}</option>
+                ))}
+              </select>
+            </label>
+            <label class="history-filters__field">
+              <span>{copy.author}</span>
+              <input name="author" id="hf-author" list="history-authors" autocomplete="off" />
+              <datalist id="history-authors">
+                {authors.map((a) => (
+                  <option value={a} />
+                ))}
+              </datalist>
+            </label>
+            <label class="history-filters__field">
+              <span>{copy.range}</span>
+              <select name="range" id="hf-range">
+                <option value="all">{copy.all}</option>
+                <option value="30d">{copy.d30}</option>
+                <option value="90d">{copy.d90}</option>
+                <option value="year">{copy.year}</option>
+              </select>
+            </label>
+            <label class="history-filters__field history-filters__field--grow">
+              <span>{copy.search}</span>
+              <input name="q" id="hf-q" type="search" placeholder="title / #n" />
+            </label>
+            <div class="history-filters__actions">
+              <button type="submit">{copy.apply}</button>
+              <a class="history-filters__reset" href={base} id="hf-reset">
+                {copy.reset}
+              </a>
+            </div>
+          </form>
+
+          <p class="history-count" id="history-count">{copy.loading}</p>
+          <div id="history-list-root"></div>
+          <nav class="history-pager" id="history-pager" aria-label={copy.pager}></nav>
         </div>
       )
     }
   </article>
 </ReportLayout>
 
+<script>
+  type PrRow = { n: number; t: string; a: string; m: string; areas: string[] };
+
+  function qs(): URLSearchParams {
+    return new URLSearchParams(window.location.search);
+  }
+
+  function rangeStart(range: string): number | null {
+    const now = Date.now();
+    const day = 864e5;
+    if (range === "30d") return now - 30 * day;
+    if (range === "90d") return now - 90 * day;
+    if (range === "year") return now - 365 * day;
+    return null;
+  }
+
+  function filterRows(rows: PrRow[], sp: URLSearchParams): PrRow[] {
+    const area = (sp.get("area") || "").trim();
+    const author = (sp.get("author") || "").trim();
+    const q = (sp.get("q") || "").trim().toLowerCase();
+    const start = rangeStart(sp.get("range") || "all");
+    return rows.filter((pr) => {
+      if (author && pr.a !== author) return false;
+      if (area && !pr.areas.includes(area)) return false;
+      if (start != null) {
+        const t = Date.parse(pr.m);
+        if (!Number.isFinite(t) || t < start) return false;
+      }
+      if (q && !`${pr.t} #${pr.n} ${pr.a}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function fmtDate(iso: string, locale: string): string {
+    try {
+      return new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(iso));
+    } catch {
+      return iso.slice(0, 10);
+    }
+  }
+
+  function render() {
+    const app = document.getElementById("history-app");
+    const raw = document.getElementById("history-pr-index");
+    if (!app || !raw) return;
+
+    const base = app.dataset.base || "/history";
+    const detailBase = app.dataset.detailBase || "/history";
+    const pageSize = Number(app.dataset.pageSize || "50");
+    const dateLocale = app.dataset.dateLocale || "zh-CN";
+    const i18n = JSON.parse(app.dataset.i18n || "{}") as Record<string, string>;
+    const rows = JSON.parse(raw.textContent || "[]") as PrRow[];
+    const sp = qs();
+
+    const areaEl = document.getElementById("hf-area") as HTMLSelectElement | null;
+    const authorEl = document.getElementById("hf-author") as HTMLInputElement | null;
+    const rangeEl = document.getElementById("hf-range") as HTMLSelectElement | null;
+    const qEl = document.getElementById("hf-q") as HTMLInputElement | null;
+    if (areaEl) areaEl.value = sp.get("area") || "";
+    if (authorEl) authorEl.value = sp.get("author") || "";
+    if (rangeEl) rangeEl.value = sp.get("range") || "all";
+    if (qEl) qEl.value = sp.get("q") || "";
+
+    const filtered = filterRows(rows, sp);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    let page = Number(sp.get("page") || "1");
+    if (!Number.isFinite(page) || page < 1) page = 1;
+    page = Math.min(page, totalPages);
+    const start = (page - 1) * pageSize;
+    const slice = filtered.slice(start, start + pageSize);
+    const active =
+      Boolean(sp.get("area")) ||
+      Boolean(sp.get("author")) ||
+      Boolean(sp.get("q")) ||
+      (sp.get("range") && sp.get("range") !== "all");
+
+    const count = document.getElementById("history-count");
+    if (count) {
+      count.innerHTML = `${i18n.showing || ""} <strong>${filtered.length}</strong> ${i18n.of || ""} ${rows.length} ${i18n.prs || ""}${active ? ` ${i18n.filtered || ""}` : ""}`;
+    }
+
+    const root = document.getElementById("history-list-root");
+    if (root) {
+      if (slice.length === 0) {
+        root.innerHTML = `<p class="history-empty">${i18n.none || ""}</p>`;
+      } else {
+        root.innerHTML = `<ol class="history-list" start="${start + 1}">${slice
+          .map((pr) => {
+            const chips = pr.areas
+              .slice(0, 3)
+              .map((c) => `<span class="chip">${escapeHtml(c)}</span>`)
+              .join("");
+            return `<li class="history-row">
+              <a class="history-row__link" href="${detailBase}/pr/${pr.n}">
+                <span class="history-row__num">#${pr.n}</span>
+                <span class="history-row__title">${escapeHtml(pr.t)}</span>
+              </a>
+              <div class="history-row__meta">
+                <span>${escapeHtml(pr.a)}</span>
+                <span>${fmtDate(pr.m, dateLocale)}</span>
+                ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
+              </div>
+            </li>`;
+          })
+          .join("")}</ol>`;
+      }
+    }
+
+    const pager = document.getElementById("history-pager");
+    if (pager) {
+      const hrefFor = (p: number) => {
+        const next = new URLSearchParams(sp);
+        if (p <= 1) next.delete("page");
+        else next.set("page", String(p));
+        const s = next.toString();
+        return s ? `${base}?${s}` : base;
+      };
+      const prev =
+        page > 1
+          ? `<a href="${hrefFor(page - 1)}">${i18n.prev || ""}</a>`
+          : `<span class="history-pager__disabled">${i18n.prev || ""}</span>`;
+      const next =
+        page < totalPages
+          ? `<a href="${hrefFor(page + 1)}">${i18n.next || ""}</a>`
+          : `<span class="history-pager__disabled">${i18n.next || ""}</span>`;
+      pager.innerHTML = `${prev}<span class="history-pager__status">${page} / ${totalPages}</span>${next}`;
+    }
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function bind() {
+    const form = document.getElementById("history-filter-form") as HTMLFormElement | null;
+    const app = document.getElementById("history-app");
+    if (!form || !app) return;
+    const base = app.dataset.base || "/history";
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const next = new URLSearchParams();
+      for (const key of ["area", "author", "range", "q"]) {
+        const v = String(fd.get(key) || "").trim();
+        if (!v || (key === "range" && v === "all")) continue;
+        next.set(key, v);
+      }
+      const url = next.toString() ? `${base}?${next}` : base;
+      history.pushState({}, "", url);
+      render();
+    });
+
+    document.getElementById("history-pager")?.addEventListener("click", (e) => {
+      const a = (e.target as HTMLElement).closest("a");
+      if (!a || !a.getAttribute("href")?.startsWith(base)) return;
+      e.preventDefault();
+      history.pushState({}, "", a.href);
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    window.addEventListener("popstate", render);
+    render();
+  }
+
+  bind();
+</script>
+
 <style>
+  .history-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: end;
+    margin: 1.5rem 0 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .history-filters__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 9rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  .history-filters__field--grow {
+    flex: 1 1 12rem;
+  }
+
+  .history-filters__field select,
+  .history-filters__field input {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--ink);
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--hair);
+    background: var(--bg);
+    border-radius: 0;
+    min-width: 0;
+  }
+
+  .history-filters__actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .history-filters__actions button {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    cursor: pointer;
+  }
+
+  .history-filters__reset {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-decoration: none;
+  }
+
+  .history-count {
+    margin: 1.25rem 0 0;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--mute);
+  }
+
   .history-empty {
     margin-top: 1.75rem;
     font-family: var(--serif);
   }
 
-  .history-list {
+  :global(.history-list) {
     list-style: none;
-    margin: 2rem 0 0;
+    margin: 1.25rem 0 0;
     padding: 0;
   }
 
-  .history-row {
+  :global(.history-row) {
     padding: 0.95rem 0;
     border-bottom: 1px solid var(--hair);
   }
 
-  .history-row:first-child {
+  :global(.history-row:first-child) {
     border-top: 1px solid var(--hair);
   }
 
-  .history-row__link {
+  :global(.history-row__link) {
     display: flex;
     gap: 0.75rem;
     align-items: baseline;
@@ -186,24 +483,24 @@ function pageHref(p: number): string {
     color: inherit;
   }
 
-  .history-row__link:hover .history-row__title {
+  :global(.history-row__link:hover .history-row__title) {
     color: var(--accent);
   }
 
-  .history-row__num {
+  :global(.history-row__num) {
     font-family: var(--mono);
     font-size: 0.78rem;
     color: var(--accent);
     flex: 0 0 auto;
   }
 
-  .history-row__title {
+  :global(.history-row__title) {
     font-family: var(--serif);
     font-size: 1.05rem;
     line-height: 1.4;
   }
 
-  .history-row__meta {
+  :global(.history-row__meta) {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem 1rem;
@@ -214,13 +511,13 @@ function pageHref(p: number): string {
     color: var(--mute);
   }
 
-  .history-row__chips {
+  :global(.history-row__chips) {
     display: inline-flex;
     flex-wrap: wrap;
     gap: 0.35rem;
   }
 
-  .chip {
+  :global(.chip) {
     padding: 0.05rem 0.35rem;
     border: 1px solid var(--hair);
     background: var(--softer);
@@ -237,15 +534,15 @@ function pageHref(p: number): string {
     font-size: 0.75rem;
   }
 
-  .history-pager a {
+  .history-pager :global(a) {
     text-decoration: none;
   }
 
-  .history-pager__status {
+  :global(.history-pager__status) {
     color: var(--mute);
   }
 
-  .history-pager__disabled {
+  :global(.history-pager__disabled) {
     color: color-mix(in srgb, var(--mute) 45%, var(--bg));
   }
 </style>
