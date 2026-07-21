@@ -7,7 +7,7 @@
 
 <svg
   class="evidence-pipeline"
-  viewBox="0 0 860 320"
+  viewBox="0 0 868 336"
   xmlns="http://www.w3.org/2000/svg"
   role="presentation"
   focusable="false"
@@ -16,109 +16,115 @@
     <marker
       id="ep-arrow"
       viewBox="0 0 10 10"
-      refX="8"
+      refX="9"
       refY="5"
-      markerWidth="7"
-      markerHeight="7"
+      markerWidth="6"
+      markerHeight="6"
       orient="auto-start-reverse"
     >
-      <path d="M 0 1.2 L 8 5 L 0 8.8 Z" fill="var(--accent)"></path>
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
     </marker>
-    <linearGradient id="ep-rail" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.15"></stop>
-      <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.45"></stop>
-      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.15"></stop>
-    </linearGradient>
   </defs>
 
-  <!-- Atmosphere -->
-  <rect
-    class="ep-stage ep-stage--0"
-    x="24"
-    y="28"
-    width="812"
-    height="200"
-    rx="2"
-    fill="var(--soft)"
-    opacity="0.45"
-  ></rect>
-
-  <text class="ep-kicker ep-stage ep-stage--0" x="40" y="52" fill="var(--accent)">
-    SCENE · §02 Evidence Before Compression
+  <!-- Masthead — figure chrome supplies the paper frame -->
+  <text class="ep-kicker ep-stage ep-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §02 · EVIDENCE BEFORE COMPRESSION
   </text>
-  <text class="ep-title ep-stage ep-stage--0" x="40" y="78" fill="var(--ink)">
+  <text class="ep-title ep-stage ep-stage--0" x="8" y="52" fill="var(--ink)">
     One Tool Result → four representations
   </text>
-
-  <!-- Rail -->
   <line
-    class="ep-rail ep-stage ep-stage--1"
-    x1="70"
-    y1="168"
-    x2="790"
-    y2="168"
-    stroke="url(#ep-rail)"
-    stroke-width="2"
-    marker-end="url(#ep-arrow)"
+    class="ep-stage ep-stage--0"
+    x1="8"
+    y1="70"
+    x2="860"
+    y2="70"
+    stroke="var(--hair)"
+    stroke-width="1"
   ></line>
 
-  <!-- Nodes -->
-  <g class="ep-node ep-stage ep-stage--1" transform="translate(70,118)">
-    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
-    ></rect>
-    <rect width="118" height="4" fill="var(--accent)"></rect>
-    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">01</text>
-    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Tool</text>
-    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">execution</text>
-    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">side effects</text>
+  <!--
+    Grid: x0=8, nodeW=148, gap=28 → xs = 8, 184, 360, 536, 712; right edge 860
+  -->
+  <g class="ep-connectors ep-stage ep-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="156" y1="144" x2="184" y2="144" marker-end="url(#ep-arrow)"></line>
+    <line x1="332" y1="144" x2="360" y2="144" marker-end="url(#ep-arrow)"></line>
+    <line x1="508" y1="144" x2="536" y2="144" marker-end="url(#ep-arrow)"></line>
+    <line x1="684" y1="144" x2="712" y2="144" marker-end="url(#ep-arrow)"></line>
   </g>
 
-  <g class="ep-node ep-stage ep-stage--2" transform="translate(220,118)">
-    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
-    ></rect>
-    <rect width="118" height="4" fill="var(--accent)"></rect>
-    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">02</text>
-    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Runtime</text>
-    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">Event</text>
-    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">canonical fact</text>
+  <!-- 01 Tool execution -->
+  <g class="ep-node ep-stage ep-stage--1" transform="translate(8,90)">
+    <rect width="148" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="14" y="28" fill="var(--accent)">01</text>
+    <text class="ep-node__name" x="14" y="52" fill="var(--ink)">Tool</text>
+    <text class="ep-node__name" x="14" y="70" fill="var(--ink)">execution</text>
+    <text class="ep-node__hint" x="14" y="94" fill="var(--mute)">side effects</text>
   </g>
 
-  <g class="ep-node ep-stage ep-stage--3" transform="translate(370,118)">
-    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
-    ></rect>
-    <rect width="118" height="4" fill="var(--accent)"></rect>
-    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">03</text>
-    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Artifact</text>
-    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">raw payload</text>
-    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">durable blob</text>
+  <!-- 02 Runtime Event -->
+  <g class="ep-node ep-stage ep-stage--2" transform="translate(184,90)">
+    <rect width="148" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="14" y="28" fill="var(--accent)">02</text>
+    <text class="ep-node__name" x="14" y="52" fill="var(--ink)">Runtime</text>
+    <text class="ep-node__name" x="14" y="70" fill="var(--ink)">Event</text>
+    <text class="ep-node__hint" x="14" y="94" fill="var(--mute)">canonical fact</text>
   </g>
 
-  <g class="ep-node ep-stage ep-stage--4" transform="translate(520,118)">
-    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
-    ></rect>
-    <rect width="118" height="4" fill="var(--accent)"></rect>
-    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">04</text>
-    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Turn</text>
-    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">Evidence</text>
-    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">bounded · sourced</text>
+  <!-- 03 Artifact -->
+  <g class="ep-node ep-stage ep-stage--3" transform="translate(360,90)">
+    <rect width="148" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="14" y="28" fill="var(--accent)">03</text>
+    <text class="ep-node__name" x="14" y="52" fill="var(--ink)">Artifact</text>
+    <text class="ep-node__name" x="14" y="70" fill="var(--ink)">raw payload</text>
+    <text class="ep-node__hint" x="14" y="94" fill="var(--mute)">durable blob</text>
   </g>
 
-  <g class="ep-node ep-stage ep-stage--5" transform="translate(670,118)">
-    <rect width="118" height="100" rx="2" fill="var(--bg)" stroke="var(--hair)" stroke-width="1.25"
+  <!-- 04 Turn Evidence -->
+  <g class="ep-node ep-stage ep-stage--4" transform="translate(536,90)">
+    <rect width="148" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)" stroke-width="1"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ep-node__idx" x="14" y="28" fill="var(--accent)">04</text>
+    <text class="ep-node__name" x="14" y="52" fill="var(--ink)">Turn</text>
+    <text class="ep-node__name" x="14" y="70" fill="var(--ink)">Evidence</text>
+    <text class="ep-node__hint" x="14" y="94" fill="var(--mute)">bounded · sourced</text>
+  </g>
+
+  <!-- 05 Provider messages — prune target -->
+  <g class="ep-node ep-node--prune ep-stage ep-stage--5" transform="translate(712,90)">
+    <rect
+      width="148"
+      height="108"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-width="1"
+      stroke-dasharray="3.5 2.5"
     ></rect>
-    <rect width="118" height="4" fill="var(--accent)"></rect>
-    <text class="ep-node__idx" x="10" y="28" fill="var(--accent)">05</text>
-    <text class="ep-node__name" x="10" y="52" fill="var(--ink)">Provider</text>
-    <text class="ep-node__name" x="10" y="70" fill="var(--ink)">messages</text>
-    <text class="ep-node__hint" x="10" y="90" fill="var(--mute)">working set</text>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ep-node__idx" x="14" y="28" fill="var(--accent)">05</text>
+    <text class="ep-node__name" x="14" y="52" fill="var(--ink)">Provider</text>
+    <text class="ep-node__name" x="14" y="70" fill="var(--ink)">messages</text>
+    <text class="ep-node__hint" x="14" y="94" fill="var(--mute)">working set · prunable</text>
+  </g>
+
+  <!-- Band labels under nodes -->
+  <g class="ep-bands ep-stage ep-stage--5">
+    <line x1="8" y1="216" x2="684" y2="216" stroke="var(--hair)" stroke-width="1"></line>
+    <line x1="712" y1="216" x2="860" y2="216" stroke="var(--accent)" stroke-width="1" opacity="0.5"></line>
+    <text class="ep-band" x="8" y="234" fill="var(--mute)">01–04 persist as evidence</text>
+    <text class="ep-band ep-band--accent" x="712" y="234" fill="var(--accent)">05 rewritten by prune</text>
   </g>
 
   <!-- Invariant callout -->
-  <g class="ep-callout ep-stage ep-stage--6" transform="translate(40,248)">
-    <rect width="780" height="48" rx="2" fill="var(--bg)" stroke="var(--hair)"></rect>
-    <rect x="0" y="0" width="4" height="48" fill="var(--accent)"></rect>
-    <text class="ep-callout__label" x="18" y="20" fill="var(--accent)">INVARIANT</text>
-    <text class="ep-callout__body" x="18" y="38" fill="var(--ink)">
+  <g class="ep-callout ep-stage ep-stage--6" transform="translate(8,256)">
+    <rect width="852" height="56" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="3" height="56" fill="var(--accent)"></rect>
+    <text class="ep-callout__label" x="20" y="24" fill="var(--accent)">INVARIANT</text>
+    <text class="ep-callout__body" x="20" y="44" fill="var(--ink)">
       Prune the context, never prune the evidence — active prune rewrites step 05 only.
     </text>
   </g>
@@ -131,76 +137,90 @@
 
   .ep-kicker {
     font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
   }
 
   .ep-title {
     font-family: var(--serif);
-    font-size: 22px;
+    font-size: 23px;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
 
   .ep-node__idx {
     font-family: var(--mono);
     font-size: 11px;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
   .ep-node__name {
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: 15.5px;
     font-weight: 600;
+    letter-spacing: -0.015em;
   }
 
   .ep-node__hint {
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
+  }
+
+  .ep-band {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .ep-band--accent {
+    letter-spacing: 0.05em;
   }
 
   .ep-callout__label {
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
   }
 
   .ep-callout__body {
     font-family: var(--serif);
-    font-size: 14px;
+    font-size: 14.5px;
+    letter-spacing: -0.01em;
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    /* Opacity-only so SVG transform= on nodes is not clobbered */
     .ep-stage {
       opacity: 0;
-      animation: ep-fade 0.65s ease forwards;
+      animation: ep-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .ep-stage--0 {
-      animation-delay: 0.05s;
+      animation-delay: 0.04s;
     }
     .ep-stage--1 {
-      animation-delay: 0.16s;
+      animation-delay: 0.14s;
     }
     .ep-stage--2 {
-      animation-delay: 0.28s;
+      animation-delay: 0.26s;
     }
     .ep-stage--3 {
-      animation-delay: 0.4s;
+      animation-delay: 0.38s;
     }
     .ep-stage--4 {
-      animation-delay: 0.52s;
+      animation-delay: 0.5s;
     }
     .ep-stage--5 {
-      animation-delay: 0.64s;
+      animation-delay: 0.62s;
     }
     .ep-stage--6 {
-      animation-delay: 0.8s;
+      animation-delay: 0.78s;
     }
 
     @keyframes ep-fade {
+      from {
+        opacity: 0;
+      }
       to {
         opacity: 1;
       }

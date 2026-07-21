@@ -39,23 +39,37 @@ const nav = [
       <DiagramFigure
         prototype
         caption="图 1 · 一次 Tool Result 拆成四层表示；active prune 只改写 Provider messages，不删 Evidence。"
-        alt="流水线：Tool execution 到 Runtime Event、Artifact、Turn Evidence，再到 Provider messages；底部不变式 Prune the context, never prune the evidence。"
+        alt="流水线：Tool execution 到 Runtime Event、Artifact、Turn Evidence，再到 Provider messages；01–04 持久为证据，05 可被 prune 改写；底部不变式 Prune the context, never prune the evidence。"
       >
         <EvidencePipelineKeystone />
       </DiagramFigure>
 
-      <p>
-        不变式：<strong>Prune the context, never prune the evidence.</strong> 这是 §02
-        的教学锚点，也是本标本选择「流水线」隐喻的原因——不是全站统一构图。
+      <p class="figure-note">
+        不变式：<strong>Prune the context, never prune the evidence.</strong>
+        流水线隐喻只服务 §02——不是全站统一构图。
       </p>
 
-      <div class="stub">
+      <aside class="stub">
         <p class="stub__tag">Prototype note</p>
         <p>
-          本页用于验证图示系统（关键图 SVG + figure chrome +
-          reduced-motion）。完整章节叙事、体量 D2 图与双语同船交付仍按验收清单推进，尚未标完成。
+          本页验证图示系统（关键图 SVG + figure chrome + reduced-motion）。完整章节叙事、体量 D2
+          图与双语同船交付仍按验收清单推进。
         </p>
-      </div>
+      </aside>
     </Section>
   </article>
 </ReportLayout>
+
+<style>
+  .figure-note {
+    margin: -0.35rem 0 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 38em;
+  }
+
+  .figure-note strong {
+    font-weight: 600;
+    color: var(--ink);
+  }
+</style>

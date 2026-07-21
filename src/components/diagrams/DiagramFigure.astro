@@ -14,26 +14,27 @@ const { caption, alt, prototype = false } = Astro.props;
   </div>
   <figcaption class="diagram-figure__caption">
     {prototype && <span class="diagram-figure__badge">Prototype</span>}
-    {caption}
+    <span class="diagram-figure__caption-text">{caption}</span>
   </figcaption>
 </figure>
 
 <style>
   .diagram-figure {
-    margin: 1.75rem 0 2rem;
+    margin: 2rem 0 2.25rem;
     max-width: 100%;
   }
 
   .diagram-figure__frame {
     border: 1px solid var(--hair);
     border-top: 2px solid var(--accent);
-    background: linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--soft) 70%, white) 0%,
-      var(--bg) 48%,
-      var(--softer) 100%
-    );
-    padding: 1.25rem 1rem 1rem;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--soft) 42%, var(--bg)) 0%,
+        var(--bg) 22%,
+        var(--bg) 100%
+      );
+    padding: 1.65rem 1.35rem 1.5rem;
     overflow-x: auto;
   }
 
@@ -41,31 +42,38 @@ const { caption, alt, prototype = false } = Astro.props;
     display: block;
     width: 100%;
     height: auto;
-    min-width: min(100%, 720px);
+    min-width: min(100%, 740px);
   }
 
   .diagram-figure__caption {
-    margin: 0.65rem 0 0;
-    padding-top: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.55rem;
+    margin: 0.7rem 0 0;
+    padding-top: 0.65rem;
     border-top: 1px solid var(--hair);
+    line-height: 1.5;
+  }
+
+  .diagram-figure__caption-text {
     font-family: var(--serif);
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-style: italic;
     color: var(--mute);
-    line-height: 1.45;
+    flex: 1 1 16rem;
   }
 
   .diagram-figure__badge {
-    display: inline-block;
-    margin-right: 0.45rem;
+    flex: 0 0 auto;
     font-family: var(--mono);
     font-style: normal;
-    font-size: 0.65rem;
-    letter-spacing: 0.06em;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
-    padding: 0.1rem 0.35rem;
-    vertical-align: 0.08em;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--hair));
+    background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+    padding: 0.12rem 0.4rem;
   }
 </style>
