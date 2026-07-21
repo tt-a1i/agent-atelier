@@ -5,6 +5,7 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipelineKeystone.astro";
 import FourRepsFlow from "../../../components/diagrams/FourRepsFlow.astro";
 import ActivePruneFlow from "../../../components/diagrams/ActivePruneFlow.astro";
+import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro";
 ---
 
 <ChapterShell chapterId="02" locale="en">
@@ -102,6 +103,12 @@ import ActivePruneFlow from "../../../components/diagrams/ActivePruneFlow.astro"
     title="Why Turn is the natural Evidence boundary"
     lede="Steps are too fine; Sessions are too wide; Turn is the operable midpoint."
   >
+    <DiagramFigure
+      caption="Fig. 4 · Source chain: RuntimeEvent → Artifact → Turn Evidence → later consumers; raw remains fetchable."
+      alt="Four steps: RuntimeEvent, Artifact ref, Turn Evidence, Later consumer."
+    >
+      <SourceChainFlow />
+    </DiagramFigure>
     <p>
       Model/tool events in this round share a turnId; tool call/result, permission, and artifacts can
       belong to the same round; a Turn terminal fact marks completed / failed / aborted. The next

@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import LogIsRuntimeKeystone from "../../components/diagrams/LogIsRuntimeKeystone.astro";
 import EventProduceConsumeFlow from "../../components/diagrams/EventProduceConsumeFlow.astro";
 import ReplayLayersFlow from "../../components/diagrams/ReplayLayersFlow.astro";
+import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.astro";
 ---
 
 <ChapterShell chapterId="01">
@@ -159,6 +160,12 @@ import ReplayLayersFlow from "../../components/diagrams/ReplayLayersFlow.astro";
     title="四个不要混在一起的身份"
     lede="Turn 不是 Run；聊天消息也不是执行状态。"
   >
+    <DiagramFigure
+      caption="图 4 · Session / Turn / Run / Invocation：概念分开，未来重试不必重写事件协议。"
+      alt="四列对照：Session、Turn、Run、Invocation。"
+    >
+      <IdentityLayersFlow />
+    </DiagramFigure>
     <ul class="plain-list">
       <li><strong>Session</strong> — 长期交互归属（sessionId）</li>
       <li><strong>Turn</strong> — 用户可见的一轮问答（turnId）</li>

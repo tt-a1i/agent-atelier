@@ -1,0 +1,64 @@
+---
+/**
+ * §04 flow — layered budgets that bound unattended loops.
+ */
+---
+
+<svg
+  class="bl-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="bl-kicker bl-stage bl-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · LAYERED BUDGETS · NO INFINITE CONTINUE
+  </text>
+  <line class="bl-stage bl-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+  <g class="bl-col bl-stage bl-stage--1" transform="translate(8,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">A · ATTEMPTS</text>
+    <text class="bl-col__title" x="14" y="56" fill="var(--ink)">maxAttempts</text>
+    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">TaskRun outer loop</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">each runTaskOnce</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">new Attempt slice</text>
+  </g>
+  <g class="bl-col bl-stage bl-stage--2" transform="translate(298,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.65"></rect>
+    <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">B · RUNTIME STEPS</text>
+    <text class="bl-col__title" x="14" y="56" fill="var(--ink)">maxRuntimeSteps</text>
+    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">inside one Attempt</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">model/tool cycles</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">cap ends Attempt</text>
+  </g>
+  <g class="bl-col bl-stage bl-stage--3" transform="translate(588,52)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="bl-col__idx" x="14" y="28" fill="var(--accent)">C · POLICY GATES</text>
+    <text class="bl-col__title" x="14" y="56" fill="var(--ink)">park / stop / abort</text>
+    <text class="bl-col__line" x="14" y="90" fill="var(--mute)">permission · budget</text>
+    <text class="bl-col__line" x="14" y="114" fill="var(--mute)">human approval</text>
+    <text class="bl-col__line" x="14" y="148" fill="var(--ink)">≠ immortal Invocation</text>
+  </g>
+</svg>
+
+<style>
+  .bl-flow { font-family: var(--sans); }
+  .bl-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; }
+  .bl-col__idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .bl-col__title { font-family: var(--serif); font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+  .bl-col__line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .bl-stage { opacity: 0; animation: bl-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .bl-stage--0 { animation-delay: 0.04s; }
+    .bl-stage--1 { animation-delay: 0.16s; }
+    .bl-stage--2 { animation-delay: 0.3s; }
+    .bl-stage--3 { animation-delay: 0.44s; }
+    @keyframes bl-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bl-stage { opacity: 1; animation: none; }
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+/**
+ * §01 flow — Session / Turn / Run / Invocation must not collapse.
+ */
+---
+
+<svg
+  class="il-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="il-kicker il-stage il-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · FOUR IDENTITIES · DO NOT COLLAPSE
+  </text>
+  <line class="il-stage il-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="il-col il-stage il-stage--1" transform="translate(8,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="il-col__idx" x="12" y="28" fill="var(--accent)">01</text>
+    <text class="il-col__title" x="12" y="56" fill="var(--ink)">Session</text>
+    <text class="il-col__line" x="12" y="90" fill="var(--mute)">long ownership</text>
+    <text class="il-col__line" x="12" y="114" fill="var(--mute)">sessionId</text>
+    <text class="il-col__line" x="12" y="148" fill="var(--ink)">who owns chat</text>
+  </g>
+  <g class="il-col il-stage il-stage--2" transform="translate(226,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.8"></rect>
+    <text class="il-col__idx" x="12" y="28" fill="var(--accent)">02</text>
+    <text class="il-col__title" x="12" y="56" fill="var(--ink)">Turn</text>
+    <text class="il-col__line" x="12" y="90" fill="var(--mute)">user-visible Q&amp;A</text>
+    <text class="il-col__line" x="12" y="114" fill="var(--mute)">turnId</text>
+    <text class="il-col__line" x="12" y="148" fill="var(--ink)">≠ execution</text>
+  </g>
+  <g class="il-col il-stage il-stage--3" transform="translate(444,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="il-col__idx" x="12" y="28" fill="var(--accent)">03</text>
+    <text class="il-col__title" x="12" y="56" fill="var(--ink)">Run</text>
+    <text class="il-col__line" x="12" y="90" fill="var(--mute)">durable attempt</text>
+    <text class="il-col__line" x="12" y="114" fill="var(--mute)">runId / AgentRun</text>
+    <text class="il-col__line" x="12" y="148" fill="var(--ink)">needs terminal fact</text>
+  </g>
+  <g class="il-col il-stage il-stage--4" transform="translate(662,52)">
+    <rect width="198" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="198" height="2" fill="var(--accent)" opacity="0.45"></rect>
+    <text class="il-col__idx" x="12" y="28" fill="var(--accent)">04</text>
+    <text class="il-col__title" x="12" y="56" fill="var(--ink)">Invocation</text>
+    <text class="il-col__line" x="12" y="90" fill="var(--mute)">Runner boundary</text>
+    <text class="il-col__line" x="12" y="114" fill="var(--mute)">invocationId</text>
+    <text class="il-col__line" x="12" y="148" fill="var(--ink)">may ≠ runId later</text>
+  </g>
+</svg>
+
+<style>
+  .il-flow { font-family: var(--sans); }
+  .il-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; }
+  .il-col__idx { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; }
+  .il-col__title { font-family: var(--serif); font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+  .il-col__line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .il-stage { opacity: 0; animation: il-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .il-stage--0 { animation-delay: 0.04s; }
+    .il-stage--1 { animation-delay: 0.14s; }
+    .il-stage--2 { animation-delay: 0.26s; }
+    .il-stage--3 { animation-delay: 0.38s; }
+    .il-stage--4 { animation-delay: 0.5s; }
+    @keyframes il-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .il-stage { opacity: 1; animation: none; }
+  }
+</style>

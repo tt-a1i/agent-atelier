@@ -5,6 +5,7 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import LogIsRuntimeKeystone from "../../../components/diagrams/LogIsRuntimeKeystone.astro";
 import EventProduceConsumeFlow from "../../../components/diagrams/EventProduceConsumeFlow.astro";
 import ReplayLayersFlow from "../../../components/diagrams/ReplayLayersFlow.astro";
+import IdentityLayersFlow from "../../../components/diagrams/IdentityLayersFlow.astro";
 ---
 
 <ChapterShell chapterId="01" locale="en">
@@ -167,6 +168,12 @@ import ReplayLayersFlow from "../../../components/diagrams/ReplayLayersFlow.astr
     title="Four identities that must not collapse"
     lede="A Turn is not a Run; a chat message is not execution state."
   >
+    <DiagramFigure
+      caption="Fig. 4 · Session / Turn / Run / Invocation stay distinct so retries need not rewrite the event protocol."
+      alt="Four columns: Session, Turn, Run, Invocation."
+    >
+      <IdentityLayersFlow />
+    </DiagramFigure>
     <ul class="plain-list">
       <li><strong>Session</strong> — long-lived interaction ownership (sessionId)</li>
       <li><strong>Turn</strong> — one user-visible Q&amp;A round (turnId)</li>

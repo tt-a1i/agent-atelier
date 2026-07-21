@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipelineKeystone.astro";
 import FourRepsFlow from "../../components/diagrams/FourRepsFlow.astro";
 import ActivePruneFlow from "../../components/diagrams/ActivePruneFlow.astro";
+import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
 ---
 
 <ChapterShell chapterId="02">
@@ -98,6 +99,12 @@ import ActivePruneFlow from "../../components/diagrams/ActivePruneFlow.astro";
     title="为什么 Turn 是自然的 Evidence 边界"
     lede="Step 太细，Session 太宽；Turn 是工程上可操作的中点。"
   >
+    <DiagramFigure
+      caption="图 4 · Source chain：RuntimeEvent → Artifact → Turn Evidence → 后续消费者；可回取原文。"
+      alt="四步：RuntimeEvent、Artifact ref、Turn Evidence、Later consumer。"
+    >
+      <SourceChainFlow />
+    </DiagramFigure>
     <p>
       本轮 model/tool events 共享 turnId；tool call/result、permission 与 artifacts 可归属同一轮；Turn
       terminal fact 给出完成/失败/中止。下一轮可以把上一轮 Evidence 当作有界工程记忆，而不必展开全部原始输出。

@@ -1,0 +1,53 @@
+---
+/**
+ * §06 flow — evidence plane is read-only; never a patch target.
+ */
+---
+
+<svg
+  class="re-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="re-kicker re-stage re-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · EVIDENCE PLANE READ-ONLY · NOT A PATCH TARGET
+  </text>
+  <line class="re-stage re-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+  <g class="re-col re-stage re-stage--1" transform="translate(8,52)">
+    <rect width="420" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="420" height="2" fill="var(--accent)"></rect>
+    <text class="re-col__idx" x="14" y="28" fill="var(--accent)">ALLOWED TARGET SURFACE</text>
+    <text class="re-col__line" x="14" y="62" fill="var(--ink)">system prompt · tool contracts</text>
+    <text class="re-col__line" x="14" y="88" fill="var(--ink)">context / permission / headless policy</text>
+    <text class="re-col__line" x="14" y="114" fill="var(--mute)">each with sourceRefs</text>
+    <text class="re-col__line" x="14" y="148" fill="var(--mute)">snapshotId = content identity</text>
+  </g>
+  <g class="re-col re-stage re-stage--2" transform="translate(448,52)">
+    <rect width="412" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="412" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="re-col__idx" x="14" y="28" fill="var(--accent)">FORBIDDEN · maka-runtime-evidence</text>
+    <text class="re-col__line" x="14" y="62" fill="var(--mute)">ledger that scores candidates</text>
+    <text class="re-col__line" x="14" y="88" fill="var(--mute)">must stay read-only export</text>
+    <text class="re-col__line" x="14" y="114" fill="var(--mute)">no rewrite scores / delete fails</text>
+    <text class="re-col__line" x="14" y="148" fill="var(--ink)">easiest fake “improvement”</text>
+  </g>
+</svg>
+
+<style>
+  .re-flow { font-family: var(--sans); }
+  .re-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; }
+  .re-col__idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .re-col__line { font-family: var(--serif); font-size: 14px; letter-spacing: -0.01em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .re-stage { opacity: 0; animation: re-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .re-stage--0 { animation-delay: 0.04s; }
+    .re-stage--1 { animation-delay: 0.18s; }
+    .re-stage--2 { animation-delay: 0.34s; }
+    @keyframes re-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .re-stage { opacity: 1; animation: none; }
+  }
+</style>

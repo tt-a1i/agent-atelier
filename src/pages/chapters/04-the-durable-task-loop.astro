@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../components/diagrams/DurableTaskKeystone.astro";
 import AttemptContinueFlow from "../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../components/diagrams/DurableBoundaryFlow.astro";
+import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
 ---
 
 <ChapterShell chapterId="04">
@@ -131,6 +132,12 @@ Long task progress
       alt="五步：runTaskOnce、Attempt ends、Append TaskEvt、Policy gate、Next view。"
     >
       <AttemptContinueFlow />
+    </DiagramFigure>
+    <DiagramFigure
+      caption="图 4 · 预算分层：maxAttempts · maxRuntimeSteps · park/stop/abort；没有无限续跑许可。"
+      alt="三列：maxAttempts、maxRuntimeSteps、policy gates。"
+    >
+      <BudgetLayersFlow />
     </DiagramFigure>
     <p>
       Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。

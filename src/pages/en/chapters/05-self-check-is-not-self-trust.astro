@@ -5,6 +5,7 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import SelfCheckKeystone from "../../../components/diagrams/SelfCheckKeystone.astro";
 import RepairBudgetFlow from "../../../components/diagrams/RepairBudgetFlow.astro";
 import AuthoritySplitFlow from "../../../components/diagrams/AuthoritySplitFlow.astro";
+import PlanThenEvidenceFlow from "../../../components/diagrams/PlanThenEvidenceFlow.astro";
 ---
 
 <ChapterShell chapterId="05" locale="en">
@@ -73,6 +74,12 @@ import AuthoritySplitFlow from "../../../components/diagrams/AuthoritySplitFlow.
     title="Why a Self-check Plan must come first"
     lede="Checking itself has side effects; post-hoc rationalization cannot distinguish prior intent."
   >
+    <DiagramFigure
+      caption="Fig. 4 · Plan submit → Runtime admit → Evidence submit → Strong pass?; missing plan can block."
+      alt="Four steps: Plan submit, Runtime admit, Evidence submit, Strong pass."
+    >
+      <PlanThenEvidenceFlow />
+    </DiagramFigure>
     <p>
       Compiles may write object files; scripts may overwrite deliverables; “verification output” may
       change the workspace listing. If the Agent only explains “those files were temporary” after the

@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import AheBoundaryKeystone from "../../components/diagrams/AheBoundaryKeystone.astro";
 import EvidenceExportFlow from "../../components/diagrams/EvidenceExportFlow.astro";
 import ManifestEvaluateFlow from "../../components/diagrams/ManifestEvaluateFlow.astro";
+import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidencePlaneFlow.astro";
 ---
 
 <ChapterShell chapterId="06">
@@ -103,6 +104,12 @@ Target Snapshot</pre>
     title="先声明「什么可以被改进」"
     lede="最危险的默认值是「整个仓库都可以改」。"
   >
+    <DiagramFigure
+      caption="图 4 · 可改表面 vs 只读证据面：maka-runtime-evidence 绝不能成为 patch 目标。"
+      alt="左列 allowed target surface，右列 forbidden maka-runtime-evidence。"
+    >
+      <ReadonlyEvidencePlaneFlow />
+    </DiagramFigure>
     <p>
       <code>MakaAheTargetSnapshot</code> 显式列出可理解的 component（system prompt、heavy-task
       policy、tool contracts、context management、permission policy、headless evaluation

@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro";
 import RepairBudgetFlow from "../../components/diagrams/RepairBudgetFlow.astro";
 import AuthoritySplitFlow from "../../components/diagrams/AuthoritySplitFlow.astro";
+import PlanThenEvidenceFlow from "../../components/diagrams/PlanThenEvidenceFlow.astro";
 ---
 
 <ChapterShell chapterId="05">
@@ -63,6 +64,12 @@ import AuthoritySplitFlow from "../../components/diagrams/AuthoritySplitFlow.ast
     title="为什么必须先有 Self-check Plan"
     lede="检查本身也会产生副作用；事后合理化无法区分事先计划。"
   >
+    <DiagramFigure
+      caption="图 4 · Plan submit → Runtime admit → Evidence submit → Strong pass?；缺 plan 可挡强通过。"
+      alt="四步：Plan submit、Runtime admit、Evidence submit、Strong pass。"
+    >
+      <PlanThenEvidenceFlow />
+    </DiagramFigure>
     <p>
       编译可能写出 object files，脚本可能覆盖 deliverable，「验证输出」也可能改变 workspace listing。若完成检查后才解释「那些文件都是临时的」，Runtime
       无法区分事先计划与事后合理化。因此先有

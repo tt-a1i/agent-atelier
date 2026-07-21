@@ -5,6 +5,7 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import AheBoundaryKeystone from "../../../components/diagrams/AheBoundaryKeystone.astro";
 import EvidenceExportFlow from "../../../components/diagrams/EvidenceExportFlow.astro";
 import ManifestEvaluateFlow from "../../../components/diagrams/ManifestEvaluateFlow.astro";
+import ReadonlyEvidencePlaneFlow from "../../../components/diagrams/ReadonlyEvidencePlaneFlow.astro";
 ---
 
 <ChapterShell chapterId="06" locale="en">
@@ -112,6 +113,12 @@ Target Snapshot</pre>
     title="Declare first what may be improved"
     lede="The most dangerous default is “the whole repository may be changed.”"
   >
+    <DiagramFigure
+      caption="Fig. 4 · Allowed target surface vs read-only evidence plane — maka-runtime-evidence is never a patch target."
+      alt="Left allowed target surface; right forbidden maka-runtime-evidence."
+    >
+      <ReadonlyEvidencePlaneFlow />
+    </DiagramFigure>
     <p>
       <code>MakaAheTargetSnapshot</code> explicitly lists understandable components (system prompt,
       heavy-task policy, tool contracts, context management, permission policy, headless evaluation,

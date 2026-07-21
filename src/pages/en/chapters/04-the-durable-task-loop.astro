@@ -5,6 +5,7 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeystone.astro";
 import AttemptContinueFlow from "../../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../../components/diagrams/DurableBoundaryFlow.astro";
+import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astro";
 ---
 
 <ChapterShell chapterId="04" locale="en">
@@ -138,6 +139,12 @@ Long task progress
       alt="Five steps: runTaskOnce, Attempt ends, Append TaskEvt, Policy gate, Next view."
     >
       <AttemptContinueFlow />
+    </DiagramFigure>
+    <DiagramFigure
+      caption="Fig. 4 · Layered budgets: maxAttempts · maxRuntimeSteps · park/stop/abort — no infinite continue."
+      alt="Three columns: maxAttempts, maxRuntimeSteps, policy gates."
+    >
+      <BudgetLayersFlow />
     </DiagramFigure>
     <p>
       An Attempt may end on normal stop, execution failure, incomplete information, permission block,
