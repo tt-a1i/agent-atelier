@@ -119,9 +119,9 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 
 | Seam | Why lower | Status |
 | --- | --- | --- |
-| Frontend CSS governance / DESIGN.md | Product UI, not Runtime mechanism depth | Out of cognitive Destination unless UI track opens |
+| Frontend CSS governance / DESIGN.md / `@maka/ui` / renderer | Product UI — but agent UX contracts affect supervision | **opened** `/guides/desktop-ui` (#86) — streaming / ToolTrow / permission slot; not CSS dump |
 | Bundled SKILL.md ×29 | Product content | F — catalog policy mines the *mechanism*; skills themselves optional |
-| Eval benchmark writeups | Results snapshots | Cite from §04/headless if needed |
+| Eval benchmark writeups | Results snapshots | Cite-only (#89) → §04 `#terminal-bench-read` |
 | Meta architecture-docs skill | How maka writes docs | Agent ops, not reader Destination |
 
 ---

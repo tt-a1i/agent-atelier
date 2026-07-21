@@ -1,0 +1,298 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import DesktopUiAgentUxFlow from "../../components/diagrams/DesktopUiAgentUxFlow.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/desktop-ui");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Desktop UI · Agent UX 契约 · Agent Atelier"
+  description="Maka 设计系统与渲染层契约：streaming chrome、ToolTrow、权限 UI——配套研报，不是 CSS dump，也不是第七世界观章。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Desktop UI · Agent UX 契约</span>
+        <span class="masthead__title-en">Design system contracts for agent supervision</span>
+      </h1>
+      <p class="masthead__sub">
+        从 <code>DESIGN.md</code> / CSS governance / <code>@maka/ui</code> / renderer README 挖出的
+        <strong>会改变 agent 监督体验</strong>的合同——不是 Tailwind 配方全集。正交于
+        <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a>（main 组合）与
+        <a href={`${ch01}#permission`}>§01 · #permission</a>（引擎协议）。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/desktop-ui</span>
+        <span>Research · #86 · Map · #34</span>
+        <span>
+          <a href={localePath("en", "guides/desktop-ui")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="UI · Scene"
+      title="为什么开 UI companion，而不是 defer"
+      lede="Cluster-3 文档编码的是监督面契约；静默跳过会留下 Destination 假完成。"
+    >
+      <p>
+        Desktop main 解决「Runtime 怎么焊进 Electron」；本页解决「用户如何看见并裁决一次
+        turn」：流式文本、工具时间线、权限接管。权威冲突时
+        <strong>code + contract tests 胜出</strong>。完整色板/圆角表留给
+        <code>maka-tokens.css</code>——atelier 只教影响 agent UX 的不变量。
+      </p>
+      <blockquote class="pull">
+        Teach supervision chrome, not a CSS dump.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="north-star"
+      label="UI · North star"
+      title="Companion Command Center"
+      lede="任务居中、活动可检视、冷静连续——不是会发光的聊天玩偶。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Signal, not texture</strong> — Maka blue 只做动作/状态/焦点；禁止背景洪水、装饰渐变、ambient
+          glow。
+        </li>
+        <li>
+          <strong>One working plane</strong> — 对话与旁侧工作上下文是同一工作区；分隔线分责，卡片阴影不把窗口撕成
+          dashboard。
+        </li>
+        <li>
+          <strong>Presence without performance</strong> — agent「在场」靠进度、解释与连续性；禁止吉祥物、假情绪、气泡装饰。
+        </li>
+        <li>
+          <strong>Native voice</strong> — mono 留给代码/路径/命令/证据数字；中英同界面、紧凑可读。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="layers"
+      label="UI · Layers"
+      title="tokens → @maka/ui → AppShell"
+      lede="三层各有 SoT；手写 renderer CSS 是过渡态，不是扩展入口。"
+    >
+      <DiagramFigure
+        caption="图 · SessionEvent → live projection → materialize/overlay → ToolTrow / Permission / token cascade；底栏钉 Companion Command Center。"
+        alt="三步水平流加三个监督面合同块，底部北星条。"
+      >
+        <DesktopUiAgentUxFlow />
+      </DiagramFigure>
+
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Tokens</strong> — <code>maka-tokens.css</code> 是运行时 token SoT；
+          <code>styles.css</code> 只做 <code>@import</code> / <code>@theme</code> 编排。
+        </li>
+        <li>
+          <strong><code>@maka/ui</code></strong> —
+          <code>primitives/</code>（目标层 + <code>data-slot</code>）→ 过渡 <code>ui.tsx</code> → 功能组件（ChatView /
+          Composer / PermissionPrompt / ToolTrow）。Barrel 只提升跨包或显式公共 API。
+        </li>
+        <li>
+          <strong>Renderer AppShell</strong> — 拥有会话状态与 IPC；ChatView 渲染时间线；Composer 槽位可被权限面
+          takeover；SessionWorkbar（ledger / browser / artifacts）懒挂载。
+        </li>
+      </ol>
+      <p>
+        新代码顺序：先 primitive / Tailwind，再 <code>styles/&lt;surface&gt;.css</code>。禁止新的裸颜色 / 半径 /
+        z-index。
+      </p>
+    </Section>
+
+    <Section
+      id="streaming"
+      label="UI · Streaming"
+      title="Live turn：投影，不是绑原始 delta"
+      lede="二次脱敏、cap 策略、平滑显示与「处理中/继续中」分形，都是信任边界的一部分。"
+    >
+      <div class="table-wrap" role="region" aria-label="Streaming 契约" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">环节</th>
+              <th scope="col">合同</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>applyLiveTurnEvent</code></td>
+              <td>thinking / text / tools / permission → <code>LiveTurnProjection</code> steps + contentOrder</td>
+            </tr>
+            <tr>
+              <td><code>overlayLiveTurn</code></td>
+              <td>live 通常覆盖 persisted；interrupted vs in-flight 例外（防 abort 后假运行）</td>
+            </tr>
+            <tr>
+              <td>Assistant stream</td>
+              <td>redact → delta cap（tail-keep）→ append → <strong>跨 delta redact</strong> → total cap（head-keep）</td>
+            </tr>
+            <tr>
+              <td>Thinking / tool output</td>
+              <td>thinking 偏 tail-keep（看「此刻」）；tool chunks 二次 redact + 条数/字数封顶；chunks 不进 JSONL</td>
+            </tr>
+            <tr>
+              <td><code>useSmoothStreamContent</code></td>
+              <td>EMA CPS · 字素切片 · 单 RAF · complete flush；reduced-motion / 历史 hydrate 用 <code>snap</code></td>
+            </tr>
+            <tr>
+              <td>Chrome 诚实</td>
+              <td><code>processingIndicator</code>（首 token 等待）≠ <code>continuingIndicator</code>（步间静默）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        默认 cap（可被测试钉死）：assistant 单 delta ≈ 4KB、单 turn total ≈ 256KB。跨 delta 二次
+        <code>redactSecrets</code> 是硬闸——密钥常被拆在两个 chunk 里。
+      </p>
+    </Section>
+
+    <Section
+      id="tool-timeline"
+      label="UI · Tool timeline"
+      title="ToolTrow：扁平时间线，不是卡片堆"
+      lede="连续工具共享一个 disclosure 根；权限才强制展开；错误靠摘要信号。"
+    >
+      <ul class="plain-list">
+        <li>
+          一组 contiguous tools → 单一 <code>ToolTrow</code>；第二个调用<strong>追加</strong>进同一组件，而不是拆掉已展开行再换成折叠组。
+        </li>
+        <li>
+          <code>needsAttention</code> <strong>仅</strong> <code>waiting_permission</code>；errored 保持折叠，摘要行用破坏色标「N 个失败」。
+        </li>
+        <li>
+          用户手动开关 disclosure 后，普通 status 变化不得重置选择。
+        </li>
+        <li>
+          多工具并行时，组图标/摘要锚定 first-seen bucket，禁止摘要在工具间乱跳（#tool-jitter）。
+        </li>
+        <li>
+          组曾见过 running 才播 settle；并行结束用光带停止，不叠 N 个 opacity fade。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="permission-ui"
+      label="UI · Permission"
+      title="PermissionPrompt 与 Composer 槽位接管"
+      lede="权限面拥有交互槽；Composer 隐藏但不卸载，草稿与 uncontrolled textarea 存活。"
+    >
+      <ul class="plain-list">
+        <li>
+          渲染在 <code>maka-composer-interaction-slot</code>；Composer 收
+          <code>hidden=&#123;Boolean(activeInteraction)&#125;</code>，禁止 <code>return null</code>。
+        </li>
+        <li>
+          <code>onRespond</code> 必须 await：IPC 失败时复位 <code>responsePending</code>，避免按钮永久锁死。
+        </li>
+        <li>
+          <code>rememberForTurn</code> 仅当 <code>rememberForTurnAllowed</code> 且 decision=<code>allow</code>。
+        </li>
+        <li>
+          reason → tone（info / caution / destructive）；打开时焦点落在 deny；展示参数走 redact。
+        </li>
+      </ul>
+      <p>
+        引擎侧 park / remember / escalation 见
+        <a href={`${ch01}#park-remember`}>§01 · #park-remember</a>；本页只教
+        <strong>监督面如何呈现与接管</strong>。UI 权限提示 ≠ OS 沙箱——见
+        <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>。
+      </p>
+    </Section>
+
+    <Section
+      id="css-contracts"
+      label="UI · CSS contracts"
+      title="影响 agent chrome 的治理合同（精简）"
+      lede="CI 守卫是契约的一部分；不是审美 checklist。"
+    >
+      <ol class="plain-list numbered">
+        <li><code>styles.css</code> 只做入口编排；选择器进 <code>styles/**</code>。</li>
+        <li>
+          少数必须 unlayered 的覆盖（如 <code>.maka-nav-row</code>、settings refresh）由
+          <code>renderer-style-layer-cascade-contract</code> 钉死。
+        </li>
+        <li>
+          <code>!important</code> 默认仅 a11y / reduced-motion / visual-smoke；其余要
+          <code>Justified:</code> + important-audit 登记。
+        </li>
+        <li>
+          <code>--foreground-N</code> wash 是表面填充，不是正文色；正文用三档
+          <code>--foreground</code> / <code>--foreground-secondary</code> /
+          <code>--muted-foreground</code>。
+        </li>
+        <li>Chat chrome 禁止装饰性 AI 渐变（<code>chat-chrome-no-gradient-contract</code>）。</li>
+      </ol>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="UI · Boundaries"
+      title="不是 desktop-host，也不是信任模型全文"
+      lede="三页各有一份真相。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>本页</strong> — 监督面设计系统与投影/时间线/权限槽位契约。
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a></strong> —
+          main stores → tools → SessionManager → IPC。
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a></strong> —
+          OS 边界、privacy context、Seatbelt 诚实。
+        </li>
+      </ul>
+      <p>
+        <code>notes/frontend-architecture-map-2026-07-19.md</code> 的 R1–R8 拆分战役是过程史；教学只吸收
+        AppShell / 层图 / 收敛方向。
+      </p>
+    </Section>
+
+    <Section
+      id="failure"
+      label="UI · Failure"
+      title="失败故事"
+      lede="错误 chrome 会教错威胁模型，或毁掉可恢复的监督状态。"
+    >
+      <ul class="plain-list">
+        <li>原始 <code>text_delta</code> 直绑 Markdown → 跳动 + 密钥可能进 React state</li>
+        <li>跳过跨 delta redact → 拆开的 Bearer token 拼回明文</li>
+        <li>权限时卸载 Composer → 草稿与 textarea 状态丢失</li>
+        <li>每个 tool 一张卡 → 权限被埋、并行 settle 抖动</li>
+        <li>把 UI 权限对话框当成沙箱 → 信任模型剧场</li>
+        <li>把 CSS dump 当 Destination → 静默跳过 agent UX 合同</li>
+      </ul>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        验证入口：<code>packages/ui</code> live-turn / trow / materialize 测试 +
+        <code>apps/desktop/src/main/__tests__</code> 下 smooth-stream、streaming-timeline、permission-composer-takeover、style-layer /
+        foreground-tier / important-audit。提纲：
+        <code>docs/research/desktop-ui-design-system-deep-outline.md</code>（#86）。
+      </p>
+    </aside>
+  </article>
+</ReportLayout>

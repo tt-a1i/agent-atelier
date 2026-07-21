@@ -1,0 +1,323 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import DesktopUiAgentUxFlow from "../../../components/diagrams/DesktopUiAgentUxFlow.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/desktop-ui");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Desktop UI · Agent UX contracts · Agent Atelier"
+  description="Maka design-system contracts that shape agent supervision: streaming chrome, ToolTrow, permission UI — a companion report, not a CSS dump or seventh worldview chapter."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Desktop UI · Agent UX contracts</span>
+        <span class="masthead__title-en">Design system contracts for agent supervision</span>
+      </h1>
+      <p class="masthead__sub">
+        Mined from <code>DESIGN.md</code>, CSS governance, <code>@maka/ui</code>, and the renderer README:
+        the contracts that change how you supervise an agent — not the full Tailwind recipe book.
+        Orthogonal to
+        <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a> (main composition) and
+        <a href={`${ch01}#permission`}>§01 · #permission</a> (engine protocol).
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/desktop-ui</span>
+        <span>Research · #86 · Map · #34</span>
+        <span>
+          <a href={localePath("zh", "guides/desktop-ui")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="UI · Scene"
+      title="Why open a UI companion instead of deferring"
+      lede="Cluster-3 docs encode supervision-surface contracts; silent skip fakes Destination completion."
+    >
+      <p>
+        Desktop main answers how Runtime is welded into Electron. This page answers how a human
+        sees and adjudicates a turn: streaming text, tool timeline, permission takeover. When
+        authorities conflict, <strong>code + contract tests win</strong>. Full palette/radius tables stay
+        in <code>maka-tokens.css</code> — atelier teaches only agent-UX invariants.
+      </p>
+      <blockquote class="pull">
+        Teach supervision chrome, not a CSS dump.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="north-star"
+      label="UI · North star"
+      title="Companion Command Center"
+      lede="Task-central, inspectable activity, calm continuity — not a glowing chat mascot."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Signal, not texture</strong> — Maka blue is action / state / focus only; no background
+          floods, decorative gradients, or ambient glow.
+        </li>
+        <li>
+          <strong>One working plane</strong> — conversation and adjacent work context share one workspace;
+          dividers separate duties; card shadows must not shatter the window into a dashboard.
+        </li>
+        <li>
+          <strong>Presence without performance</strong> — the agent feels present through progress,
+          explanation, and continuity — not mascots, fake emotion, or bubble ornament.
+        </li>
+        <li>
+          <strong>Native voice</strong> — mono is for code, paths, commands, and numeric evidence; CJK and
+          Latin read as one compact UI.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="layers"
+      label="UI · Layers"
+      title="tokens → @maka/ui → AppShell"
+      lede="Each layer has a source of truth; hand-rolled renderer CSS is transitional, not the extension path."
+    >
+      <DiagramFigure
+        caption="Fig. · SessionEvent → live projection → materialize/overlay → ToolTrow / Permission / token cascade; footer pins Companion Command Center."
+        alt="Three-step horizontal flow plus three supervision contract blocks and a north-star footer bar."
+      >
+        <DesktopUiAgentUxFlow />
+      </DiagramFigure>
+
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Tokens</strong> — <code>maka-tokens.css</code> is the runtime token SoT;
+          <code>styles.css</code> is entry-only (<code>@import</code> / <code>@theme</code> orchestration).
+        </li>
+        <li>
+          <strong><code>@maka/ui</code></strong> —
+          <code>primitives/</code> (target layer + <code>data-slot</code>) → transitional
+          <code>ui.tsx</code> → feature components (ChatView / Composer / PermissionPrompt / ToolTrow).
+          Barrel promotion requires a cross-package consumer or an explicit public-API need.
+        </li>
+        <li>
+          <strong>Renderer AppShell</strong> — owns session state and IPC; ChatView renders the timeline;
+          the Composer slot can be taken over by the permission surface; SessionWorkbar (ledger /
+          browser / artifacts) mounts lazily.
+        </li>
+      </ol>
+      <p>
+        New code order: primitive / Tailwind first, then <code>styles/&lt;surface&gt;.css</code>. No new raw
+        colors, radii, or z-index values.
+      </p>
+    </Section>
+
+    <Section
+      id="streaming"
+      label="UI · Streaming"
+      title="Live turn: a projection, not raw deltas"
+      lede="Secondary redaction, cap policy, smooth display, and processing vs continuing chrome are part of the trust boundary."
+    >
+      <div class="table-wrap" role="region" aria-label="Streaming contracts" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Stage</th>
+              <th scope="col">Contract</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>applyLiveTurnEvent</code></td>
+              <td>thinking / text / tools / permission → <code>LiveTurnProjection</code> steps + contentOrder</td>
+            </tr>
+            <tr>
+              <td><code>overlayLiveTurn</code></td>
+              <td>live usually wins over persisted; interrupted vs in-flight is the abort-race exception</td>
+            </tr>
+            <tr>
+              <td>Assistant stream</td>
+              <td>
+                redact → delta cap (tail-keep) → append → <strong>cross-delta redact</strong> → total cap
+                (head-keep)
+              </td>
+            </tr>
+            <tr>
+              <td>Thinking / tool output</td>
+              <td>
+                thinking prefers tail-keep (“now”); tool chunks get secondary redact + count/char caps;
+                chunks are transient (not JSONL)
+              </td>
+            </tr>
+            <tr>
+              <td><code>useSmoothStreamContent</code></td>
+              <td>
+                EMA CPS · grapheme-safe · single RAF · complete flush; <code>snap</code> for reduced-motion /
+                history hydrate
+              </td>
+            </tr>
+            <tr>
+              <td>Chrome honesty</td>
+              <td>
+                <code>processingIndicator</code> (first-token wait) ≠ <code>continuingIndicator</code> (mid-turn
+                lull)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Default caps (pinned by tests): ~4KB per assistant delta, ~256KB total per turn. Cross-delta
+        <code>redactSecrets</code> is a hard gate — secrets often split across chunks.
+      </p>
+    </Section>
+
+    <Section
+      id="tool-timeline"
+      label="UI · Tool timeline"
+      title="ToolTrow: a flat timeline, not a card stack"
+      lede="Contiguous tools share one disclosure root; only permission forces open; errors signal via summary."
+    >
+      <ul class="plain-list">
+        <li>
+          One contiguous tool run → a single <code>ToolTrow</code>; a second call
+          <strong>appends</strong> inside the same root instead of replacing an expanded row with a collapsed
+          group.
+        </li>
+        <li>
+          <code>needsAttention</code> is <strong>only</strong> <code>waiting_permission</code>; errored rows stay
+          collapsed while the summary carries the failure signal in destructive color.
+        </li>
+        <li>A user’s manual disclosure choice survives ordinary later status changes.</li>
+        <li>
+          While multiple tools run, group icon/summary anchors the first-seen bucket — no mid-run summary
+          jitter (#tool-jitter).
+        </li>
+        <li>
+          Settle animation only if the group was ever seen running here; parallel finishes drop the light
+          band instead of stacking N opacity fades.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="permission-ui"
+      label="UI · Permission"
+      title="PermissionPrompt and Composer slot takeover"
+      lede="The permission surface owns the interaction slot; Composer hides without unmounting so draft and uncontrolled textarea survive."
+    >
+      <ul class="plain-list">
+        <li>
+          Renders in <code>maka-composer-interaction-slot</code>; Composer receives
+          <code>hidden=&#123;Boolean(activeInteraction)&#125;</code> — never <code>return null</code>.
+        </li>
+        <li>
+          <code>onRespond</code> must be awaited so <code>responsePending</code> resets on IPC failure and buttons
+          do not lock forever.
+        </li>
+        <li>
+          <code>rememberForTurn</code> only when <code>rememberForTurnAllowed</code> and decision=<code>allow</code>.
+        </li>
+        <li>
+          reason → tone (info / caution / destructive); focus deny on open; displayed args go through
+          redact.
+        </li>
+      </ul>
+      <p>
+        Engine-side park / remember / escalation lives at
+        <a href={`${ch01}#park-remember`}>§01 · #park-remember</a>; this page only teaches
+        <strong>how the supervision surface presents and takes over</strong>. A UI permission prompt is not an
+        OS sandbox — see
+        <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>.
+      </p>
+    </Section>
+
+    <Section
+      id="css-contracts"
+      label="UI · CSS contracts"
+      title="Governance that binds agent chrome (lean)"
+      lede="CI guards are part of the contract — not an aesthetic checklist."
+    >
+      <ol class="plain-list numbered">
+        <li><code>styles.css</code> is entry orchestration only; selectors live under <code>styles/**</code>.</li>
+        <li>
+          A short unlayered override list (e.g. <code>.maka-nav-row</code>, settings refresh) is pinned by
+          <code>renderer-style-layer-cascade-contract</code>.
+        </li>
+        <li>
+          <code>!important</code> defaults to a11y / reduced-motion / visual-smoke only; everything else needs
+          <code>Justified:</code> plus the important-audit registry.
+        </li>
+        <li>
+          <code>--foreground-N</code> washes are surface fills, not prose colors; text uses the three-tier
+          aliases (<code>--foreground</code> / <code>--foreground-secondary</code> /
+          <code>--muted-foreground</code>).
+        </li>
+        <li>Chat chrome forbids decorative AI gradients (<code>chat-chrome-no-gradient-contract</code>).</li>
+      </ol>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="UI · Boundaries"
+      title="Not desktop-host, not the full trust model"
+      lede="Three pages, three truths."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>This page</strong> — supervision design system + projection / timeline / permission-slot
+          contracts.
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a></strong> —
+          main stores → tools → SessionManager → IPC.
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a></strong> —
+          OS boundary, privacy context, Seatbelt honesty.
+        </li>
+      </ul>
+      <p>
+        The R1–R8 decomposition campaign in
+        <code>notes/frontend-architecture-map-2026-07-19.md</code> is process history; teaching absorbs only
+        AppShell / layer map / convergence direction.
+      </p>
+    </Section>
+
+    <Section
+      id="failure"
+      label="UI · Failure"
+      title="Failure stories"
+      lede="Wrong chrome teaches the wrong threat model — or destroys recoverable supervision state."
+    >
+      <ul class="plain-list">
+        <li>Bind raw <code>text_delta</code> to Markdown → jumpy chrome + secrets may land in React state</li>
+        <li>Skip cross-delta redact → split Bearer tokens reassemble as plaintext</li>
+        <li>Unmount Composer on permission → draft and textarea state die</li>
+        <li>One card per tool → permission buried, parallel settle jitter</li>
+        <li>Treat the UI permission dialog as a sandbox → trust-model theater</li>
+        <li>Treat a CSS dump as Destination → silent skip of agent UX contracts</li>
+      </ul>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        Verification: <code>packages/ui</code> live-turn / trow / materialize tests plus
+        <code>apps/desktop/src/main/__tests__</code> smooth-stream, streaming-timeline,
+        permission-composer-takeover, style-layer / foreground-tier / important-audit. Outline:
+        <code>docs/research/desktop-ui-design-system-deep-outline.md</code> (#86).
+      </p>
+    </aside>
+  </article>
+</ReportLayout>

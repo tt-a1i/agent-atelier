@@ -16,7 +16,7 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
 
 <ReportLayout
   title="Desktop main composition · Agent Atelier"
-  description="Maka Electron main: stores → tool assembly → BackendRegistry → SessionManager → IPC cluster — companion report, not a seventh worldview chapter, and not UI chrome."
+      description="Maka Electron main: stores → tool assembly → BackendRegistry → SessionManager → IPC cluster — companion report, not a seventh worldview chapter. UI chrome: /guides/desktop-ui."
   nav={nav}
   activeHref={selfHref}
   locale={locale}
@@ -52,7 +52,8 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         Desktop main is the product composition root: open persistence, assemble tools, register
         backends, construct <code>SessionManager</code>, then expose typed IPC through preload. When
         authorities conflict, <strong>code + contract tests win</strong>. This page does not teach CSS,
-        Storybook, or visual-smoke scenario catalogs.
+        Storybook, or visual-smoke scenario catalogs — supervision chrome lives at
+        <a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a>.
       </p>
       <blockquote class="pull">
         Renderer never constructs SessionManager; secrets never cross main→renderer.
@@ -234,7 +235,8 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
       <p>
         Bot / IM bridges:
         <a href={localePath(locale, "guides/bot-im")}>/guides/bot-im</a>. Computer-use suite:
-        <a href={localePath(locale, "guides/computer-use")}>/guides/computer-use</a>. Trust model:
+        <a href={localePath(locale, "guides/computer-use")}>/guides/computer-use</a>. Supervision UI:
+        <a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a>. Trust model:
         <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>.
       </p>
     </Section>

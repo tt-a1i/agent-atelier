@@ -9,7 +9,7 @@
 
 **Destination is NOT complete.**
 
-Named Cluster 1 fat seams remain **deep**. This follow-up absorbed #87–#89 plus the fattest non-UI archive contrast (`expert-team-implementation`). Leftovers that still block closing #34 are mostly **Cluster-3 UI** design-encoding rows (#86) plus AHE Target controller / reconciler Phase 3 product stubs. **Do not close #34.**
+Matrix **design-encoding debt is cleared** (#86 Cluster-3 UI companion shipped; #87–#89 decided/mined; expert-team contrast absorbed). Remaining Destination blockers are **product stubs** (AHE Target controller / Phase 3 reconciler) plus entry honesty — not silent doc skips. **Do not fake-close Destination** when the matrix looks green.
 
 ## Method (this pass)
 
@@ -17,7 +17,8 @@ Named Cluster 1 fat seams remain **deep**. This follow-up absorbed #87–#89 plu
 2. Decided Codex/FogCursor RE is **history contrast** (not Runtime protocol, not silent skip) → `#cursor-contrast` — #88.  
 3. Terminal-Bench eval writeup → **cite-only** with §04 `#terminal-bench-read` how-to-read vs Harbor taxonomy — #89.  
 4. Extra: Expert Team competitor RE contrast into §04 `#swarm`.  
-5. Regenerated matrix counts + debt list; kept entry honesty.
+5. **#86:** opened `/guides/desktop-ui` (CN+EN) — DESIGN / CSS governance / `@maka/ui` / renderer README / notes frontend structure → agent UX contracts (streaming / ToolTrow / permission slot); not a CSS dump.  
+6. Regenerated matrix counts + debt list; kept entry honesty.
 
 Depth classes (same as mine-plan):
 
@@ -34,11 +35,11 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 54 | 42.5% |
-| thin | 5 | 3.9% |
-| none | 68 | 53.5% |
+| deep | 60 | 47.2% |
+| thin | 4 | 3.1% |
+| none | 63 | 49.6% |
 
-`none` is dominated by bundled SKILL×29 + discard/history archives + meta/process — **not** all Destination blockers. Design-encoding debt that still blocks closing #34 is listed in the matrix §“Design-encoding debt” (mostly #86 UI).
+`none` is dominated by bundled SKILL×29 + discard/history archives + meta/process — **not** Destination blockers. Design-encoding matrix debt: **cleared**.
 
 ## Cluster scores (mine-plan buckets)
 
@@ -61,7 +62,7 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | Seam | Status (honest) |
 | --- | --- |
 | Sandbox | **deep** |
-| Computer-use | **deep** (+ physical-input-guard + FogCursor contrast this pass) |
+| Computer-use | **deep** (+ physical-input-guard + FogCursor contrast) |
 | Recovery Phase0/1 + T1/T2 Resolver | **deep** |
 | Tool journal sticky migration / Phase2 vs Phase3 | **deep** |
 | AgentRunRecovery vs RuntimeRecovery | **deep** |
@@ -88,7 +89,7 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | Runtime-host gateway | **deep** |
 | Local memory whitebox | **deep** |
 
-**Approx. Cluster 1 named fat list:** all deep for Current teaching claims. Still **not** Destination (Cluster-3 UI debt + Target stubs + entry honesty).
+**Approx. Cluster 1 named fat list:** all deep for Current teaching claims. Still **not** Destination (Target stubs + entry honesty).
 
 ### Cluster 2 — Archive that still teaches
 
@@ -99,28 +100,31 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | `expert-team-implementation.md` | **deep** (history contrast) |
 | Remaining | archive `README.md` inventory-only thin |
 
-### Cluster 3 — Lower priority (still inventoried; blocks close if design-encoding)
+### Cluster 3 — UI track opened (#86)
 
-Frontend CSS / DESIGN.md / `packages/ui` / notes frontend map / renderer README / 29 SKILL bodies — **thin/none** on matrix; [#86](https://github.com/tt-a1i/agent-atelier/issues/86) asks UI track or defer-with-reason.
+| Seam | Status |
+| --- | --- |
+| DESIGN.md / CSS governance / `@maka/ui` / renderer README / notes frontend map | **deep** → `/guides/desktop-ui` (agent UX contracts; not CSS dump) |
+| Bundled SKILL.md ×29 | OOS product content (catalog mechanism already deep) |
+| Eval / RE tickets #87–#89 | decided/mined on CU / §04 homes |
 
-## Remaining (do not close #34)
+## Remaining (Destination honesty)
 
-1. **Design-encoding matrix debt** — primarily Cluster-3 UI (#86); see [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md).  
-2. **AHE Target controller / runner / change-evaluation validator** — product stub; do not invent.  
-3. **Tool journal Phase 3 reconciler** — Target; taught as non-claim.  
-4. **Entry / map copy** — keep saying Destination not complete.
+1. **AHE Target controller / runner / change-evaluation validator** — product stub; do not invent.  
+2. **Tool journal Phase 3 reconciler** — Target; taught as non-claim.  
+3. **Entry / map copy** — keep saying Destination not complete until product Current catches up (or map explicitly accepts stub honesty as done).  
+4. Matrix design-encoding rows: **cleared**.
 
 ## Ticket frontier
 
-- Open wayfinder: **#34** (map).  
-- Closed this pass: [#87](https://github.com/tt-a1i/agent-atelier/issues/87) · [#88](https://github.com/tt-a1i/agent-atelier/issues/88) · [#89](https://github.com/tt-a1i/agent-atelier/issues/89).  
-- Still open child: [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI.  
+- Open wayfinder: **#34** (map) — matrix debt cleared; Destination still stub-gated.  
+- Closed: [#86](https://github.com/tt-a1i/agent-atelier/issues/86) · [#87](https://github.com/tt-a1i/agent-atelier/issues/87) · [#88](https://github.com/tt-a1i/agent-atelier/issues/88) · [#89](https://github.com/tt-a1i/agent-atelier/issues/89).  
 - Prior children through #85 closed for shipped research/tasks.
 
 ## What would make Destination true
 
-1. Matrix shows **zero design-encoding** docs at `none`/`thin` (mined **or** explicitly deferred-with-reason that is not a silent skip).  
-2. Entry / map stop implying depth pass ≈ Destination — keep honest WIP until (1).  
+1. Matrix shows **zero design-encoding** docs at `none`/`thin` (mined **or** explicitly deferred-with-reason) — **done** for design-encoding rows.  
+2. Entry / map stop implying depth pass ≈ Destination — keep honest WIP while Target stubs remain.  
 3. Optional: close Target stubs only when product Current catches up — do not invent.
 
 Until then: **depth pass advanced — Destination not complete.**

@@ -1,0 +1,163 @@
+---
+/**
+ * /guides/desktop-ui — agent UX contracts (streaming / trow / permission), not CSS dump.
+ */
+---
+
+<svg
+  class="dui-flow"
+  viewBox="0 0 868 340"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="dui-kicker dui-stage dui-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · DESKTOP UI · AGENT UX CONTRACTS
+  </text>
+  <line
+    class="dui-stage dui-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="dui-stage dui-stage--1" transform="translate(8,52)">
+    <rect width="200" height="88" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">1 · SESSION EVENTS</text>
+    <text class="dui-line" x="12" y="50" fill="var(--ink)">text / thinking / tool</text>
+    <text class="dui-line" x="12" y="68" fill="var(--mute)">permission_request</text>
+  </g>
+
+  <path
+    class="dui-stage dui-stage--1"
+    d="M216 96 H240"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#dui-arrow)"
+  ></path>
+
+  <g class="dui-stage dui-stage--2" transform="translate(248,52)">
+    <rect width="220" height="88" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">2 · LIVE PROJECTION</text>
+    <text class="dui-line" x="12" y="50" fill="var(--ink)">applyLiveTurnEvent</text>
+    <text class="dui-line" x="12" y="68" fill="var(--mute)">redact · caps · steps</text>
+  </g>
+
+  <path
+    class="dui-stage dui-stage--2"
+    d="M476 96 H500"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#dui-arrow)"
+  ></path>
+
+  <g class="dui-stage dui-stage--3" transform="translate(508,52)">
+    <rect width="352" height="88" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">3 · MATERIALIZE + OVERLAY</text>
+    <text class="dui-line" x="12" y="50" fill="var(--ink)">timeline · overlayLiveTurn</text>
+    <text class="dui-line" x="12" y="68" fill="var(--mute)">smooth-stream · ChatView</text>
+  </g>
+
+  <g class="dui-stage dui-stage--4" transform="translate(8,168)">
+    <rect width="276" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">TOOL TROW</text>
+    <text class="dui-line" x="12" y="48" fill="var(--ink)">flat disclosure · attention=permission</text>
+  </g>
+
+  <g class="dui-stage dui-stage--5" transform="translate(296,168)">
+    <rect width="276" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">PERMISSION UI</text>
+    <text class="dui-line" x="12" y="48" fill="var(--ink)">composer slot takeover · draft kept</text>
+  </g>
+
+  <g class="dui-stage dui-stage--6" transform="translate(584,168)">
+    <rect width="276" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dui-idx" x="12" y="24" fill="var(--accent)">TOKEN / CASCADE</text>
+    <text class="dui-line" x="12" y="48" fill="var(--ink)">maka-tokens · CI cascade guards</text>
+  </g>
+
+  <g class="dui-stage dui-stage--7" transform="translate(8,268)">
+    <rect width="852" height="52" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dui-idx" x="14" y="22" fill="var(--accent)">NORTH STAR</text>
+    <text class="dui-line" x="14" y="40" fill="var(--ink)">
+      Companion Command Center · inspectable activity · no AI-glow / chat-bubble ornament
+    </text>
+  </g>
+
+  <defs>
+    <marker id="dui-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .dui-flow {
+    font-family: var(--sans);
+  }
+  .dui-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .dui-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .dui-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dui-stage {
+      opacity: 0;
+      animation: dui-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .dui-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .dui-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .dui-stage--2 {
+      animation-delay: 0.22s;
+    }
+    .dui-stage--3 {
+      animation-delay: 0.32s;
+    }
+    .dui-stage--4 {
+      animation-delay: 0.42s;
+    }
+    .dui-stage--5 {
+      animation-delay: 0.5s;
+    }
+    .dui-stage--6 {
+      animation-delay: 0.58s;
+    }
+    .dui-stage--7 {
+      animation-delay: 0.66s;
+    }
+    @keyframes dui-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dui-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

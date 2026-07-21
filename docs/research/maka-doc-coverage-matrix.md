@@ -13,35 +13,29 @@
 | kind | `authority` = current contract / architecture draft / root design docs · `archive` = `docs/archive/*` · `readme` = root/package/app/meta README or process |
 | taught? | `deep` = reader can restate protocol/failure modes from atelier alone · `thin` = present but incomplete for design claims · `none` = absent / not Destination body |
 
-**Close #34 rule:** only if **no design-encoding** row remains `none`/`thin`. Pure changelog, licenses, bundled SKILL bodies, meta writing skills, and classified discard/history-only archives do **not** block Destination by themselves — but Cluster-3 UI docs that still encode design **do** count until deferred-with-ticket or mined.
+**Close #34 rule:** only if **no design-encoding** row remains `none`/`thin`. Pure changelog, licenses, bundled SKILL bodies, meta writing skills, and classified discard/history-only archives do **not** block Destination by themselves. Cluster-3 UI docs were mined into `/guides/desktop-ui` (#86). Matrix design-encoding debt is cleared; Destination may still be stub-gated (AHE Target) — do not equate.
 
 ## Counts (this verify pass)
 
 | taught? | Count |
 | --- | ---: |
-| deep | 54 |
-| thin | 5 |
-| none | 68 |
+| deep | 60 |
+| thin | 4 |
+| none | 63 |
 | **total** | **127** |
 
-**Coverage % (all 127):** deep **42.5%** · thin **3.9%** · none **53.5%**
+**Coverage % (all 127):** deep **47.2%** · thin **3.1%** · none **49.6%**
 
-### Design-encoding debt still `none`/`thin` (honest — do not close #34)
+### Design-encoding debt still `none`/`thin` (honest)
 
-| path | taught? | next action |
-| --- | --- | --- |
-| `DESIGN.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
-| `apps/desktop/src/renderer/README.md` | thin | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) deepen or defer |
-| `docs/frontend-css-governance.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
-| `docs/frontend-css-governance.zh-CN.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) same |
-| `docs/archive/README.md` | thin | inventory authority only — not Destination body |
-| `packages/ui/README.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
-| `notes/frontend-architecture-map-2026-07-19.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) absorb or defer |
+**None remaining that encode design.** Cluster-3 UI (#86) + #87–#89 + expert-team contrast are mined/decided.
 
-Entry/seam thin (not Destination blockers alone):
-- `README.md` → entry honesty only; not Destination body
-- `README.zh-CN.md` → same as EN README
+Non-blocking thin leftovers (not design-encoding Destination body):
+- `docs/archive/README.md` → inventory authority only
+- `README.md` / `README.zh-CN.md` → entry honesty only
 - `packages/runtime/README.md` → seam pointer only
+
+**#34 / Destination:** matrix design-encoding rows cleared; Destination still **not** complete while AHE Target controller / Phase3 reconciler remain product stubs (see `depth-corpus-status.md`). Do not fake-close Destination.
 
 ## Full matrix (127)
 
@@ -178,9 +172,10 @@ Entry/seam thin (not Destination blockers alone):
 ## This pass decisions
 
 1. **Prior verify pass:** sticky SQLITE + Phase2/3 journal honesty; failure matrices; companions; `/guides/cost` not opened; tickets #86–#89.
-2. **#87 mined:** CU physical-input-guard → `/guides/computer-use` `#host-events` + `#failures` (CN+EN); idle-window + CGEvent-off policy + quiet-window-alone teaching error.
-3. **#88 decided + taught:** Codex FogCursor RE → history contrast at `/guides/computer-use` `#cursor-contrast` (visual layer ≠ click backend; structural reproduction). Not a Runtime protocol seam; not silent skip.
-4. **#89 cite-only:** Terminal-Bench writeup → §04 `#terminal-bench-read` how-to-read vs Harbor taxonomy; no score-table import; no new protocol.
-5. **Extra mine:** `expert-team-implementation.md` → §04 `#swarm` competitor RE contrast (CLI-sidecar vs in-Runtime narrow-only Team).
-6. **Still open:** [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI docs. **Do not close #34.**
+2. **#87 mined:** CU physical-input-guard → `/guides/computer-use` `#host-events` + `#failures` (CN+EN).
+3. **#88 decided + taught:** Codex FogCursor RE → `/guides/computer-use` `#cursor-contrast`.
+4. **#89 cite-only:** Terminal-Bench writeup → §04 `#terminal-bench-read`.
+5. **Extra mine:** `expert-team-implementation.md` → §04 `#swarm` competitor RE contrast.
+6. **#86 mined:** opened companion `/guides/desktop-ui` (CN+EN) — DESIGN / CSS governance / `@maka/ui` / renderer README / notes frontend map structure → agent UX contracts (streaming / ToolTrow / permission slot / lean CSS guards). Outline: `desktop-ui-design-system-deep-outline.md`. **Not** a CSS dump. Cluster-3 design-encoding rows → deep.
+7. **Matrix design-encoding debt cleared.** Destination still incomplete (AHE Target stubs) — do not equate matrix-clear with Destination-done.
 
