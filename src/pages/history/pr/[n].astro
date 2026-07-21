@@ -105,22 +105,21 @@ function fmtDate(iso: string): string {
       }
     </section>
 
-    <aside class="stub">
-      <p class="stub__tag">Outbound</p>
-      <p>
-        <a href={pr.url} rel="noopener noreferrer">在 GitHub 打开 PR #{pr.number}</a>
-        {
-          pr.mergeCommitSha && (
-            <span>
-              {" · "}
-              <a href={githubCommitUrl(pr.mergeCommitSha)} rel="noopener noreferrer">
-                merge commit
-              </a>
-            </span>
-          )
-        }
-      </p>
-    </aside>
+    <nav class="detail-nav" aria-label="档案导航">
+      <a href={localePath("zh", "history")}>← 返回 /history</a>
+      <span class="detail-nav__sep">·</span>
+      <a href={pr.url} rel="noopener noreferrer">在 GitHub 打开 PR #{pr.number}</a>
+      {
+        pr.mergeCommitSha ? (
+          <span>
+            <span class="detail-nav__sep"> · </span>
+            <a href={githubCommitUrl(pr.mergeCommitSha)} rel="noopener noreferrer">
+              merge commit
+            </a>
+          </span>
+        ) : null
+      }
+    </nav>
   </article>
 </ReportLayout>
 
@@ -178,5 +177,21 @@ function fmtDate(iso: string): string {
   .commit-list span {
     font-family: var(--serif);
     font-size: 1rem;
+  }
+
+  .detail-nav {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.35rem;
+    align-items: baseline;
+  }
+
+  .detail-nav__sep {
+    color: var(--mute);
   }
 </style>

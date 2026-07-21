@@ -11,7 +11,7 @@ import {
   chapterNavItems,
   type ChapterId,
 } from "../lib/chapters";
-import { LAYER_LABELS, localePath, type Locale } from "../lib/i18n";
+import { LAYER_LABELS, chrome, localePath, type Locale } from "../lib/i18n";
 
 interface Props {
   locale?: Locale;
@@ -21,7 +21,9 @@ const { locale = "zh" } = Astro.props;
 const nav = chapterNavItems(locale);
 const layers = LAYERS[locale];
 const layerLabels = LAYER_LABELS[locale];
+const t = chrome(locale);
 const historyHref = localePath(locale, "history");
+const allChaptersDone = CHAPTERS.every((c) => c.status === "done");
 
 function chapterLinks(ids: ChapterId[]) {
   return ids.map((id) => CHAPTERS.find((c) => c.id === id)!);
@@ -47,7 +49,7 @@ const copy =
         tocLabel: "Six chapters",
         tocTitle: "Chapter index",
         tocLede:
-          "Routes match Maka ARCHITECTURE English titles 1:1. Every chapter stays Draft/WIP until the acceptance checklist hard gates pass — none are marked complete.",
+          "Routes match Maka ARCHITECTURE English titles 1:1. Chapters marked Done have passed the acceptance checklist hard gate on both locales.",
         tracksLabel: "Dual track",
         tracksTitle: "Cognitive track and history track",
         tracksLede:
@@ -57,13 +59,14 @@ const copy =
         pull: "This site is for readers who want to understand how an Agent keeps its ledger, thins context, reviews failure, and improves in a falsifiable way — not only how to call an API.",
         pathsLabel: "Reading paths",
         pathsTitle: "Choose a path by problem",
-        pathsLede: "Same six chapters; different entry orders. All routes remain WIP.",
+        pathsLede: "Same six chapters; different entry orders.",
         dualCaption:
           "Fig. · Dual track: §01–§06 teach structure; /history holds the PR-first lineage with sparse asides bridging back.",
         dualAlt:
           "Two columns: Cognitive track §01–§06 milestones versus History track /history archive with PR-first filters and cross-links.",
-        wipNote:
-          "Acceptance checklist is a hard gate (narrative, keystone+flows, asides, a11y, bilingual, chrome). TOC WIP badges mean unfinished — not a completed curriculum.",
+        wipNote: allChaptersDone
+          ? "§01–§06 meet the hard gate (narrative, keystone+flows, asides, a11y, bilingual, chrome). /history keeps its own polish backlog for nested commits and orphan buckets."
+          : "Acceptance checklist is a hard gate. TOC WIP means unfinished — not a completed curriculum.",
         paths: [
           {
             title: "First time in the Runtime",
@@ -89,29 +92,30 @@ const copy =
         metaSpecimen: "标本 · maka-agent",
         metaGenre: "体裁 · research report",
         metaHistory: "演进轨",
-        layersLabel: "Mental model",
+        layersLabel: "心智模型",
         layersTitle: "三层心智模型",
         layersLede: "同一组运行事实，被投影给不同消费者；先分清层，再进章节。",
         layerChapters: "对应章节：",
-        tocLabel: "Six chapters",
+        tocLabel: "六章",
         tocTitle: "六章索引",
         tocLede:
-          "路由与 Maka ARCHITECTURE 英文章名 1:1；每章在验收清单硬闸门通过前保持草稿 / WIP，目录不标完成。",
-        tracksLabel: "Dual track",
+          "路由与 Maka ARCHITECTURE 英文章名 1:1；标「完成」的章节已在中英双语通过验收清单硬闸门。",
+        tracksLabel: "双轨",
         tracksTitle: "认知轨与演进轨",
         tracksLede: "里程碑讲透结构；完整 commit/PR 谱系在 /history。",
         tracksBody:
           "认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入 /history（PR-first 快照），或在章内稀疏的演进旁注中跳转。",
         pull: "目标读者不是「只会调 API 的人」，而是想弄清 Agent 内部账本怎么记、上下文怎么瘦、失败怎么复盘、系统如何可证伪地改进的人。",
-        pathsLabel: "Reading paths",
+        pathsLabel: "阅读路径",
         pathsTitle: "按问题选择阅读路径",
-        pathsLede: "六章不变，入口顺序可变；全部仍为 WIP。",
+        pathsLede: "六章不变，入口顺序可变。",
         dualCaption:
           "图 · 双轨：§01–§06 讲结构；/history 承载 PR-first 谱系，章内旁注稀疏回链。",
         dualAlt:
           "两列对照：认知轨 §01–§06 里程碑，与演进轨 /history 档案（PR-first、筛选、交叉引用）。",
-        wipNote:
-          "验收清单是硬闸门（叙事、关键图+体量流、旁注预算、无障碍、双语、chrome）。目录上的 WIP 表示未完成，不是已结业课程。",
+        wipNote: allChaptersDone
+          ? "§01–§06 已过硬闸门（叙事、关键图+体量流、旁注预算、无障碍、双语、chrome）。/history 仍保留嵌套 commit / orphan 桶等演进轨打磨项。"
+          : "验收清单是硬闸门。目录上的 WIP 表示未完成，不是已结业课程。",
         paths: [
           {
             title: "第一次进入 Runtime",
@@ -201,7 +205,9 @@ const copy =
                 </span>
                 <span class="chapter-toc__meta">
                   <span class="chapter-toc__layer">{layerLabels[c.layer]}</span>
-                  <span class="chapter-toc__wip">WIP</span>
+                  <span class:list={["chapter-toc__badge", c.status === "done" && "chapter-toc__badge--done"]}>
+                    {c.status === "done" ? t.tocDone : t.tocWip}
+                  </span>
                 </span>
               </a>
               <p class="chapter-toc__q">
@@ -417,7 +423,11 @@ const copy =
     color: var(--mute);
   }
 
-  .chapter-toc__wip {
+  .chapter-toc__badge {
+    color: var(--mute);
+  }
+
+  .chapter-toc__badge--done {
     color: var(--accent);
   }
 

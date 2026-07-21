@@ -2,7 +2,9 @@
 
 **Ticket:** [Define per-chapter perfect acceptance checklist](https://github.com/tt-a1i/agent-atelier/issues/6)  
 **Date:** 2026-07-21  
-**Status:** Decision recorded
+**Status:** Decision recorded  
+
+**Post-Pages audit (2026-07-21):** §01–§06 meet this hard gate on zh+en — see [`chapter-hard-gate-audit-2026-07-21.md`](./chapter-hard-gate-audit-2026-07-21.md) and [#30](https://github.com/tt-a1i/agent-atelier/issues/30). UI may mark `status: done` only while that audit remains true.
 
 ## Context
 

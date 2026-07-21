@@ -28,10 +28,13 @@ const metaDescription =
 const titlePrimary = locale === "en" ? chapter.titleEn : chapter.titleZh;
 const titleSecondary = locale === "en" ? chapter.titleZh : chapter.titleEn;
 const question = locale === "en" ? chapter.questionEn : chapter.questionZh;
-const lede = chapter.ledeZh;
+const lede = locale === "en" ? chapter.ledeEn : chapter.ledeZh;
 const selfHref = chapterHref(chapter.slug, locale);
 const historyHref = localePath(locale, "history");
 const guideHref = localePath(locale, "");
+const isDone = chapter.status === "done";
+const statusLabel = isDone ? t.statusDone : t.statusWip;
+const draftOrDone = isDone ? t.doneLabel : t.draftLabel;
 ---
 
 <ReportLayout
@@ -44,7 +47,7 @@ const guideHref = localePath(locale, "");
   <article class="report">
     <header class="masthead">
       <p class="masthead__eyebrow">
-        §{chapter.id} · {chapter.titleEn} · {locale === "en" ? "Draft" : "草稿 / Draft"}
+        §{chapter.id} · {chapter.titleEn} · {draftOrDone}
       </p>
       <h1>
         <span class="masthead__title-zh">{titlePrimary}</span>
@@ -54,28 +57,30 @@ const guideHref = localePath(locale, "");
       <div class="masthead__meta">
         <span>{t.layer} · {layers[chapter.layer]}</span>
         <span>{t.specimen}</span>
-        <span>{t.statusWip}</span>
+        <span>{statusLabel}</span>
         <span>
           {t.historyTrack} · <a href={historyHref}>/history</a>
         </span>
       </div>
     </header>
 
-    <aside class="stub" aria-label="WIP">
-      <p class="stub__tag">{t.chapterWipTag}</p>
-      <p>
-        {t.chapterWipBody}
-        {
-          locale === "zh" && (
-            <span>
-              {" "}
-              详见
-              <a href="https://github.com/tt-a1i/agent-atelier/issues/6">验收清单</a>。
-            </span>
-          )
-        }
-      </p>
-    </aside>
+    {
+      !isDone && (
+        <aside class="stub" aria-label="WIP">
+          <p class="stub__tag">{t.chapterWipTag}</p>
+          <p>
+            {t.chapterWipBody}
+            {locale === "zh" && (
+              <span>
+                {" "}
+                详见
+                <a href="https://github.com/tt-a1i/agent-atelier/issues/6">验收清单</a>。
+              </span>
+            )}
+          </p>
+        </aside>
+      )
+    }
 
     <Section
       id="thesis"

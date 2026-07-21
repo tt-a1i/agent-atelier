@@ -121,14 +121,6 @@ const hrefEn = localePath("en", bare);
       </div>
     </nav>
     <main id="main" tabindex="-1">
-      {
-        locale === "en" && (
-          <aside class="shell-banner stub" aria-label="Locale shell status">
-            <p class="stub__tag">{t.wipShellTag}</p>
-            <p>{t.wipShellBanner}</p>
-          </aside>
-        )
-      }
       <slot />
     </main>
     <footer class="footer">{t.footer}</footer>

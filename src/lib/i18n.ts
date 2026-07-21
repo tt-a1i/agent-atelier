@@ -82,11 +82,10 @@ type Chrome = {
   localeSwitchToZh: string;
   localeSwitchToEn: string;
   localeSwitchAria: string;
-  wipShellBanner: string;
-  wipShellTag: string;
   chapterWipTag: string;
   chapterWipBody: string;
   statusWip: string;
+  statusDone: string;
   specimen: string;
   layer: string;
   historyTrack: string;
@@ -102,6 +101,10 @@ type Chrome = {
   pagerGuide: string;
   pagerHistory: string;
   evolutionAside: string;
+  draftLabel: string;
+  doneLabel: string;
+  tocDone: string;
+  tocWip: string;
 };
 
 const ZH: Chrome = {
@@ -114,25 +117,64 @@ const ZH: Chrome = {
   localeSwitchToZh: "中文",
   localeSwitchToEn: "EN",
   localeSwitchAria: "切换语言",
-  wipShellBanner:
-    "English shell only — chrome and structure are localized; full EN prose is not shipped. Do not treat this locale as bilingual-complete.",
-  wipShellTag: "WIP · EN shell",
-  chapterWipTag: "WIP · chapter scaffold",
+  chapterWipTag: "WIP · 章节草稿",
   chapterWipBody:
-    "Route and NewsLiquid chrome are in place; body copy advances against the acceptance checklist. Do not mark this chapter complete; § nav is structure, not completion.",
+    "本页仍在对照验收清单推进。§ 导航只表示结构，不表示已完成；请勿当作结业章节。",
+  statusWip: "Status · WIP（清单未过）",
+  statusDone: "Status · 清单已过",
+  specimen: "Specimen · maka-agent",
+  layer: "Layer",
+  historyTrack: "History track",
+  thesisLabel: "Thesis",
+  thesisTitle: "本章回答什么",
+  outlineLabel: "Outline",
+  outlineTitle: "本章骨架",
+  outlineLede: "关键图、体量流、演进旁注与 Current / Target 边界的阅读索引。",
+  outlineDefaults: [
+    "机制主线：用标本讲清 Current 边界",
+    "关键图：手写 SVG 开篇图",
+    "体量图：≥3 幅流程 / 投影图",
+    "演进旁注：稀疏链入 /history（PR-first）",
+  ],
+  pagerPrev: "上一章",
+  pagerNext: "下一章",
+  pagerBack: "返回",
+  pagerGuide: "导读",
+  pagerHistory: "History",
+  evolutionAside: "演进旁注",
+  draftLabel: "草稿 / Draft",
+  doneLabel: "完成",
+  tocDone: "完成",
+  tocWip: "WIP",
+};
+
+const EN: Chrome = {
+  brand: "Agent Atelier",
+  skipToContent: "Skip to content",
+  navGuide: "Guide",
+  navHistory: "History",
+  footer:
+    "Agent Atelier · specimen: Maka · visual tokens adapted from NewsLiquid research reports",
+  localeSwitchToZh: "中文",
+  localeSwitchToEn: "EN",
+  localeSwitchAria: "Switch language",
+  chapterWipTag: "WIP · chapter draft",
+  chapterWipBody:
+    "This page is still advancing against the acceptance checklist. § nav is structure, not completion.",
   statusWip: "Status · WIP (checklist not met)",
+  statusDone: "Status · checklist met",
   specimen: "Specimen · maka-agent",
   layer: "Layer",
   historyTrack: "History track",
   thesisLabel: "Thesis",
   thesisTitle: "What this chapter answers",
   outlineLabel: "Outline",
-  outlineTitle: "Reading skeleton (planned)",
-  outlineLede: "Structural slots for later bilingual prose and keystone figures.",
+  outlineTitle: "Chapter spine",
+  outlineLede: "Index of the keystone, volume flows, evolution aside, and Current / Target boundary.",
   outlineDefaults: [
     "Mechanism spine: teach Current boundaries via the specimen",
-    "Keystone slot: hand SVG opener (todo)",
-    "Volume diagrams: ≥3 flow/projection figures (todo)",
+    "Keystone: hand SVG opener",
+    "Volume diagrams: ≥3 flow/projection figures",
     "Evolution asides: sparse links into /history (PR-first)",
   ],
   pagerPrev: "Previous",
@@ -141,25 +183,10 @@ const ZH: Chrome = {
   pagerGuide: "Guide",
   pagerHistory: "History",
   evolutionAside: "Evolution aside",
-};
-
-const EN: Chrome = {
-  ...ZH,
-  skipToContent: "Skip to content",
-  navGuide: "Guide",
-  chapterWipTag: "WIP · chapter scaffold",
-  statusWip: "Status · WIP (checklist not met)",
-  layer: "Layer",
-  thesisLabel: "Thesis",
-  thesisTitle: "What this chapter answers",
-  outlineLabel: "Outline",
-  outlineTitle: "Reading skeleton (planned)",
-  outlineLede: "Structural slots for later bilingual prose and keystone figures.",
-  pagerPrev: "Previous",
-  pagerNext: "Next",
-  pagerBack: "Back",
-  pagerGuide: "Guide",
-  evolutionAside: "Evolution aside",
+  draftLabel: "Draft",
+  doneLabel: "Complete",
+  tocDone: "Done",
+  tocWip: "WIP",
 };
 
 export function chrome(locale: Locale): Chrome {

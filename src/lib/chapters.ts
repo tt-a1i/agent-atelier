@@ -4,6 +4,8 @@ import { chrome, localePath, type Locale } from "./i18n";
 
 export type ChapterId = "01" | "02" | "03" | "04" | "05" | "06";
 
+export type ChapterStatus = "wip" | "done";
+
 export interface ChapterMeta {
   id: ChapterId;
   n: number;
@@ -16,10 +18,13 @@ export interface ChapterMeta {
   /** Core question from Maka six-chapter index. */
   questionZh: string;
   questionEn: string;
-  /** Short lede for stubs / TOC. */
+  /** Short lede for thesis / TOC. */
   ledeZh: string;
+  ledeEn: string;
   layer: 1 | 2 | 3;
-  status: "wip";
+  /** Hard-gate checklist status — `done` only when checklist fully passes. */
+  status: ChapterStatus;
+  checklistVersion: 1;
 }
 
 export const LAYER_LABELS_ZH: Record<1 | 2 | 3, string> = {
@@ -39,8 +44,11 @@ export const CHAPTERS: ChapterMeta[] = [
     questionZh: "Maka 如何保存并回放一次 Agent Run 的状态空间？",
     questionEn: "How does Maka preserve and replay the state space of an Agent Run?",
     ledeZh: "运行事实进入 append-only log；Session 与上下文都是投影，不是第二套真相。",
+    ledeEn:
+      "Execution facts enter an append-only log; Session and context are projections, not a second truth.",
     layer: 1,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
   {
     id: "02",
@@ -53,8 +61,10 @@ export const CHAPTERS: ChapterMeta[] = [
     questionEn:
       "How can a large Tool Result leave Turn-level evidence without exhausting active context?",
     ledeZh: "Prune the context, never prune the evidence——活跃上下文可裁，证据不可删。",
+    ledeEn: "Prune the context, never prune the evidence — active context may shrink; evidence must not.",
     layer: 1,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
   {
     id: "03",
@@ -66,8 +76,11 @@ export const CHAPTERS: ChapterMeta[] = [
     questionZh: "LLM 如何忘记旧上下文，同时不丢失历史事实？",
     questionEn: "How can the LLM forget old context without losing historical facts?",
     ledeZh: "Compaction 改写的是模型下一轮看见的投影，不是 Event Log 里的事实。",
+    ledeEn:
+      "Compaction rewrites the projection the model sees next — not the facts in the Event Log.",
     layer: 1,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
   {
     id: "04",
@@ -79,8 +92,11 @@ export const CHAPTERS: ChapterMeta[] = [
     questionZh: "一个任务长于 Turn、Run 和进程时，Maka 如何持续推进？",
     questionEn: "How does Maka continue a task that outlives a Turn, Run, or process?",
     ledeZh: "Headless 用独立 Task identity 与 Task Event Log，把进度跨 Attempt 接住。",
+    ledeEn:
+      "Headless uses an independent Task identity and Task Event Log to carry progress across Attempts.",
     layer: 2,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
   {
     id: "05",
@@ -93,8 +109,11 @@ export const CHAPTERS: ChapterMeta[] = [
     questionEn:
       "How can an Agent inspect and repair its work without turning self-report into authority?",
     ledeZh: "Self-check 是任务循环内的受限反馈；最终事实权威仍在日志与投影边界上。",
+    ledeEn:
+      "Self-check is bounded feedback inside the task loop; final fact authority stays on the log and projection boundary.",
     layer: 2,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
   {
     id: "06",
@@ -107,8 +126,11 @@ export const CHAPTERS: ChapterMeta[] = [
     questionEn:
       "How does Maka turn run experience into falsifiable and reversible system improvement?",
     ledeZh: "AHE 在交互 Runtime 外组织演化证据；改进走受限 change surface 与可回滚谱系。",
+    ledeEn:
+      "AHE organizes evolution evidence outside the interactive Runtime; change rides a constrained surface and rollback lineage.",
     layer: 3,
-    status: "wip",
+    status: "done",
+    checklistVersion: 1,
   },
 ];
 

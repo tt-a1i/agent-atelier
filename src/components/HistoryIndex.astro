@@ -52,7 +52,7 @@ const copy =
         description: "Merged PR timeline for maka-agent (pinned snapshot, PR-first).",
         h1: "Maka lineage",
         sub: "Browse development by merged PR; member commits nest on detail pages. Cognitive chapters stay milestone-shaped — this track is the full archive.",
-        wip: "Modes: PR-first (default), first-parent, full DAG. Filters run client-side against the pin. Nested PR commits / unlinked-commit bucket polish remain WIP.",
+        wip: "Modes: PR-first (default), first-parent, full DAG. Filters run client-side against the pin. Nested member commits on this index and an orphan-commit bucket remain open polish.",
         empty: "No data/maka-history/ snapshot found. Run npm run history:ingest first.",
         prev: "← Prev",
         next: "Next →",
@@ -87,7 +87,7 @@ const copy =
         description: "Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。",
         h1: "Maka 演进史",
         sub: "默认按已合并 PR 浏览发展链路；成员 commit 嵌套在详情页。认知轨章节保持里程碑叙事，这里提供完整可追溯档案。",
-        wip: "模式：PR-first（默认）/ first-parent / full DAG。筛选在客户端对 pin 运行。PR 内嵌套 commit、无 PR orphan 桶等仍属 WIP。",
+        wip: "模式：PR-first（默认）/ first-parent / full DAG。筛选在客户端对 pin 运行。列表内嵌套成员 commit、无 PR orphan 桶仍待打磨。",
         empty: "尚未找到 data/maka-history/ 快照。请先运行 npm run history:ingest。",
         prev: "← 上一页",
         next: "下一页 →",
@@ -128,7 +128,7 @@ const copy =
 >
   <article class="report">
     <header class="masthead">
-      <p class="masthead__eyebrow">History track · PR-first · Draft</p>
+      <p class="masthead__eyebrow">History track · PR-first</p>
       <h1>{copy.h1}</h1>
       <p class="masthead__sub">{copy.sub}</p>
       {
@@ -144,8 +144,8 @@ const copy =
       }
     </header>
 
-    <aside class="stub" aria-label="WIP">
-      <p class="stub__tag">WIP · modes v1</p>
+    <aside class="history-note" aria-label={locale === "en" ? "History track note" : "演进轨说明"}>
+      <p class="history-note__tag">{locale === "en" ? "Note" : "说明"}</p>
       <p>{copy.wip}</p>
     </aside>
 
@@ -588,6 +588,31 @@ const copy =
 </script>
 
 <style>
+  .history-note {
+    margin: 0 0 1.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--hair);
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    max-width: 46em;
+  }
+
+  .history-note__tag {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.35rem;
+  }
+
+  .history-note p {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 0.98rem;
+    color: var(--mute);
+  }
+
   .history-modes {
     flex: 1 1 100%;
     display: flex;
