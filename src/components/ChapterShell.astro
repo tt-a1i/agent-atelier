@@ -1,0 +1,235 @@
+---
+import ReportLayout from "../layouts/ReportLayout.astro";
+import Section from "./Section.astro";
+import {
+  adjacentChapters,
+  chapterNavItems,
+  getChapter,
+  LAYER_LABELS_ZH,
+  type ChapterId,
+} from "../lib/chapters";
+
+interface Props {
+  chapterId: ChapterId;
+  /** Extra description for <meta>; defaults to question. */
+  description?: string;
+}
+
+const { chapterId, description } = Astro.props;
+const chapter = getChapter(chapterId);
+const { prev, next } = adjacentChapters(chapterId);
+const nav = chapterNavItems(chapterId);
+const metaDescription = description ?? chapter.questionZh;
+---
+
+<ReportLayout
+  title={`§${chapter.id} ${chapter.titleEn} · Agent Atelier`}
+  description={metaDescription}
+  nav={nav}
+  activeHref={chapter.href}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">
+        §{chapter.id} · {chapter.titleEn} · 草稿 / Draft
+      </p>
+      <h1>
+        <span class="masthead__title-zh">{chapter.titleZh}</span>
+        <span class="masthead__title-en">{chapter.titleEn}</span>
+      </h1>
+      <p class="masthead__sub">{chapter.questionZh}</p>
+      <div class="masthead__meta">
+        <span>层 · {LAYER_LABELS_ZH[chapter.layer]}</span>
+        <span>标本 · maka-agent</span>
+        <span>状态 · WIP（未达验收清单）</span>
+        <span>
+          演进轨 · <a href="/history">/history</a>
+        </span>
+      </div>
+    </header>
+
+    <aside class="stub" aria-label="WIP 说明">
+      <p class="stub__tag">WIP · 章节脚手架</p>
+      <p>
+        本章已挂路由与 NewsLiquid chrome，正文按
+        <a href="https://github.com/tt-a1i/agent-atelier/issues/6">验收清单</a>
+        推进中。勿将本页标为完成；§ 导航仅表示结构，不表示完成度。
+      </p>
+    </aside>
+
+    <Section
+      id="thesis"
+      label={`§${chapter.id} · Thesis`}
+      title="本章要回答什么"
+      lede={chapter.ledeZh}
+    >
+      <p>
+        核心问题：{chapter.questionZh}
+      </p>
+      <p class="thesis-en" lang="en">
+        <span class="thesis-en__label">EN question</span>
+        {chapter.questionEn}
+      </p>
+      <slot name="thesis" />
+    </Section>
+
+    <slot />
+
+    <Section
+      id="outline"
+      label={`§${chapter.id} · Outline`}
+      title="拟展开的阅读骨架"
+      lede="结构占位，便于后续同船双语与关键图槽位对齐。"
+    >
+      <slot name="outline">
+        <ul class="outline-list">
+          <li>机制主线：用标本讲清 Current 边界</li>
+          <li>关键图槽位：章首手写 SVG（待补）</li>
+          <li>体量图槽位：≥3 张流程/投影图（待补）</li>
+          <li>
+            演进旁注：稀疏链到 <a href="/history">/history</a>（PR 优先）
+          </li>
+        </ul>
+      </slot>
+    </Section>
+
+    <nav class="chapter-pager" aria-label="相邻章节">
+      {
+        prev ? (
+          <a class="chapter-pager__link chapter-pager__link--prev" href={prev.href}>
+            <span class="chapter-pager__dir">上一章</span>
+            <span class="chapter-pager__title">
+              §{prev.id} {prev.titleZh}
+            </span>
+          </a>
+        ) : (
+          <a class="chapter-pager__link chapter-pager__link--prev" href="/">
+            <span class="chapter-pager__dir">返回</span>
+            <span class="chapter-pager__title">导读</span>
+          </a>
+        )
+      }
+      {
+        next ? (
+          <a class="chapter-pager__link chapter-pager__link--next" href={next.href}>
+            <span class="chapter-pager__dir">下一章</span>
+            <span class="chapter-pager__title">
+              §{next.id} {next.titleZh}
+            </span>
+          </a>
+        ) : (
+          <a class="chapter-pager__link chapter-pager__link--next" href="/history">
+            <span class="chapter-pager__dir">演进轨</span>
+            <span class="chapter-pager__title">/history</span>
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</ReportLayout>
+
+<style>
+  .masthead h1 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .masthead__title-zh {
+    display: block;
+  }
+
+  .masthead__title-en {
+    display: block;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+    color: var(--mute);
+    letter-spacing: -0.01em;
+  }
+
+  .thesis-en {
+    margin-top: 1.1rem;
+    padding: 0.85rem 1rem;
+    background: var(--softer);
+    border: 1px solid var(--hair);
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--mute);
+    max-width: 40em;
+  }
+
+  .thesis-en__label {
+    display: block;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+    color: var(--accent);
+  }
+
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .chapter-pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 2.75rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--hair);
+  }
+
+  .chapter-pager__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.85rem 0;
+    text-decoration: none;
+    color: var(--ink);
+    min-width: 0;
+  }
+
+  .chapter-pager__link:hover .chapter-pager__title {
+    color: var(--accent);
+  }
+
+  .chapter-pager__link--next {
+    text-align: right;
+  }
+
+  .chapter-pager__dir {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  .chapter-pager__title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: color 0.15s ease;
+  }
+
+  @media (max-width: 560px) {
+    .chapter-pager {
+      grid-template-columns: 1fr;
+    }
+
+    .chapter-pager__link--next {
+      text-align: left;
+    }
+  }
+</style>

@@ -236,3 +236,50 @@ a:hover {
   color: var(--mute);
   letter-spacing: 0.02em;
 }
+
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 50;
+  padding: 0.45rem 0.75rem;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+.site-nav__links a[aria-current="page"] {
+  color: var(--accent);
+}
+
+.history-aside {
+  margin: 1.25rem 0 1.5rem;
+  padding: 0.75rem 0 0.75rem 1rem;
+  border-left: 2px solid var(--hair);
+  max-width: 38em;
+}
+
+.history-aside__tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin: 0 0 0.3rem;
+}
+
+.history-aside p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--mute);
+}
+
+main:focus {
+  outline: none;
+}

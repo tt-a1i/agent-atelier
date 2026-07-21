@@ -1,0 +1,39 @@
+---
+import ChapterShell from "../../components/ChapterShell.astro";
+import Section from "../../components/Section.astro";
+---
+
+<ChapterShell chapterId="04">
+  <div slot="thesis">
+    <p>
+      交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。Headless 的 Durable Task
+      Loop 把「一次聊天」升级为「可续跑的任务」。
+    </p>
+  </div>
+
+  <Section
+    id="durability"
+    label="§04 · Durability"
+    title="任务活得比进程久"
+    lede="Task Event Log + TaskRun projection：进度有账可查。"
+  >
+    <p>
+      进入第二层心智模型：长程任务。本章说明 Attempt、恢复与和 Runtime Event Log
+      的衔接，为 §05 Self-check 与 §06 AHE 准备舞台。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注</p>
+      <p>
+        Headless / durable task 文档与实现演进，见
+        <a href="/history">/history</a>。
+      </p>
+    </aside>
+    <div class="stub">
+      <p class="stub__tag">Stub · 待展开</p>
+      <p>
+        计划：Task identity 生命周期图 + Attempt 失败续跑时间线；对照「只靠 Session
+        续聊」与「有 TaskRun 投影」。
+      </p>
+    </div>
+  </Section>
+</ChapterShell>

@@ -1,0 +1,39 @@
+---
+import ChapterShell from "../../components/ChapterShell.astro";
+import Section from "../../components/Section.astro";
+---
+
+<ChapterShell chapterId="03">
+  <div slot="thesis">
+    <p>
+      上下文窗口会满；「记住一切」是幻觉。Compaction
+      让模型合法地忘记旧轮次，同时历史事实仍可从 log / 证据层找回——忘记的是投影，不是世界。
+    </p>
+  </div>
+
+  <Section
+    id="projection"
+    label="§03 · Projection"
+    title="忘记上下文 ≠ 丢失事实"
+    lede="投影可以重算；canonical log 不能被摘要覆盖。"
+  >
+    <p>
+      本章承接 §01 的事实边界与 §02 的证据纪律：压缩策略决定模型下一轮看见什么，但不能把「曾经发生过」从系统里抹掉。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注</p>
+      <p>
+        Compaction / 上下文投影相关演进，浏览
+        <a href="/history">/history</a>
+        中 runtime / docs 区域的合并 PR。
+      </p>
+    </aside>
+    <div class="stub">
+      <p class="stub__tag">Stub · 待展开</p>
+      <p>
+        计划：token 预算面积图 + 压缩前后 Provider messages 对照；标注触发条件与「留什么 /
+        丢什么」。
+      </p>
+    </div>
+  </Section>
+</ChapterShell>

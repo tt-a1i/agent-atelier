@@ -1,0 +1,41 @@
+---
+import ChapterShell from "../../components/ChapterShell.astro";
+import Section from "../../components/Section.astro";
+---
+
+<ChapterShell chapterId="01">
+  <div slot="thesis">
+    <p>
+      没有可回放的事实账本，就没有可调试、可投影、可演进的 Agent。本章建立 Runtime Event Log
+      作为 canonical source 的地位，并说明 Session / UI / Provider
+      上下文为何只能是投影。
+    </p>
+  </div>
+
+  <Section
+    id="spine"
+    label="§01 · Spine"
+    title="事实进 log，状态出投影"
+    lede="先能复述「发生了什么」，再谈智能与策略。"
+  >
+    <p>
+      Maka 把模型消息、工具调用、权限与终止写入 append-only 事件流。后续章节里的证据保留、Compaction、Headless
+      TaskRun，都站在这条脊柱上。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注</p>
+      <p>
+        Runtime Event Log 相关架构文档的合入轨迹，见
+        <a href="/history">/history</a>
+        （例如文档章落地 PR）。
+      </p>
+    </aside>
+    <div class="stub">
+      <p class="stub__tag">Stub · 待展开</p>
+      <p>
+        计划：事件类型一览 + 一次 Agent Run 的瀑布回放；对照「只有 chat transcript」与「有 Runtime
+        Event Log」的调试差距。
+      </p>
+    </div>
+  </Section>
+</ChapterShell>

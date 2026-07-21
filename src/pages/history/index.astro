@@ -1,5 +1,6 @@
 ---
 import ReportLayout from "../../layouts/ReportLayout.astro";
+import { chapterNavItems } from "../../lib/chapters";
 import {
   HISTORY_PAGE_SIZE,
   hasMakaHistorySnapshot,
@@ -8,10 +9,7 @@ import {
   prAreaChips,
 } from "../../lib/maka-history";
 
-const nav = [
-  { href: "/", label: "导读" },
-  { href: "/history", label: "History" },
-];
+const nav = chapterNavItems();
 
 const ready = hasMakaHistorySnapshot();
 const meta = ready ? loadMeta() : null;
@@ -41,6 +39,7 @@ function fmtDate(iso: string): string {
   title="History · Maka 演进轨 · Agent Atelier"
   description="Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。"
   nav={nav}
+  activeHref="/history"
 >
   <article class="report">
     <header class="masthead">

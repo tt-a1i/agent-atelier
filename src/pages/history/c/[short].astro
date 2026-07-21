@@ -1,5 +1,6 @@
 ---
 import ReportLayout from "../../../layouts/ReportLayout.astro";
+import { chapterNavItems } from "../../../lib/chapters";
 import {
   getCommitByShort,
   githubCommitUrl,
@@ -20,11 +21,7 @@ if (!commit) {
 }
 
 const meta = loadMeta();
-const nav = [
-  { href: "/", label: "导读" },
-  { href: "/history", label: "History" },
-  { href: `/history/c/${commit.short}`, label: commit.short },
-];
+const nav = chapterNavItems();
 
 function fmtDate(iso: string): string {
   try {

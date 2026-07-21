@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { chapterNavItems } from "../lib/chapters";
 
 interface NavItem {
   href: string;
@@ -10,21 +11,25 @@ interface Props {
   title: string;
   description?: string;
   nav?: NavItem[];
+  /** Highlight matching sticky-nav link. */
+  activeHref?: string;
+  /** Document language; bilingual shell (#12) will flip this. */
+  lang?: string;
 }
 
 const {
   title,
   description = "用 Maka 解剖 Agent：里程碑式的 Agent 学习站",
-  nav = [
-    { href: "/", label: "导读" },
-    { href: "/chapters/02-evidence-before-compression", label: "§02" },
-    { href: "/history", label: "History" },
-  ],
+  nav = chapterNavItems(),
+  activeHref,
+  lang = "zh-CN",
 } = Astro.props;
+
+const currentPath = activeHref ?? Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -41,21 +46,32 @@ const {
     />
   </head>
   <body>
-    <nav class="site-nav" aria-label="章节导航">
+    <a class="skip-link" href="#main">跳到正文</a>
+    <nav class="site-nav" aria-label="站点与章节导航">
       <div class="site-nav__inner">
         <a class="site-nav__brand" href="/">Agent <span>Atelier</span></a>
         <ul class="site-nav__links">
           {
-            nav.map((item) => (
-              <li>
-                <a href={item.href}>{item.label}</a>
-              </li>
-            ))
+            nav.map((item) => {
+              const active =
+                item.href === "/"
+                  ? currentPath === "/"
+                  : currentPath === item.href || currentPath.startsWith(`${item.href}/`);
+              return (
+                <li>
+                  <a href={item.href} aria-current={active ? "page" : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })
           }
         </ul>
       </div>
     </nav>
-    <slot />
+    <main id="main">
+      <slot />
+    </main>
     <footer class="footer">
       Agent Atelier · specimen: Maka · visual tokens adapted from NewsLiquid research reports
     </footer>

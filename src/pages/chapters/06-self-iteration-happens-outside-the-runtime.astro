@@ -1,0 +1,38 @@
+---
+import ChapterShell from "../../components/ChapterShell.astro";
+import Section from "../../components/Section.astro";
+---
+
+<ChapterShell chapterId="06">
+  <div slot="thesis">
+    <p>
+      系统改进若发生在交互 Runtime 内部且不可证伪，就会把一次跑通的偶然性固化成「进化」。AHE
+      把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。
+    </p>
+  </div>
+
+  <Section
+    id="boundary"
+    label="§06 · Boundary"
+    title="演化在 Runtime 墙外"
+    lede="可证伪、可回滚，才配叫改进。"
+  >
+    <p>
+      第三层心智模型：演化。本章收束前五章建立的事实、证据、任务与权威边界，说明经验如何变成可治理的变更。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注</p>
+      <p>
+        AHE / self-iteration 边界文档演进，见
+        <a href="/history">/history</a>。
+      </p>
+    </aside>
+    <div class="stub">
+      <p class="stub__tag">Stub · 待展开</p>
+      <p>
+        计划：Runtime ↔ AHE 边界图 + manifest / evaluation / rollback
+        三段流水线；明确「Target」与已落地 Current 的标注纪律。
+      </p>
+    </div>
+  </Section>
+</ChapterShell>

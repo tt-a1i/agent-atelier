@@ -1,5 +1,6 @@
 ---
 import ReportLayout from "../../../layouts/ReportLayout.astro";
+import { chapterNavItems } from "../../../lib/chapters";
 import {
   getCommitBySha,
   getPr,
@@ -27,11 +28,7 @@ const memberCommits = pr.commitShas
   .filter((c): c is NonNullable<typeof c> => Boolean(c));
 const chips = prAreaChips(pr, 8);
 
-const nav = [
-  { href: "/", label: "导读" },
-  { href: "/history", label: "History" },
-  { href: `/history/pr/${pr.number}`, label: `#${pr.number}` },
-];
+const nav = chapterNavItems();
 
 function fmtDate(iso: string): string {
   try {

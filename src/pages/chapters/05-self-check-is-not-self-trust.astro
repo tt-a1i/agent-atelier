@@ -1,0 +1,38 @@
+---
+import ChapterShell from "../../components/ChapterShell.astro";
+import Section from "../../components/Section.astro";
+---
+
+<ChapterShell chapterId="05">
+  <div slot="thesis">
+    <p>
+      Agent 可以检查自己的产出，但不能把「我觉得做完了」写成最终权威。Self-check
+      是有界反馈环：帮助修复，不接管事实。
+    </p>
+  </div>
+
+  <Section
+    id="authority"
+    label="§05 · Authority"
+    title="自检可以，自证权威不行"
+    lede="反馈有预算；完成条件不能只听自述。"
+  >
+    <p>
+      承接 §04 的任务循环：在 Attempt 内引入受限 Self-check，并划清它与 Event Log / 外部验收的边界。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注</p>
+      <p>
+        Self-check 架构章与后续收紧，见
+        <a href="/history">/history</a>。
+      </p>
+    </aside>
+    <div class="stub">
+      <p class="stub__tag">Stub · 待展开</p>
+      <p>
+        计划：有界反馈环示意图 + 「自述完成 / 证据完成」对照表；回链 §02「证据不可被 prune
+        删掉」。
+      </p>
+    </div>
+  </Section>
+</ChapterShell>

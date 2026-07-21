@@ -50,16 +50,18 @@ npm run preview  # 预览生产构建
 ## 内容原则
 
 - **标本**：Maka（`maka-agent`），本站是独立产品，不并入其 monorepo 发版节奏。
-- **目录**：按改变认知的里程碑组织（例如 Tool loop → Log-first → Compaction）。
+- **目录**：认知轨 1:1 对齐 Maka 六章（`/chapters/01-…`–`/06-…`）；演进轨在 `/history`。
 - **不做**：把仓库每一笔 commit 当成 TOC；也不先做 CMS / 账号体系。
 
 ## 目录速览
 
 ```text
 src/
-  styles/global.css      # NewsLiquid tokens + report chrome
-  layouts/ReportLayout.astro
-  components/Section.astro
-  pages/index.astro      # 首页报告（§00–§03）
-  content/sample-note.mdx
+  styles/global.css           # NewsLiquid tokens + report chrome
+  lib/chapters.ts             # §01–§06 元数据（中英题、核心问题）
+  layouts/ReportLayout.astro  # sticky § 导航
+  components/ChapterShell.astro
+  pages/index.astro           # 一句话架构 + 三层心智模型 + 六章索引
+  pages/chapters/01-…06-…     # 认知轨（WIP stubs；§02 含关键图）
+  pages/history/              # 演进轨 PR-first
 ```

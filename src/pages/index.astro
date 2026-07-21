@@ -1,19 +1,37 @@
 ---
 import ReportLayout from "../layouts/ReportLayout.astro";
 import Section from "../components/Section.astro";
+import {
+  ARCHITECTURE_SENTENCE_ZH,
+  CHAPTERS,
+  LAYER_LABELS_ZH,
+  LAYERS_ZH,
+  chapterNavItems,
+  type ChapterId,
+} from "../lib/chapters";
+
+const nav = chapterNavItems();
+
+function chapterLinks(ids: ChapterId[]) {
+  return ids.map((id) => CHAPTERS.find((c) => c.id === id)!);
+}
 ---
 
-<ReportLayout title="用 Maka 解剖 Agent · Agent Atelier">
+<ReportLayout
+  title="用 Maka 解剖 Agent · Agent Atelier"
+  description="Maka 是 log-first、projection-driven 的 Agent Runtime。沿六章里程碑理解完整 Agent 结构。"
+  nav={nav}
+  activeHref="/"
+>
   <article class="report">
     <header class="masthead">
       <p class="masthead__eyebrow">Agent Learning Report · Specimen: Maka</p>
       <h1>用 Maka 解剖 Agent</h1>
-      <p class="masthead__sub">
-        不是把每一次 git commit 摊成目录，而是沿着真正改变认知的里程碑，把 Agent
-        从「会调用工具的聊天框」拆到可观察、可压缩、可演进的系统。
+      <p class="masthead__sub masthead__sub--architecture">
+        {ARCHITECTURE_SENTENCE_ZH}
       </p>
       <div class="masthead__meta">
-        <span>系列 · 里程碑演进</span>
+        <span>认知轨 · §01–§06</span>
         <span>标本 · maka-agent</span>
         <span>体裁 · research report</span>
         <span>
@@ -23,82 +41,227 @@ import Section from "../components/Section.astro";
     </header>
 
     <Section
-      id="intro"
-      label="§00 · Preface"
-      title="为什么用标本，而不是教科书"
-      lede="先看见一只活着的 Agent，再抽象出通用结构。"
+      id="layers"
+      label="Mental model"
+      title="三层心智模型"
+      lede="同一组运行事实，被投影给不同消费者；先分清层，再进章节。"
+    >
+      <ol class="layer-list">
+        {
+          LAYERS_ZH.map((layer) => (
+            <li class="layer-card">
+              <p class="layer-card__n">
+                {layer.n}. {layer.title}
+              </p>
+              <p class="layer-card__body">{layer.body}</p>
+              <p class="layer-card__chapters">
+                对应章节：
+                {chapterLinks(layer.chapters).map((c, i) => (
+                  <span>
+                    {i > 0 ? " · " : ""}
+                    <a href={c.href}>
+                      §{c.id} {c.titleZh}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section
+      id="chapters"
+      label="Six chapters"
+      title="六章索引"
+      lede="路由与 Maka ARCHITECTURE 英文章名 1:1；全部为 WIP，未标完成。"
+    >
+      <ol class="chapter-toc">
+        {
+          CHAPTERS.map((c) => (
+            <li class="chapter-toc__item">
+              <a class="chapter-toc__link" href={c.href}>
+                <span class="chapter-toc__id">§{c.id}</span>
+                <span class="chapter-toc__titles">
+                  <span class="chapter-toc__zh">{c.titleZh}</span>
+                  <span class="chapter-toc__en">{c.titleEn}</span>
+                </span>
+                <span class="chapter-toc__meta">
+                  <span class="chapter-toc__layer">{LAYER_LABELS_ZH[c.layer]}</span>
+                  <span class="chapter-toc__wip">WIP</span>
+                </span>
+              </a>
+              <p class="chapter-toc__q">{c.questionZh}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section
+      id="tracks"
+      label="Dual track"
+      title="认知轨与演进轨"
+      lede="里程碑讲透结构；完整 commit/PR 谱系在 /history。"
     >
       <p>
-        Agent Atelier 是一座面向「深度理解 Agent」的学习站。内容以
-        <strong>Maka</strong> 为教学标本：它足够真实（有工具循环、日志、上下文压缩），又足够可读（可以沿着工程决策追问为什么）。
-      </p>
-      <p>
-        目录按<strong>里程碑</strong>组织——那些一旦理解就再也回不去的节点——而不是仓库里的每一笔提交。图表与动画会逐步补上；这一页先把骨架与语气定下来。
+        认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入
+        <a href="/history">/history</a>
+        （PR-first 快照），或在章内稀疏的演进旁注中跳转。
       </p>
       <blockquote class="pull">
         目标读者不是「只会调 API 的人」，而是想弄清 Agent
-        内部账本怎么记、上下文怎么瘦、失败怎么复盘的人。
+        内部账本怎么记、上下文怎么瘦、失败怎么复盘、系统如何可证伪地改进的人。
       </blockquote>
-    </Section>
-
-    <Section
-      id="s01"
-      label="§01 · Milestone"
-      title="Tool loop：从一次回答到可行动的循环"
-      lede="模型、工具、观察——闭环比 prompt 更重要。"
-    >
-      <p>
-        认知轨正式章节见
-        <a href="/chapters/02-evidence-before-compression">§02 Evidence Before Compression</a>
-        （关键图视觉系统标本；正文仍为草稿）。工具循环的证据层在那里用场景化流水线讲清。
-      </p>
-      <p>
-        第一个里程碑：Agent 不是「生成一段话」，而是反复经历
-        <em>decide → act → observe → decide</em>。Maka 的工具循环是这条主线的入口。
-      </p>
-      <div class="stub">
-        <p class="stub__tag">Stub · 待展开</p>
-        <p>
-          计划：一张循环示意图 + 一次真实 tool call 的时间线动画；对照「单次 completion」与「多步 loop」的失败模式。
-        </p>
-      </div>
-    </Section>
-
-    <Section
-      id="s02"
-      label="§02 · Milestone"
-      title="Log-first：没有日志就没有可调试的 Agent"
-      lede="把黑盒拆成可回放的事件流。"
-    >
-      <p>
-        第二个里程碑：先把「发生了什么」写进可查询的日志，再谈策略与智能。Log-first
-        让复现、评测与教学成为可能——标本级 Agent 必须可被旁观。
-      </p>
-      <div class="stub">
-        <p class="stub__tag">Stub · 待展开</p>
-        <p>
-          计划：事件类型一览表 + 一次会话的瀑布图；说明哪些字段属于 trust boundary，哪些只是调试噪声。
-        </p>
-      </div>
-    </Section>
-
-    <Section
-      id="s03"
-      label="§03 · Milestone"
-      title="Compaction：上下文是稀缺资源"
-      lede="记住一切是幻觉；压缩才是工程。"
-    >
-      <p>
-        第三个里程碑：上下文窗口会满，历史必须被摘要、裁剪或外置。Compaction
-        不是边角优化，而是长任务 Agent 能否活过第 N 轮的分水岭。
-      </p>
-      <div class="stub">
-        <p class="stub__tag">Stub · 待展开</p>
-        <p>
-          计划：token 预算面积图 + 压缩前后对照；用 Maka 的 compaction
-          决策讲清「丢什么 / 留什么 / 何时触发」。
-        </p>
-      </div>
     </Section>
   </article>
 </ReportLayout>
+
+<style>
+  .masthead__sub--architecture {
+    font-style: normal;
+    font-size: 1.12rem;
+    line-height: 1.65;
+    color: var(--ink);
+    max-width: 42em;
+  }
+
+  .layer-list {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+
+  .layer-card {
+    padding: 0 0 1.35rem;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .layer-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .layer-card__n {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.45rem;
+  }
+
+  .layer-card__body {
+    font-family: var(--serif);
+    margin: 0 0 0.65rem;
+    max-width: 40em;
+  }
+
+  .layer-card__chapters {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--mute);
+  }
+
+  .chapter-toc {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+
+  .chapter-toc__item {
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .chapter-toc__item:last-child {
+    border-bottom: none;
+  }
+
+  .chapter-toc__link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem 1rem;
+    align-items: baseline;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .chapter-toc__link:hover .chapter-toc__zh {
+    color: var(--accent);
+  }
+
+  .chapter-toc__id {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .chapter-toc__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .chapter-toc__zh {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.2rem;
+    transition: color 0.15s ease;
+  }
+
+  .chapter-toc__en {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--mute);
+  }
+
+  .chapter-toc__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--mute);
+  }
+
+  .chapter-toc__wip {
+    color: var(--accent);
+  }
+
+  .chapter-toc__q {
+    margin: 0.55rem 0 0 0;
+    padding-left: calc(0.78rem * 3.2);
+    font-family: var(--serif);
+    font-size: 0.98rem;
+    color: var(--mute);
+    max-width: 40em;
+  }
+
+  @media (max-width: 640px) {
+    .chapter-toc__link {
+      grid-template-columns: auto 1fr;
+    }
+
+    .chapter-toc__meta {
+      grid-column: 2;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .chapter-toc__q {
+      padding-left: 0;
+    }
+  }
+</style>
