@@ -1,0 +1,124 @@
+---
+/**
+ * §01 protocol — execution spine as stability boundaries (not class tourism).
+ */
+---
+
+<svg
+  class="es-flow"
+  viewBox="0 0 868 292"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="es-kicker es-stage es-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · EXEC SPINE · EACH LAYER PROTECTS A DIFFERENT STABILITY
+  </text>
+  <line class="es-stage es-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <g class="es-stage es-stage--1" transform="translate(8,48)">
+    <rect width="118" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="118" height="2" fill="var(--accent)"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">1</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">Session</text>
+    <text class="es-title" x="10" y="68" fill="var(--ink)">Manager</text>
+    <text class="es-line" x="10" y="96" fill="var(--mute)">send / stop</text>
+    <text class="es-line" x="10" y="116" fill="var(--mute)">recover entry</text>
+  </g>
+  <path class="es-stage es-stage--1" d="M130 114 H146" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#es-arrow)"></path>
+
+  <g class="es-stage es-stage--2" transform="translate(150,48)">
+    <rect width="118" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="118" height="2" fill="var(--accent)" opacity="0.9"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">2</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">Runtime</text>
+    <text class="es-title" x="10" y="68" fill="var(--ink)">Kernel</text>
+    <text class="es-line" x="10" y="96" fill="var(--mute)">active-run</text>
+    <text class="es-line" x="10" y="116" fill="var(--mute)">control plane</text>
+  </g>
+  <path class="es-stage es-stage--2" d="M272 114 H288" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#es-arrow)"></path>
+
+  <g class="es-stage es-stage--3" transform="translate(292,48)">
+    <rect width="118" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="118" height="2" fill="var(--accent)" opacity="0.8"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">3</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">AgentRun</text>
+    <text class="es-line" x="10" y="80" fill="var(--mute)">durable</text>
+    <text class="es-line" x="10" y="100" fill="var(--mute)">envelope</text>
+    <text class="es-line" x="10" y="120" fill="var(--mute)">+ terminal</text>
+  </g>
+  <path class="es-stage es-stage--3" d="M414 114 H430" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#es-arrow)"></path>
+
+  <g class="es-stage es-stage--4" transform="translate(434,48)">
+    <rect width="118" height="132" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="118" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">4</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">Runtime</text>
+    <text class="es-title" x="10" y="68" fill="var(--ink)">Runner</text>
+    <text class="es-line" x="10" y="96" fill="var(--mute)">Invocation</text>
+    <text class="es-line" x="10" y="116" fill="var(--mute)">protocol</text>
+  </g>
+  <path class="es-stage es-stage--4" d="M556 114 H572" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#es-arrow)"></path>
+
+  <g class="es-stage es-stage--5" transform="translate(576,48)">
+    <rect width="118" height="132" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="118" height="2" fill="var(--accent)"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">5</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">AiSdkFlow</text>
+    <text class="es-line" x="10" y="80" fill="var(--mute)">Session→</text>
+    <text class="es-line" x="10" y="100" fill="var(--mute)">RuntimeEvent</text>
+    <text class="es-line" x="10" y="120" fill="var(--ink)">one terminal</text>
+  </g>
+  <path class="es-stage es-stage--5" d="M698 114 H714" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#es-arrow)"></path>
+
+  <g class="es-stage es-stage--6" transform="translate(718,48)">
+    <rect width="142" height="132" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="142" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="es-idx" x="10" y="24" fill="var(--accent)">6–7</text>
+    <text class="es-title" x="10" y="48" fill="var(--ink)">Backend +</text>
+    <text class="es-title" x="10" y="68" fill="var(--ink)">ToolRuntime</text>
+    <text class="es-line" x="10" y="96" fill="var(--mute)">model loop</text>
+    <text class="es-line" x="10" y="116" fill="var(--mute)">side effects</text>
+  </g>
+
+  <g class="es-stage es-stage--7" transform="translate(8,204)">
+    <rect width="852" height="68" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="es-foot" x="16" y="28" fill="var(--ink)"
+      >Owns ≠ tourism: façade · control plane · envelope · protocol · bridge · effects</text
+    >
+    <text class="es-foot" x="16" y="52" fill="var(--mute)"
+      >Must-not: request-shape math in SessionManager · provider stream in Kernel · tool loop in Runner</text
+    >
+  </g>
+
+  <defs>
+    <marker id="es-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .es-flow { font-family: var(--sans); }
+  .es-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .es-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .es-title { font-family: var(--serif); font-size: 14px; font-weight: 600; letter-spacing: -0.015em; }
+  .es-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  .es-foot { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .es-stage { opacity: 0; animation: es-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .es-stage--0 { animation-delay: 0.04s; }
+    .es-stage--1 { animation-delay: 0.1s; }
+    .es-stage--2 { animation-delay: 0.18s; }
+    .es-stage--3 { animation-delay: 0.26s; }
+    .es-stage--4 { animation-delay: 0.34s; }
+    .es-stage--5 { animation-delay: 0.42s; }
+    .es-stage--6 { animation-delay: 0.5s; }
+    .es-stage--7 { animation-delay: 0.58s; }
+    @keyframes es-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .es-stage { opacity: 1; animation: none; }
+  }
+</style>

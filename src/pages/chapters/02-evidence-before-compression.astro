@@ -482,9 +482,12 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
 activeArchiveFailures
 activeEstimatedTokensSaved</pre>
     <p>
-      用途：解释一次 request 为何变小，以及缩小过程中有没有损失恢复路径。缓存命中 / miss /
-      request-shape 归因见后续 cache 教学票（map #34 · #38），勿与 prune 正确性混为一谈。中期
-      capacity / newest-step 交互见
+      用途：解释一次 request 为何变小，以及缩小过程中有没有损失恢复路径。Active/stale prune
+      改变 provider-visible messages，可能移动 <code>historyProjectionHash</code>；cache hit/miss /
+      <code>prefixHash</code> 归因梯见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#request-shape`}>§01 · request-shape</a>
+      ——archive fail-open 永远优先于 chase cache，勿与 prune 正确性混为一谈。中期 capacity /
+      newest-step 交互见
       <a href={`${import.meta.env.BASE_URL}history/pr/1077`}>maka:pr:1077</a>（高级旁注）。
     </p>
   </Section>

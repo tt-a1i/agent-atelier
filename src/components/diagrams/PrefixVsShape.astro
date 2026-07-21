@@ -1,0 +1,73 @@
+---
+/**
+ * §01 cost spine — durable prefix nested inside full request shape; turn tail outside prefix.
+ */
+---
+
+<svg
+  class="pvs-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="pvs-kicker pvs-stage pvs-stage--0" x="8" y="20" fill="var(--accent)">
+    COST SPINE · DURABLE PREFIX ⊂ REQUEST SHAPE · LOCAL DIAGNOSTICS ONLY
+  </text>
+  <line class="pvs-stage pvs-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <g class="pvs-stage pvs-stage--1" transform="translate(8,52)">
+    <rect width="560" height="228" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="560" height="2" fill="var(--accent)"></rect>
+    <text class="pvs-idx" x="16" y="28" fill="var(--accent)">REQUESTSHAPEHASH</text>
+    <text class="pvs-title" x="16" y="54" fill="var(--ink)">Full provider-visible request</text>
+
+    <g transform="translate(16,72)">
+      <rect width="360" height="140" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+      <rect width="360" height="2" fill="var(--accent)"></rect>
+      <text class="pvs-idx" x="14" y="26" fill="var(--accent)">PREFIXHASH</text>
+      <text class="pvs-title" x="14" y="50" fill="var(--ink)">Durable prefix</text>
+      <text class="pvs-line" x="14" y="78" fill="var(--mute)">model / provider identity</text>
+      <text class="pvs-line" x="14" y="98" fill="var(--mute)">system prompt</text>
+      <text class="pvs-line" x="14" y="118" fill="var(--mute)">provider options</text>
+      <text class="pvs-line" x="14" y="138" fill="var(--mute)">active tool schema</text>
+    </g>
+
+    <text class="pvs-line" x="400" y="110" fill="var(--ink)">+ history</text>
+    <text class="pvs-line" x="400" y="130" fill="var(--ink)">projection</text>
+    <text class="pvs-line" x="400" y="160" fill="var(--mute)">prior messages</text>
+    <text class="pvs-line" x="400" y="180" fill="var(--mute)">view hash</text>
+  </g>
+
+  <g class="pvs-stage pvs-stage--2" transform="translate(588,52)">
+    <rect width="272" height="228" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="pvs-idx" x="14" y="28" fill="var(--accent)">TURN TAIL</text>
+    <text class="pvs-title" x="14" y="56" fill="var(--ink)">Volatile facts</text>
+    <text class="pvs-line" x="14" y="90" fill="var(--mute)">cwd / git status</text>
+    <text class="pvs-line" x="14" y="112" fill="var(--mute)">date / platform</text>
+    <text class="pvs-line" x="14" y="134" fill="var(--mute)">fresh memory</text>
+    <text class="pvs-line" x="14" y="156" fill="var(--mute)">current user</text>
+    <text class="pvs-line" x="14" y="190" fill="var(--ink)">≠ durable system</text>
+    <text class="pvs-line" x="14" y="210" fill="var(--mute)">prompt pollution</text>
+  </g>
+</svg>
+
+<style>
+  .pvs-flow { font-family: var(--sans); }
+  .pvs-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .pvs-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .pvs-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .pvs-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pvs-stage { opacity: 0; animation: pvs-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .pvs-stage--0 { animation-delay: 0.04s; }
+    .pvs-stage--1 { animation-delay: 0.16s; }
+    .pvs-stage--2 { animation-delay: 0.32s; }
+    @keyframes pvs-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pvs-stage { opacity: 1; animation: none; }
+  }
+</style>

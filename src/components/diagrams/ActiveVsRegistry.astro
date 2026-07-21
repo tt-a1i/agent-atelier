@@ -1,0 +1,79 @@
+---
+/**
+ * §01 cost spine — full dispatch registry vs provider-visible activeTools; load ≠ permission.
+ */
+---
+
+<svg
+  class="avr-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="avr-kicker avr-stage avr-stage--0" x="8" y="20" fill="var(--accent)">
+    COST SPINE · ACTIVE SCHEMA ≠ FULL REGISTRY · LOAD ≠ PERMISSION
+  </text>
+  <line class="avr-stage avr-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <g class="avr-stage avr-stage--1" transform="translate(8,52)">
+    <rect width="320" height="180" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="320" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="avr-idx" x="14" y="28" fill="var(--accent)">PROVIDERTOOLS</text>
+    <text class="avr-title" x="14" y="56" fill="var(--ink)">Full dispatch registry</text>
+    <text class="avr-line" x="14" y="90" fill="var(--mute)">local execute capability</text>
+    <text class="avr-line" x="14" y="112" fill="var(--mute)">hidden groups stay here</text>
+    <text class="avr-line" x="14" y="134" fill="var(--mute)">not all on the wire</text>
+    <text class="avr-line" x="14" y="166" fill="var(--ink)">≠ toolSchemaHash input</text>
+  </g>
+
+  <path class="avr-stage avr-stage--2" d="M340 142 H380" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#avr-arrow)"></path>
+  <text class="avr-line avr-stage avr-stage--2" x="348" y="128" fill="var(--accent)">load_tools</text>
+
+  <g class="avr-stage avr-stage--2" transform="translate(388,52)">
+    <rect width="280" height="180" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="280" height="2" fill="var(--accent)"></rect>
+    <text class="avr-idx" x="14" y="28" fill="var(--accent)">ACTIVETOOLS</text>
+    <text class="avr-title" x="14" y="56" fill="var(--ink)">Wire-visible set</text>
+    <text class="avr-line" x="14" y="90" fill="var(--mute)">schemas this step</text>
+    <text class="avr-line" x="14" y="112" fill="var(--mute)">hashes for prefix</text>
+    <text class="avr-line" x="14" y="134" fill="var(--mute)">economy / groups</text>
+    <text class="avr-line" x="14" y="166" fill="var(--ink)">toolSchemaHash here</text>
+  </g>
+
+  <g class="avr-stage avr-stage--3" transform="translate(688,52)">
+    <rect width="172" height="180" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="avr-idx" x="12" y="28" fill="var(--accent)">ORTHOGONAL</text>
+    <text class="avr-title" x="12" y="56" fill="var(--ink)">Permission</text>
+    <text class="avr-line" x="12" y="90" fill="var(--mute)">Engine</text>
+    <text class="avr-line" x="12" y="120" fill="var(--ink)">authorize</text>
+    <text class="avr-line" x="12" y="142" fill="var(--mute)">≠ advertise</text>
+    <text class="avr-line" x="12" y="166" fill="var(--mute)">≠ load_tools</text>
+  </g>
+
+  <defs>
+    <marker id="avr-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .avr-flow { font-family: var(--sans); }
+  .avr-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .avr-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .avr-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .avr-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .avr-stage { opacity: 0; animation: avr-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .avr-stage--0 { animation-delay: 0.04s; }
+    .avr-stage--1 { animation-delay: 0.14s; }
+    .avr-stage--2 { animation-delay: 0.28s; }
+    .avr-stage--3 { animation-delay: 0.42s; }
+    @keyframes avr-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .avr-stage { opacity: 1; animation: none; }
+  }
+</style>

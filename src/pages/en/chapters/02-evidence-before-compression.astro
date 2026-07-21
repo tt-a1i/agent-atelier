@@ -507,8 +507,13 @@ activeArchiveFailures
 activeEstimatedTokensSaved</pre>
     <p>
       Purpose: explain why a request got smaller and whether recovery paths were lost along the way.
-      Cache hit/miss / request-shape attribution belongs to the later cache teaching ticket (map #34 ·
-      #38) — do not confuse it with prune correctness. Mid-turn capacity / newest-step interaction:
+      Active/stale prune changes provider-visible messages and may move
+      <code>historyProjectionHash</code>; cache hit/miss / <code>prefixHash</code> attribution lives in
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#request-shape"}
+        >§01 · request-shape</a
+      >
+      — archive fail-open always beats chasing cache; do not confuse it with prune correctness.
+      Mid-turn capacity / newest-step interaction:
       <a href={`${localePath("en", "history/pr/1077")}`}>maka:pr:1077</a> (advanced aside).
     </p>
   </Section>

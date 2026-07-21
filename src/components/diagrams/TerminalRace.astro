@@ -1,0 +1,94 @@
+---
+/**
+ * §01 protocol — single terminal + late-event drain; late complete cannot win.
+ */
+---
+
+<svg
+  class="tr-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="tr-kicker tr-stage tr-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · ONE TERMINAL · LATE EVENTS DRAINED · HEADER FOLLOWS LEDGER
+  </text>
+  <line class="tr-stage tr-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <!-- timeline axis -->
+  <line class="tr-stage tr-stage--1" x1="40" y1="120" x2="820" y2="120" stroke="var(--hair)" stroke-width="1.5"
+  ></line>
+  <text class="tr-line tr-stage tr-stage--1" x="40" y="56" fill="var(--mute)">t →</text>
+
+  <g class="tr-stage tr-stage--2" transform="translate(60,78)">
+    <circle cx="12" cy="42" r="6" fill="var(--accent)"></circle>
+    <text class="tr-idx" x="0" y="18" fill="var(--accent)">A</text>
+    <text class="tr-line" x="-8" y="72" fill="var(--ink)">abort</text>
+    <text class="tr-line" x="-20" y="92" fill="var(--mute)">accepted</text>
+  </g>
+
+  <g class="tr-stage tr-stage--3" transform="translate(280,78)">
+    <circle cx="12" cy="42" r="6" fill="var(--mute)"></circle>
+    <text class="tr-idx" x="0" y="18" fill="var(--mute)">B</text>
+    <text class="tr-line" x="-24" y="72" fill="var(--mute)">complete</text>
+    <text class="tr-line" x="-28" y="92" fill="var(--mute)">(late)</text>
+    <!-- dashed reject -->
+    <line x1="12" y1="48" x2="12" y2="100" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3"
+    ></line>
+  </g>
+
+  <g class="tr-stage tr-stage--3" transform="translate(480,78)">
+    <rect width="160" height="88" rx="1" fill="var(--soft)" stroke="var(--accent)" y="8"></rect>
+    <text class="tr-idx" x="12" y="32" fill="var(--accent)">DRAIN</text>
+    <text class="tr-line" x="12" y="56" fill="var(--ink)">silent consume</text>
+    <text class="tr-line" x="12" y="76" fill="var(--mute)">not yielded</text>
+  </g>
+
+  <g class="tr-stage tr-stage--4" transform="translate(680,78)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)" y="8"></rect>
+    <text class="tr-idx" x="12" y="32" fill="var(--accent)">WINNER</text>
+    <text class="tr-line" x="12" y="56" fill="var(--ink)">aborted</text>
+    <text class="tr-line" x="12" y="76" fill="var(--mute)">semantics hold</text>
+  </g>
+
+  <g class="tr-stage tr-stage--5" transform="translate(8,196)">
+    <rect width="280" height="84" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="tr-idx" x="12" y="24" fill="var(--accent)">FAIL · HEADER ONLY</text>
+    <text class="tr-line" x="12" y="50" fill="var(--mute)">run.json completed</text>
+    <text class="tr-line" x="12" y="70" fill="var(--ink)">no terminal event → repair</text>
+  </g>
+  <g class="tr-stage tr-stage--5" transform="translate(304,196)">
+    <rect width="280" height="84" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="tr-idx" x="12" y="24" fill="var(--accent)">FAIL · LEDGER ONLY</text>
+    <text class="tr-line" x="12" y="50" fill="var(--mute)">terminal durable</text>
+    <text class="tr-line" x="12" y="70" fill="var(--ink)">header lag → repair header</text>
+  </g>
+  <g class="tr-stage tr-stage--5" transform="translate(600,196)">
+    <rect width="260" height="84" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="tr-idx" x="12" y="24" fill="var(--accent)">STOP THEN LATE</text>
+    <text class="tr-line" x="12" y="50" fill="var(--mute)">Kernel stopped</text>
+    <text class="tr-line" x="12" y="70" fill="var(--ink)">≠ resurrect success</text>
+  </g>
+</svg>
+
+<style>
+  .tr-flow { font-family: var(--sans); }
+  .tr-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .tr-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .tr-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .tr-stage { opacity: 0; animation: tr-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .tr-stage--0 { animation-delay: 0.04s; }
+    .tr-stage--1 { animation-delay: 0.12s; }
+    .tr-stage--2 { animation-delay: 0.22s; }
+    .tr-stage--3 { animation-delay: 0.34s; }
+    .tr-stage--4 { animation-delay: 0.46s; }
+    .tr-stage--5 { animation-delay: 0.58s; }
+    @keyframes tr-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tr-stage { opacity: 1; animation: none; }
+  }
+</style>

@@ -1,0 +1,68 @@
+---
+/**
+ * §01 cost spine — miss-rise attribution ladder (prefix stable vs prefix moved).
+ */
+---
+
+<svg
+  class="al-flow"
+  viewBox="0 0 868 340"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="al-kicker al-stage al-stage--0" x="8" y="20" fill="var(--accent)">
+    COST SPINE · ATTRIBUTION LADDER · WALK IN ORDER WHEN MISS RISES
+  </text>
+  <line class="al-stage al-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <g class="al-stage al-stage--1" transform="translate(8,52)">
+    <rect width="520" height="268" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="al-idx" x="16" y="28" fill="var(--accent)">QUESTIONS · TOP → BOTTOM</text>
+    <text class="al-line" x="16" y="60" fill="var(--ink)">1 · model / provider identity changed?</text>
+    <text class="al-line" x="16" y="88" fill="var(--ink)">2 · system prompt changed (volatile pollution)?</text>
+    <text class="al-line" x="16" y="116" fill="var(--ink)">3 · provider options changed?</text>
+    <text class="al-line" x="16" y="144" fill="var(--ink)">4 · active tool schema changed (load_tools)?</text>
+    <text class="al-line" x="16" y="172" fill="var(--ink)">5 · history projection changed?</text>
+    <text class="al-line" x="16" y="200" fill="var(--ink)">6 · turn tail / user content only?</text>
+    <text class="al-line" x="16" y="240" fill="var(--mute)">prefix may stay stable while full shape moves</text>
+    <text class="al-line" x="16" y="260" fill="var(--mute)">≠ inventing provider cache key</text>
+  </g>
+
+  <g class="al-stage al-stage--2" transform="translate(548,52)">
+    <rect width="312" height="120" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="312" height="2" fill="var(--accent)"></rect>
+    <text class="al-idx" x="14" y="28" fill="var(--accent)">PREFIX STABLE</text>
+    <text class="al-line" x="14" y="60" fill="var(--ink)">requestShapeHash moved</text>
+    <text class="al-line" x="14" y="84" fill="var(--mute)">history / tail churn</text>
+    <text class="al-line" x="14" y="108" fill="var(--mute)">prefix locality may help</text>
+  </g>
+
+  <g class="al-stage al-stage--3" transform="translate(548,192)">
+    <rect width="312" height="128" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="312" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="al-idx" x="14" y="28" fill="var(--accent)">PREFIX MOVED</text>
+    <text class="al-line" x="14" y="60" fill="var(--ink)">system / tools / options</text>
+    <text class="al-line" x="14" y="84" fill="var(--mute)">placement bug or edit</text>
+    <text class="al-line" x="14" y="108" fill="var(--mute)">input ↓ + miss ↑ = false win</text>
+  </g>
+</svg>
+
+<style>
+  .al-flow { font-family: var(--sans); }
+  .al-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .al-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .al-line { font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .al-stage { opacity: 0; animation: al-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .al-stage--0 { animation-delay: 0.04s; }
+    .al-stage--1 { animation-delay: 0.16s; }
+    .al-stage--2 { animation-delay: 0.3s; }
+    .al-stage--3 { animation-delay: 0.44s; }
+    @keyframes al-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .al-stage { opacity: 1; animation: none; }
+  }
+</style>

@@ -6,14 +6,23 @@ import LogIsRuntimeKeystone from "../../components/diagrams/LogIsRuntimeKeystone
 import EventProduceConsumeFlow from "../../components/diagrams/EventProduceConsumeFlow.astro";
 import ReplayLayersFlow from "../../components/diagrams/ReplayLayersFlow.astro";
 import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.astro";
+import ExecSpineFlow from "../../components/diagrams/ExecSpineFlow.astro";
+import DualStreamBridge from "../../components/diagrams/DualStreamBridge.astro";
+import ModelToolLoop from "../../components/diagrams/ModelToolLoop.astro";
+import PermissionControlFlow from "../../components/diagrams/PermissionControlFlow.astro";
+import TerminalRace from "../../components/diagrams/TerminalRace.astro";
+import PrefixVsShape from "../../components/diagrams/PrefixVsShape.astro";
+import AttributionLadder from "../../components/diagrams/AttributionLadder.astro";
+import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
 ---
 
 <ChapterShell chapterId="01">
   <div slot="thesis">
     <p>
       没有可回放的事实账本，就没有可调试、可投影、可演进的 Agent。本章建立 Runtime Event Log
-      作为 canonical source 的地位，并说明 Session / UI / Provider
-      上下文为何只能是投影。
+      作为 canonical source 的机制地位——从执行主链、双流桥接、单终态与权限控制流，到 request
+      materialization 的 cost spine——并说明 Session / UI / Provider 上下文为何只能是投影。关键句：
+      <strong>Log is the source of truth; state is a materialized view.</strong>
     </p>
   </div>
 
@@ -27,10 +36,14 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
       假设用户说：找出失败的测试，修复，再跑一遍。若只是聊天应用，路径只有「发模型 →
       等回复 → 显示」。真实 Agent 却要经历读项目、调工具、等授权、处理失败/超时、把结果喂回模型、重复多轮，并在完成 / 失败 / 中止之间给出明确终点。
     </p>
-    <p>
-      界面要实时显示；下一轮模型要读到可信历史；崩溃重启不能永远停在「运行中」；用户按停止后，迟到的
-      provider 事件也不能把状态改写成「完成」。
-    </p>
+    <p>这一场景立刻压出一组开放环压力（后文机制逐一接住）：</p>
+    <ul class="plain-list">
+      <li>流式输出与逐步工具副作用交错；</li>
+      <li>权限弹窗不是「UI 暂停」，而是 Runtime 控制流转；</li>
+      <li>用户停止后，迟到的 provider <code>complete</code> 不能改写终态；</li>
+      <li>进程崩溃时，只能修理已 durable 的投影，不能臆造「模型正要做什么」；</li>
+      <li>同样「缩短 prompt」可能让 cache miss 与账单上升——request shape 也是 Runtime 事实面。</li>
+    </ul>
     <blockquote class="pull">
       Runtime 真正解决的是：如何把包含流式输出、工具副作用、用户介入和进程故障的开放式循环，记录成一段可以重新解释和回放的事实历史。
     </blockquote>
@@ -55,113 +68,47 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
       <strong>Event Log 保存事实；Session、Run、UI、模型上下文和恢复逻辑都是这份日志的消费者或投影。</strong>
     </p>
     <pre class="code-block" aria-label="状态与投影关系">State(t) = Project(RuntimeEvents[0..t], policy, runtime configuration)</pre>
+    <p class="figure-note">
+      不变式：<strong>Log is the source of truth; state is a materialized view.</strong>
+    </p>
   </Section>
 
   <Section
-    id="spine"
+    id="spine-consume"
     label="§01 · Spine"
     title="生产、提交、投影、消费"
     lede="同一段日志可被不同消费者解释成不同状态——但没有消费者可以改写真相。"
   >
     <DiagramFigure
-      caption="图 2 · Produce → Durable append → Project → Consume；UI transcript 永远是消费者。"
+      caption="图 2 · Produce → Durable append → Project → Consume；UI transcript 永远是消费者，不是 completed semantics 的权威。"
       alt="四步流水线：Produce facts、Durable append、Project、Consume views。"
     >
       <EventProduceConsumeFlow />
     </DiagramFigure>
 
     <ul class="plain-list">
-      <li>Model History Projector → 下一次模型调用的 messages</li>
-      <li>Runtime Read Model → UI 所需的对话、工具活动与 Turn 状态</li>
-      <li>Terminal Fact Classifier → 一次 Run 的最终结果</li>
-      <li>Recovery → 进程退出前哪些事实已经 durable</li>
-      <li>Context / Compaction → 更小但保留关键语义的工作上下文（见 §03）</li>
+      <li><strong>Model History Projector</strong> — 下一次模型调用的 messages（可经 prune / compact 改写投影）</li>
+      <li><strong>Runtime Read Model</strong> — UI 所需的对话、工具活动与 Turn 状态</li>
+      <li><strong>Terminal Fact Classifier</strong> — 一次 Run 的最终结果（必须由 terminal RuntimeEvent 支持）</li>
+      <li><strong>Recovery</strong> — 进程退出前哪些事实已经 durable；只修投影，不 warm-resume 工具</li>
+      <li><strong>Context / Compaction</strong> — 更小但保留关键语义的工作上下文（见 §03）</li>
+      <li><strong>Cost / request-shape diagnostics</strong> — 附着在真实装配路径上的本地诊断（见
+        <a href="#request-shape">#request-shape</a>）</li>
     </ul>
     <p>
       这与普通 application log 不同：普通日志多在业务之后描述「代码做过什么」；RuntimeEvent
       本身就是业务语义。删除这份日志，系统就失去可靠重建交互状态的基础。
     </p>
-    <aside class="history-aside">
-      <p class="history-aside__tag">演进旁注</p>
-      <p>
-        Runtime Event Log 架构章合入：
-        <a href={`${import.meta.env.BASE_URL}history/pr/768`}>maka:pr:768</a>
-        （docs: add Runtime Event Log architecture chapter）。
-      </p>
-    </aside>
   </Section>
 
   <Section
-    id="event"
-    label="§01 · Event"
-    title="一条 RuntimeEvent 保存了什么"
-    lede="不是 role + text，而是可投影、可配对、可终止的正交事实。"
-  >
-    <p>一条事实至少要能回答这些正交维度：</p>
-    <ul class="plain-list">
-      <li><strong>Identity</strong> — session / invocation / run / turn / branch</li>
-      <li><strong>Ordering</strong> — id、时间戳与 ledger 顺序</li>
-      <li><strong>Source</strong> — role、author</li>
-      <li><strong>Content</strong> — text、thinking、function call/response、error</li>
-      <li><strong>Actions</strong> — state delta、permission、artifact、usage、end invocation</li>
-      <li><strong>Correlation</strong> — tool call、provider event、step 与 artifact 引用</li>
-      <li><strong>Lifecycle</strong> — partial 流式片段 vs 持久事实 vs 终止事实</li>
-    </ul>
-    <p>
-      因此模型历史不必从 UI transcript 反向解析；UI 也不是事实源。投影器从
-      RuntimeEvent 中选择 non-partial、model-visible 的事件，再按 provider 能力物化。
-    </p>
-  </Section>
-
-  <Section
-    id="replay"
-    label="§01 · Replay"
-    title="「回放状态空间」的三层含义"
-    lede="Current 已成立的是语义回放；不要把 wire-level 确定性偷换成已经兑现的承诺。"
-  >
-    <DiagramFigure
-      caption="图 3 · 语义回放（Current）≠ Provider-native（能力门控）≠ Bit-exact wire（Target）。"
-      alt="三列对照：Semantic replay、Provider-native、Bit-exact wire。"
-    >
-      <ReplayLayersFlow />
-    </DiagramFigure>
-
-    <ol class="plain-list plain-list--ol">
-      <li>
-        <strong>语义回放（Current）</strong>
-        — 给定 ledger，可重建文本、thinking、工具配对、权限、usage 与 terminal
-        fact；下一轮模型历史与 completed Session read model 优先从此构造。
-      </li>
-      <li>
-        <strong>Provider-native 回放（有能力门控）</strong>
-        — 不同 provider 对 tool history / signed thinking
-        要求不同；先做 replay plan，再决定 native、text-only 或显式降级。可回放 ≠ 把
-        JSONL 原样塞给任意模型。
-      </li>
-      <li>
-        <strong>Bit-exact wire replay（Target / 未宣称）</strong>
-        — 当前 Event Log 保存的是 canonical message semantics，不等于完整快照每次
-        HTTP 原始字节。System prompt、tool schema、options、投影策略仍参与 request
-        生成。若未来要承诺 bit-exact，需对配置与 request shape 另做版本化。
-      </li>
-    </ol>
-    <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
-      <p>
-        本章教学以 Current 语义回放为主。Target 方向会显式标注，避免把愿望写成已落地事实——对齐
-        Maka 架构文的纪律。
-      </p>
-    </div>
-  </Section>
-
-  <Section
-    id="ids"
+    id="identities"
     label="§01 · Identity"
     title="四个不要混在一起的身份"
     lede="Turn 不是 Run；聊天消息也不是执行状态。"
   >
     <DiagramFigure
-      caption="图 4 · Session / Turn / Run / Invocation：概念分开，未来重试不必重写事件协议。"
+      caption="图 3 · Session / Turn / Run / Invocation：概念分开，未来重试不必重写事件协议。"
       alt="四列对照：Session、Turn、Run、Invocation。"
     >
       <IdentityLayersFlow />
@@ -178,33 +125,780 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
   </Section>
 
   <Section
-    id="invariant"
-    label="§01 · Invariant"
-    title="必须守住的边界"
-    lede="Log is the source of truth; state is a materialized view."
+    id="event"
+    label="§01 · Event"
+    title="一条 RuntimeEvent 保存了什么"
+    lede="不是 role + text，而是可投影、可配对、可终止的正交事实。"
+  >
+    <p>一条事实至少要能回答这些正交维度：</p>
+    <ul class="plain-list">
+      <li><strong>Identity</strong> — session / invocation / run / turn / branch</li>
+      <li><strong>Ordering</strong> — id、时间戳与 ledger 顺序</li>
+      <li><strong>Source</strong> — role、author</li>
+      <li><strong>Content</strong> — text、thinking、function call/response、error</li>
+      <li><strong>Actions</strong> — state delta、<strong>permission</strong>、<strong>artifact</strong>、<strong>usage</strong>、end invocation</li>
+      <li><strong>Correlation</strong> — tool call、provider event、step 与 artifact 引用</li>
+      <li><strong>Lifecycle</strong> — partial 流式片段 vs 持久事实 vs 终止事实</li>
+    </ul>
+    <p>
+      Actions 不是聊天文本的伪装。权限请求与决策、usage 计数、artifact 引用都以 action
+      进入 ledger，这样回放才能回答「为何停住、如何继续、花了多少、证据在哪」——而不是从气泡文案里猜。
+    </p>
+    <p>
+      因此模型历史不必从 UI transcript 反向解析；UI 也不是事实源。投影器从
+      RuntimeEvent 中选择 non-partial、model-visible 的事件，再按 provider 能力物化。
+    </p>
+  </Section>
+
+  <Section
+    id="exec-spine"
+    label="§01 · Exec spine"
+    title="执行主链：谁保护什么稳定性"
+    lede="按稳定性边界阅读组件，而不是按类名观光。"
+  >
+    <DiagramFigure
+      caption="图 4 · Caller → SessionManager → Kernel → AgentRun → Runner → AiSdkFlow → Backend / ToolRuntime；每层保护不同稳定性。"
+      alt="七段执行主链：SessionManager、RuntimeKernel、AgentRun、RuntimeRunner、AiSdkFlow、Backend 与 ToolRuntime。"
+    >
+      <ExecSpineFlow />
+    </DiagramFigure>
+
+    <pre class="code-block" aria-label="执行主链">Caller
+  → SessionManager          # product façade
+  → RuntimeKernel           # active-run control plane
+  → AgentRun                # durable execution envelope
+  → RuntimeRunner           # Invocation protocol
+  → AiSdkFlow               # SessionEvent → RuntimeEvent bridge
+  → AgentBackend (AiSdkBackend)
+       → ModelAdapter       # provider stream normalization
+       → ToolRuntime        # side-effect boundary</pre>
+
+    <div class="table-wrap" role="region" aria-label="组件职责边界" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">Owns</th>
+            <th scope="col">Must not own</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">SessionManager</th>
+            <td>稳定的 <code>sendMessage</code> / stop / recover 入口</td>
+            <td>request-shape 数学、工具循环细节</td>
+          </tr>
+          <tr>
+            <th scope="row">RuntimeKernel</th>
+            <td>创建/注册 Run、路由 stop/permission、组装 Runner+Flow、确保 finalize</td>
+            <td>provider 流细节</td>
+          </tr>
+          <tr>
+            <th scope="row">AgentRun</th>
+            <td>header 生命周期、初始 user RuntimeEvent、history 构造、terminal commit</td>
+            <td>选择下一个 tool</td>
+          </tr>
+          <tr>
+            <th scope="row">RuntimeRunner</th>
+            <td>preflight 规则、要求 terminal、结构化 <code>InvocationResult</code></td>
+            <td>直接调用 provider / tools</td>
+          </tr>
+          <tr>
+            <th scope="row">AiSdkFlow</th>
+            <td>Backend 事件 → canonical facts；<strong>恰好一个</strong> terminal</td>
+            <td>重做模型循环</td>
+          </tr>
+          <tr>
+            <th scope="row">AiSdkBackend</th>
+            <td>prompt / history / tools / step loop / usage 附着</td>
+            <td>宣称 Session 级 active runs</td>
+          </tr>
+          <tr>
+            <th scope="row">ToolRuntime</th>
+            <td>guards、permission、execute、synthetic error result、artifacts</td>
+            <td>UI transcript 权威</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Runner 的 preflight 缝存在；生产路径上 Kernel 未必注入独立 gate——应标为「能力已有 / 入口可能未接线」，不要把测试契约写成全量线上保证。
+      </p>
+    </div>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        主链接线：
+        <a href={`${import.meta.env.BASE_URL}history/pr/9`}>maka:pr:9</a>
+        （Wire AiSdkFlow into SessionManager runtime path）、
+        <a href={`${import.meta.env.BASE_URL}history/pr/7`}>maka:pr:7</a>
+        （Wire RuntimeRunner through SessionManager）、
+        <a href={`${import.meta.env.BASE_URL}history/pr/6`}>maka:pr:6</a>
+        （Fix Runtime v2 runner and flow contracts）。语义源收敛：
+        <a href={`${import.meta.env.BASE_URL}history/pr/14`}>maka:pr:14</a>
+        /
+        <a href={`${import.meta.env.BASE_URL}history/pr/11`}>maka:pr:11</a>。架构文档合入（次要）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/768`}>maka:pr:768</a>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="dual-stream"
+    label="§01 · Dual stream"
+    title="SessionEvent 与 RuntimeEvent"
+    lede="双轨并存是 Current 迁移现实；Flow 是语义桥，不是羞耻脚注。"
+  >
+    <DiagramFigure
+      caption="图 5 · Backend 仍发 SessionEvent；AiSdkFlow 映射为 RuntimeEvent，并强制单终态。"
+      alt="三列：SessionEvent、AiSdkFlow 桥、RuntimeEvent canonical log。"
+    >
+      <DualStreamBridge />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="双流对照" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">流</th>
+            <th scope="col">受众</th>
+            <th scope="col">今日角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">SessionEvent</th>
+            <td>Renderer / legacy consumers</td>
+            <td>Backend 仍发射这些事件</td>
+          </tr>
+          <tr>
+            <th scope="row">RuntimeEvent</th>
+            <td>Canonical semantic log</td>
+            <td>completed replay 的优先事实源</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>AiSdkFlow 的映射节拍（教学必记）：</p>
+    <ul class="plain-list">
+      <li>text / thinking → model content</li>
+      <li>tool_start / tool_result → function call / response</li>
+      <li>permission request / decision → actions</li>
+      <li>usage → action</li>
+      <li>error / abort / complete → failure 或 terminal facts</li>
+    </ul>
+    <p>
+      迁移诚实：Flow 仍是 legacy→canonical 适配器；Backend 尚未原生只发 RuntimeEvent。双维护成本是
+      Current 边界，不是叙事上的「已经只剩一条真理管道」。
+    </p>
+  </Section>
+
+  <Section
+    id="loop"
+    label="§01 · Loop"
+    title="模型 ↔ 工具如何推进"
+    lede="逐步持久化；工具期间暂停 model idle watchdog；终态仍只有一个。"
+  >
+    <DiagramFigure
+      caption="图 6 · Begin → streamText → ToolRuntime（暂停 idle WD）→ next step / finish → Flow 单终态 → AgentRun commit。"
+      alt="模型与工具循环序列，强调逐步持久化与单终态。"
+    >
+      <ModelToolLoop />
+    </DiagramFigure>
+
+    <ol class="plain-list numbered">
+      <li>Kernel 启动 Turn → AgentRun.begin</li>
+      <li>Runner 跑 Flow → Backend.send</li>
+      <li>streamText → thinking / text / tool call</li>
+      <li>ToolRuntime.execute → tool result</li>
+      <li>带着结果进入下一步</li>
+      <li>最终文本 + finish → SessionEvents</li>
+      <li>Flow 发出 RuntimeEvents + <strong>恰好一个</strong> terminal</li>
+      <li>AgentRun 提交 terminal fact 并 finalize 投影</li>
+    </ol>
+    <ul class="plain-list">
+      <li>逐步持久化 assistant text / thinking，而不是只等一个巨型最终 blob。</li>
+      <li>Tool call 携带 step ID，供回放重组。</li>
+      <li>工具执行期间暂停 model idle watchdog（静默是预期的）；tool / run 超时仍生效。</li>
+      <li>
+        默认 step cap（Current 策略，例如 50）：若仍在 tool-calling，保留结果并给出确定性
+        continue hint，而不是空白 UI。
+      </li>
+    </ul>
+  </Section>
+
+  <Section
+    id="permission"
+    label="§01 · Permission"
+    title="权限是 Runtime 控制流"
+    lede="Permission is control flow. — 不是「UI 弹了个模态框」。"
+  >
+    <DiagramFigure
+      caption="图 7 · PermissionEngine 三岔：allow 执行 / block 合成错误结果 / prompt 暂停并保留 Run 身份。"
+      alt="权限控制流菱形：allow、block、prompt，以及 Kernel 路由决策。"
+    >
+      <PermissionControlFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="权限三结果" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">结果</th>
+            <th scope="col">Runtime 行为</th>
+            <th scope="col">Ledger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">allow</th>
+            <td>执行实现</td>
+            <td>按策略记录 decision</td>
+          </tr>
+          <tr>
+            <th scope="row">block</th>
+            <td><strong>无</strong>真实副作用；写入 <strong>synthetic error tool result</strong></td>
+            <td>denial + 配对 result</td>
+          </tr>
+          <tr>
+            <th scope="row">prompt</th>
+            <td>发出 permission request；暂停 watchdog；Session → <code>waiting_for_user</code>；Run 保持身份</td>
+            <td>request fact；稍后 decision fact</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      路由：<code>RuntimeKernel.respondToPermission()</code> → Backend → ToolRuntime 写入决策 →
+      continue 或 deny。回放/诊断必须能回答：为何停住、控制权如何回到循环。与 §02
+      配对：synthetic error result 保 call/result pairing（完整协议见 §02）。
+    </p>
+  </Section>
+
+  <Section
+    id="terminal"
+    label="§01 · Terminal"
+    title="单终态与迟到事件"
+    lede="One terminal. — 已终止的 Run 必须有且仅有一条有效 terminal RuntimeEvent；header 必须由此支撑。"
+  >
+    <DiagramFigure
+      caption="图 8 · abort 先被接受；迟到 complete 虚线拒绝并被 silent drain；header / ledger 失配进入 repair。"
+      alt="时间线：abort 接受、迟到 complete 被拒绝、三种 header/ledger 失败故事。"
+    >
+      <TerminalRace />
+    </DiagramFigure>
+
+    <blockquote class="pull">
+      A terminated Run must have exactly one valid terminal RuntimeEvent; the Run header must be
+      backed by that fact.
+    </blockquote>
+
+    <p>四则失败故事（读者应能不看 specimen 复述）：</p>
+    <ol class="plain-list numbered">
+      <li>
+        <strong>双终态：</strong>Backend 先发 <code>abort</code> 再发
+        <code>complete(user_stop)</code> → Flow 接受第一条；<strong>静默 drain</strong>
+        迟到事件；aborted 语义胜出。
+      </li>
+      <li>
+        <strong>有 header 无 ledger：</strong><code>run.json</code> 写 completed，但无 terminal
+        RuntimeEvent → 不信任 header；向 <code>missing_terminal_event</code> 失败修复。
+      </li>
+      <li>
+        <strong>有 ledger 无 header 更新：</strong>terminal 已 durable，进程死在 header
+        之前 → 读模型以 terminal event 为更强事实；recovery 修 header。
+      </li>
+      <li>
+        <strong>Stop 后迟到 complete：</strong>Kernel 已标记 stopped + Backend.stop；迟到的
+        provider complete/error <strong>不能</strong>复活成「成功完成」。
+      </li>
+    </ol>
+
+    <p>Runner 规则值得点名：</p>
+    <ul class="plain-list">
+      <li>Preflight 失败 → 不启动 Flow / 不伪造已开始的 invocation。</li>
+      <li>Flow 事件之前先有 initial user RuntimeEvent。</li>
+      <li>Flow throw / 无 terminal / permission denied / abort / 不完整 finish → 结构化失败。</li>
+      <li>Success 要求非空最终模型文本（Current contract）。</li>
+    </ul>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        缺失 terminal ledger 的修复：
+        <a href={`${import.meta.env.BASE_URL}history/pr/410`}>maka:pr:410</a>。合成终态上保留
+        stop 语义：
+        <a href={`${import.meta.env.BASE_URL}history/pr/435`}>maka:pr:435</a>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="stores"
+    label="§01 · Stores"
+    title="三套存储的权威边界"
+    lede="权威串味是经典事故：UI 投影、ops 索引与语义 ledger 各答不同问题。"
+  >
+    <div class="table-wrap" role="region" aria-label="三套存储权威" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Store</th>
+            <th scope="col">回答什么</th>
+            <th scope="col">不该用来</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">SessionStore</th>
+            <td>UI / 兼容 / 进行中投影（StoredMessage）</td>
+            <td>completed semantics 的唯一权威</td>
+          </tr>
+          <tr>
+            <th scope="row">AgentRunStore</th>
+            <td>Run 生命周期 ops 索引（run.json + operational events）</td>
+            <td>替代交互语义</td>
+          </tr>
+          <tr>
+            <th scope="row">RuntimeEventStore</th>
+            <td>Canonical AI 交互事实（runtime-events.jsonl）</td>
+            <td>无限 partial delta 垃圾场</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="code-block" aria-label="文件背板目录草图">sessions/&lt;sessionId&gt;/
+  ... session projection ...
+  runs/&lt;runId&gt;/
+    run.json
+    events.jsonl
+    runtime-events.jsonl
+    runtime-partials/</pre>
+    <p>
+      Partial 流是有界、可替换的快照；最终 non-partial 覆盖同一语义槽。不要把直播 delta
+      永远当成 durable 真相。
+    </p>
+  </Section>
+
+  <Section
+    id="recovery"
+    label="§01 · Recovery"
+    title="崩溃后修复什么"
+    lede="State repair ≠ warm resume。Recovery 不猜模型「正要做什么」。"
+  >
+    <p>启动 recovery <strong>会</strong>：</p>
+    <ul class="plain-list">
+      <li>扫描非终态 Runs 与 ledgers；</li>
+      <li>检测陈旧 model stream / tool 尾巴 / permission 等待 / 损坏的 ops 事件；</li>
+      <li>保守地提交 failed/cancelled，并修复 Session / Turn 投影。</li>
+    </ul>
+    <p>启动 recovery <strong>不会</strong>：</p>
+    <ul class="plain-list">
+      <li>在工具中途重新调用模型；</li>
+      <li>从副作用的下一行 warm-resume；</li>
+      <li>在没有 durable 事实时臆造「模型正要做的事」。</li>
+    </ul>
+    <p>
+      标签：<strong>state repair</strong>——未来 checkpoint resume 的地基，不是今日的 mid-tool warm
+      resume。跨进程 Attempt 耐久见 §04 TaskRun / park-grant。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Warm mid-tool resume = Target / 非 Current 启动 recovery。高级旁注：durable safe-boundary
+        resume phases 见
+        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>maka:pr:1223</a>
+        ——教学以 Current 诚实为准，不把演进阶段写成已默认开启。
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="replay"
+    label="§01 · Replay"
+    title="「回放状态空间」的三层含义"
+    lede="Current 已成立的是语义回放；不要把 wire-level 确定性偷换成已经兑现的承诺。"
+  >
+    <DiagramFigure
+      caption="图 9 · 语义回放（Current）≠ Provider-native（能力门控）≠ Bit-exact wire（Target）——后者通向 #request-shape cost spine。"
+      alt="三列对照：Semantic replay、Provider-native、Bit-exact wire，并指向 request-shape。"
+    >
+      <ReplayLayersFlow />
+    </DiagramFigure>
+
+    <ol class="plain-list numbered">
+      <li>
+        <strong>语义回放（Current）</strong>
+        — 给定 ledger，可重建文本、thinking、工具配对、权限、usage 与 terminal
+        fact；下一轮模型历史与 completed Session read model 优先从此构造。
+      </li>
+      <li>
+        <strong>Provider-native 回放（有能力门控）</strong>
+        — 不同 provider 对 tool history / signed thinking
+        要求不同；先做 replay plan，再决定 native、text-only 或显式降级。可回放 ≠ 把
+        JSONL 原样塞给任意模型。
+      </li>
+      <li>
+        <strong>Bit-exact wire replay（Target / 未宣称）</strong>
+        — 当前 Event Log 保存的是 canonical message semantics，不等于完整快照每次
+        HTTP 原始字节。System prompt、tool schema、options、投影策略仍参与 request
+        生成。Cost spine 教的是这套 materialization 的<strong>诊断模型</strong>，不是宣称
+        ledger 已存全量 wire 快照——见下一节。
+      </li>
+    </ol>
+  </Section>
+
+  <Section
+    id="request-shape"
+    label="§01 · Request shape"
+    title="Provider 看见的请求，不等于 ledger 里的消息"
+    lede="Cost spine：测量 hit/miss/write 之后再庆祝「更短的 prompt」。prefixHash 是 Maka 本地诊断，不是 provider cache key。"
   >
     <p>
-      思想来源可以粗读为两条：ADK 式「Session history 是事实，working context 是投影」；以及分布式系统里
-      log-first / event sourcing 的直觉——不要把每个下游视图当成独立真相。
+      归档设计文（extract durable ideas；<strong>不是</strong> Current 权威）留下的压力场景：history
+      budget 压低了总 input tokens，但 <strong>cache miss 与估算费用反而上升</strong>。原因往往不在「模型变贵」，而在
+      durable prefix 被 cwd/date 污染、active tool schema 抖动、或 history 投影变化——而本地
+      <code>prefixHash</code> / <code>requestShapeHash</code> 只诊断 Maka 自己的稳定序列化，
+      <strong>不等于</strong> DeepSeek（或任何 provider）内部 cache key。
     </p>
+
+    <DiagramFigure
+      caption="图 10 · Durable prefix（prefixHash）嵌在完整 request shape（requestShapeHash）内；turn tail 的易变事实不应写进 durable system prompt。"
+      alt="嵌套矩形：durable prefix 在 request shape 内；右侧 turn tail 列出 cwd/date 等易变事实。"
+    >
+      <PrefixVsShape />
+    </DiagramFigure>
+
+    <pre class="code-block" aria-label="Provider-visible 请求结构">provider-visible request
+  durable prefix
+    model / provider identity
+    system prompt
+    provider options
+    active tool schema
+  history projection          # prior messages view
+  current user content
+  turn tail                   # volatile facts</pre>
+
+    <div class="table-wrap" role="region" aria-label="durable vs turn tail" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">放进 durable system prompt</th>
+            <th scope="col">放进 turn tail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>稳定行为规则</td>
+            <td>当前 cwd</td>
+          </tr>
+          <tr>
+            <td>长期用户偏好</td>
+            <td>Git status</td>
+          </tr>
+          <tr>
+            <td>Workspace / skills 说明</td>
+            <td>Date / platform</td>
+          </tr>
+          <tr>
+            <td>Opt-in 且稳定的 local memory</td>
+            <td>本 Turn 新鲜 memory 更新</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="prefix-vs-tail" class="subhead">Durable prefix vs turn tail</h3>
     <p>
-      由此推出后文各章共用的终端不变量：
-      <strong>Run header 不能凭自己宣布完成，它必须得到 terminal RuntimeEvent 的支持。</strong>
-      §02 将在此之上讨论 Tool Result 的证据层；§03 讨论 Compaction 如何只改投影不改事实。
+      失败故事：团队以为「system prompt 没变」，但 date/cwd 每 Turn 改写它 →
+      <code>prefixHash</code> 抖动 → miss 上升 → 根因被误归到 history。易变事实属于 turn
+      tail，不属于 durable prefix。
     </p>
+
+    <h3 id="hashes" class="subhead"><code>prefixHash</code> 与 <code>requestShapeHash</code></h3>
+    <p>
+      来自 Current <code>computeRequestShapeDiagnostic</code>：
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong><code>prefixHash</code></strong> ← stableHash of
+        <code>modelProviderHash</code> · <code>systemPromptHash</code> ·
+        <code>providerOptionsHash</code> · <code>toolSchemaHash</code>（仅 active/visible tools）
+      </li>
+      <li>
+        <strong><code>requestShapeHash</code></strong> ← 上述再加上
+        <code>historyProjectionHash</code>
+      </li>
+    </ul>
+    <div class="table-wrap" role="region" aria-label="变化原因分类" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Reason</th>
+            <th scope="col">典型含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">first_turn</th>
+            <td>尚无 prior diagnostic</td>
+          </tr>
+          <tr>
+            <th scope="row">model_or_provider_changed</th>
+            <td>连接 / 模型身份</td>
+          </tr>
+          <tr>
+            <th scope="row">system_prompt_changed</th>
+            <td>Durable prompt 字节</td>
+          </tr>
+          <tr>
+            <th scope="row">tool_schema_changed 等</th>
+            <td>Active schema / economy load</td>
+          </tr>
+          <tr>
+            <th scope="row">provider_options_changed</th>
+            <td>Options blob</td>
+          </tr>
+          <tr>
+            <th scope="row">history_projection_changed</th>
+            <td>Prior messages 视图（compact / prune / 增长）</td>
+          </tr>
+          <tr>
+            <th scope="row">stable</th>
+            <td>未检测到组件变化</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <strong>这些是 Maka 本地诊断。</strong> Provider 可能用完全不同的哈希与分段策略。高级旁注：
+      <code>capturePreparedProviderRequest</code> 的 segment 顺序（tools → system →
+      messages）与 first-diff 可用于更深排查，但不作为本章第一屏。
+    </p>
+
+    <h3 id="usage-split" class="subhead">Cache hit / miss / write / output / reasoning</h3>
+    <div class="table-wrap" role="region" aria-label="usage 计数" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Counter</th>
+            <th scope="col">角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">cache hit</th>
+            <td>Provider 报告的复用 input</td>
+          </tr>
+          <tr>
+            <th scope="row">cache miss</th>
+            <td>新鲜 input——<strong>检查 provenance</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">cache write</th>
+            <td>写入 provider cache 的 tokens</td>
+          </tr>
+          <tr>
+            <th scope="row">output</th>
+            <td>补全</td>
+          </tr>
+          <tr>
+            <th scope="row">reasoning</th>
+            <td>若 provider 暴露，与普通 output 分开</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Miss provenance：有原生 miss 字段则用原生；否则
+      <strong>derived</strong>：<code>max(0, input − hit − write)</code>，并标记
+      <code>cacheMissInputSource = derived</code>。usage 缺失时不要发明计数——记录诊断缺口。计费教学保持轻量：miss
+      / read / write / output 可能有不同单价；不要假装单一「input 价」能解释 DeepSeek 类账单。
+    </p>
+
+    <h3 id="attribution" class="subhead">Miss 上升时的归因梯</h3>
+    <DiagramFigure
+      caption="图 11 · Miss 上升时按序追问六问；分支阅读 prefix 稳定 vs prefix 移动。"
+      alt="垂直归因梯与两侧分支：prefix stable / prefix moved。"
+    >
+      <AttributionLadder />
+    </DiagramFigure>
+    <div class="table-wrap" role="region" aria-label="观察与故事" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">观察</th>
+            <th scope="col">可能故事</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>prefixHash</code> 稳定，<code>requestShapeHash</code> 变</td>
+            <td>History / tail 抖动；prefix locality 仍可能有用</td>
+          </tr>
+          <tr>
+            <td><code>prefixHash</code> 变 + system_prompt_changed</td>
+            <td>放置 bug 或有意改 prompt</td>
+          </tr>
+          <tr>
+            <td><code>prefixHash</code> 变 + tool schema reason</td>
+            <td>Economy load 或 catalog 抖动</td>
+          </tr>
+          <tr>
+            <td>Total input ↓ 但 miss ↑</td>
+            <td>经典假胜利——先测量再庆祝</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="tool-economy" class="subhead">Active tools ≠ dispatch registry</h3>
+    <DiagramFigure
+      caption="图 12 · 全量 providerTools 与 wire 上 activeTools；load_tools 改变可见集；PermissionEngine 正交授权。"
+      alt="全量 registry、active wire set、load_tools 箭头与正交 PermissionEngine。"
+    >
+      <ActiveVsRegistry />
+    </DiagramFigure>
+    <ul class="plain-list">
+      <li>Economy：未分组可见；分组隐藏直至 <code>load_tools</code>。</li>
+      <li>Load 是显式 Runtime 事实；下一 Turn 可从 ledger 再播种。</li>
+      <li>Execute-boundary：同一步开始时不在 active set 的工具不能调用。</li>
+      <li><strong>Load ≠ permission grant。</strong></li>
+      <li>
+        <code>toolSchemaHash</code> 只哈希 <strong>可见</strong> tools——哈希全量 registry
+        会假触发变化并掩盖 load。
+      </li>
+    </ul>
+
+    <h3 id="cost-fail-open" class="subhead">不为 cache 删除事实</h3>
+    <ul class="plain-list">
+      <li>§02：archive 失败 → 保留完整 tool result message。</li>
+      <li>§03：compact 失败 → 安全的 source-derived 上下文；无虚假 coverage。</li>
+      <li>Hydration 失败 → 永不伪造 raw bytes。</li>
+      <li>Cache hit 永远不是删除 ledger 事实或跳过完整性检查的理由。</li>
+    </ul>
+    <blockquote class="pull">
+      Optimize the provider-visible view; never destroy the source to chase a hit rate.
+    </blockquote>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Request-shape / cache 诊断：
+        <a href={`${import.meta.env.BASE_URL}history/pr/21`}>maka:pr:21</a>
+        （Add request-shape prefix diagnostics）、
+        <a href={`${import.meta.env.BASE_URL}history/pr/23`}>maka:pr:23</a>
+        （Add cache-aware request shape diagnostics）。Tool-economy 统一：
+        <a href={`${import.meta.env.BASE_URL}history/pr/41`}>maka:pr:41</a>。§02 / §03
+        机制 PR（316 / 729）仅作次要交叉链接，不当作 cache 主旁注。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="invariants"
+    label="§01 · Invariants"
+    title="必须保护的不变量"
+    lede="考试清单：能复述才算读过本章，而不是 checklist 变绿。"
+  >
+    <ol class="plain-list numbered invariants">
+      <li>Log is source of truth; state is a materialized view.</li>
+      <li>UI transcript 从不是 completed semantics 的权威。</li>
+      <li>已终止的 Invocation/Run 恰好一条有效 terminal RuntimeEvent。</li>
+      <li>Terminal header commit 需要 durable terminal fact（或显式 repair 路径）。</li>
+      <li>迟到事件不能覆盖已接受的 terminal。</li>
+      <li>Permission / usage / artifact 以 actions 旅行，不伪装成聊天。</li>
+      <li>Tool call/result pairing 必须可重建。</li>
+      <li>Partial 流可替换；durable 事实不是永远沉默的 delta。</li>
+      <li>Recovery 从 durable 事实修投影；它不发明成功。</li>
+      <li>Request materialization 可变；message facts 保持稳定（本 cost spine）。</li>
+    </ol>
+    <p>
+      思想来源可粗读为：ADK 式「Session history 是事实，working context 是投影」；以及分布式系统
+      log-first / event sourcing 的直觉——不要把每个下游视图当成独立真相。§02 在此之上谈 Tool
+      Result 证据层；§03 谈 Compaction 只改投影；§04 谈跨 Attempt 的 Task envelope。
+    </p>
+  </Section>
+
+  <Section
+    id="asides"
+    label="§01 · Asides"
+    title="演进旁注索引"
+    lede="机制 PR 优先；docs-land 次要。"
+  >
+    <ul class="plain-list">
+      <li>
+        主链 / Flow：
+        <a href={`${import.meta.env.BASE_URL}history/pr/9`}>9</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/7`}>7</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/6`}>6</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/14`}>14</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/11`}>11</a>
+      </li>
+      <li>
+        Terminal：
+        <a href={`${import.meta.env.BASE_URL}history/pr/410`}>410</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/435`}>435</a>
+      </li>
+      <li>
+        Cost spine：
+        <a href={`${import.meta.env.BASE_URL}history/pr/21`}>21</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/23`}>23</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/41`}>41</a>
+      </li>
+      <li>
+        次要 / 高级：
+        <a href={`${import.meta.env.BASE_URL}history/pr/768`}>768</a>（docs）·
+        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>1223</a>（resume phases）
+      </li>
+    </ul>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + 生产/消费流 + 三层回放 + 身份层体量流</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/768`}>maka:pr:768</a></li>
-      <li>Current 语义回放 vs Target bit-exact 已显式区分</li>
-      <li>验收清单硬闸门已过（中英同船）</li>
+      <li>关键图 + produce/consume + 身份层 + 执行主链 / 双流 / 循环 / 权限 / 终态竞态</li>
+      <li>三套存储权威 + recovery = state repair</li>
+      <li>三层回放 → #request-shape cost spine（prefixHash / 归因梯 / tool economy）</li>
+      <li>
+        机制旁注
+        <a href={`${import.meta.env.BASE_URL}history/pr/9`}>9</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/410`}>410</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/21`}>21</a>（非仅 768）
+      </li>
+      <li>读者测验：迟到 complete after abort；更短却更贵</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .figure-note {
+    margin: -0.35rem 0 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 38em;
+  }
+
+  .figure-note strong {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .subhead {
+    margin: 1.6rem 0 0.65rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    max-width: 36em;
+  }
+
   .code-block {
     margin: 1rem 0 1.25rem;
     padding: 0.9rem 1.05rem;
@@ -214,6 +908,7 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
     font-size: 0.82rem;
     overflow-x: auto;
     max-width: 42em;
+    white-space: pre;
   }
 
   .plain-list {
@@ -226,8 +921,12 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
     margin-bottom: 0.45rem;
   }
 
-  .plain-list--ol {
+  .plain-list.numbered {
     list-style: decimal;
+  }
+
+  .invariants li {
+    margin-bottom: 0.65rem;
   }
 
   .outline-list {
@@ -248,5 +947,55 @@ import IdentityLayersFlow from "../../components/diagrams/IdentityLayersFlow.ast
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+
+  .table-wrap {
+    margin: 1rem 0 1.35rem;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--hair);
+  }
+
+  .proto-table {
+    width: 100%;
+    min-width: 36rem;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .proto-table th,
+  .proto-table td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--hair);
+    text-align: left;
+    vertical-align: top;
+    max-width: 14em;
+  }
+
+  .proto-table thead th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+    background: var(--soft);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .proto-table tbody th[scope="row"] {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .proto-table tbody tr:last-child th,
+  .proto-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .proto-table code {
+    font-size: 0.8em;
   }
 </style>

@@ -1,0 +1,94 @@
+---
+/**
+ * §01 protocol — permission as Runtime control flow: allow / block / prompt.
+ */
+---
+
+<svg
+  class="pc-flow"
+  viewBox="0 0 868 292"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="pc-kicker pc-stage pc-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · PERMISSION IS CONTROL FLOW · NOT A UI MODAL
+  </text>
+  <line class="pc-stage pc-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"
+  ></line>
+
+  <g class="pc-stage pc-stage--1" transform="translate(8,52)">
+    <rect width="168" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pc-idx" x="12" y="26" fill="var(--accent)">IN</text>
+    <text class="pc-title" x="12" y="52" fill="var(--ink)">Tool call</text>
+    <text class="pc-line" x="12" y="80" fill="var(--mute)">PermissionEngine</text>
+  </g>
+
+  <path class="pc-stage pc-stage--1" d="M184 102 H220" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pc-arrow)"></path>
+
+  <g class="pc-stage pc-stage--2" transform="translate(228,68)">
+    <polygon points="70,0 140,50 70,100 0,50" fill="var(--soft)" stroke="var(--accent)"></polygon>
+    <text class="pc-idx" x="42" y="54" fill="var(--accent)">?</text>
+  </g>
+
+  <path class="pc-stage pc-stage--3" d="M298 78 H340" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pc-arrow)"></path>
+  <path class="pc-stage pc-stage--3" d="M298 118 H340" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pc-arrow)"></path>
+  <path class="pc-stage pc-stage--3" d="M370 168 V188" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#pc-arrow)"></path>
+
+  <g class="pc-stage pc-stage--3" transform="translate(348,48)">
+    <rect width="156" height="72" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="pc-idx" x="12" y="22" fill="var(--accent)">ALLOW</text>
+    <text class="pc-line" x="12" y="46" fill="var(--ink)">execute impl</text>
+    <text class="pc-line" x="12" y="64" fill="var(--mute)">decision facts</text>
+  </g>
+
+  <g class="pc-stage pc-stage--3" transform="translate(524,48)">
+    <rect width="156" height="72" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pc-idx" x="12" y="22" fill="var(--accent)">BLOCK</text>
+    <text class="pc-line" x="12" y="46" fill="var(--ink)">no side effect</text>
+    <text class="pc-line" x="12" y="64" fill="var(--mute)">synthetic error</text>
+  </g>
+
+  <g class="pc-stage pc-stage--3" transform="translate(700,48)">
+    <rect width="160" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="pc-idx" x="12" y="22" fill="var(--accent)">PROMPT</text>
+    <text class="pc-line" x="12" y="46" fill="var(--ink)">pause + wait</text>
+    <text class="pc-line" x="12" y="64" fill="var(--mute)">Run keeps id</text>
+  </g>
+
+  <g class="pc-stage pc-stage--4" transform="translate(8,196)">
+    <rect width="852" height="76" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="pc-title" x="16" y="28" fill="var(--ink)"
+      >Kernel.respondToPermission → Backend → ToolRuntime writes decision → continue or deny</text
+    >
+    <text class="pc-line" x="16" y="56" fill="var(--mute)"
+      >Ledger: request fact + decision fact · Session may be waiting_for_user · pairing preserved for §02</text
+    >
+  </g>
+
+  <defs>
+    <marker id="pc-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .pc-flow { font-family: var(--sans); }
+  .pc-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; }
+  .pc-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .pc-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .pc-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pc-stage { opacity: 0; animation: pc-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .pc-stage--0 { animation-delay: 0.04s; }
+    .pc-stage--1 { animation-delay: 0.14s; }
+    .pc-stage--2 { animation-delay: 0.24s; }
+    .pc-stage--3 { animation-delay: 0.36s; }
+    .pc-stage--4 { animation-delay: 0.5s; }
+    @keyframes pc-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pc-stage { opacity: 1; animation: none; }
+  }
+</style>
