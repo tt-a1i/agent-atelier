@@ -4,9 +4,13 @@ import { chapterNavItems } from "../lib/chapters";
 import { localePath, type Locale } from "../lib/i18n";
 import {
   HISTORY_PAGE_SIZE,
+  buildHistoryCommitIndex,
   hasMakaHistorySnapshot,
+  listCommitAreas,
+  listCommitAuthors,
   listPrAreas,
   listPrAuthors,
+  loadCommits,
   loadMeta,
   loadPrs,
   prAreaChips,
@@ -23,8 +27,12 @@ const base = localePath(locale, "history");
 const ready = hasMakaHistorySnapshot();
 const meta = ready ? loadMeta() : null;
 const allPrs = ready ? loadPrs() : [];
-const authors = ready ? listPrAuthors(allPrs) : [];
-const areas = ready ? listPrAreas(allPrs) : [];
+const allCommits = ready ? loadCommits() : [];
+const authorsPr = ready ? listPrAuthors(allPrs) : [];
+const areasPr = ready ? listPrAreas(allPrs) : [];
+const authorsCommit = ready ? listCommitAuthors(allCommits) : [];
+const areasCommit = ready ? listCommitAreas(allCommits) : [];
+const commitIndex = ready ? buildHistoryCommitIndex() : { commits: [], firstParent: [] };
 
 /** Compact rows for client-side filter/pagination (static-hosting safe). */
 const prIndex = allPrs.map((pr) => ({
@@ -44,12 +52,16 @@ const copy =
         description: "Merged PR timeline for maka-agent (pinned snapshot, PR-first).",
         h1: "Maka lineage",
         sub: "Browse development by merged PR; member commits nest on detail pages. Cognitive chapters stay milestone-shaped — this track is the full archive.",
-        wip: "Filters (area / author / time / search) run client-side against the pin (static-safe). First-parent / full-DAG advanced views remain WIP — not complete.",
+        wip: "Modes: PR-first (default), first-parent, full DAG. Filters run client-side against the pin. Nested PR commits / unlinked-commit bucket polish remain WIP.",
         empty: "No data/maka-history/ snapshot found. Run npm run history:ingest first.",
         prev: "← Prev",
         next: "Next →",
         pager: "Pagination",
         filters: "Filters",
+        mode: "Mode",
+        modePr: "PR-first",
+        modeFp: "First-parent",
+        modeDag: "Full DAG",
         area: "Area",
         author: "Author",
         range: "Time",
@@ -63,21 +75,28 @@ const copy =
         showing: "Showing",
         of: "of",
         prs: "PRs",
+        commits: "commits",
         filtered: "(filtered)",
-        none: "No PRs match these filters.",
+        none: "No rows match these filters.",
         loading: "Loading timeline…",
+        merge: "merge",
+        parents: "parents",
       }
     : {
         title: "History · Maka 演进轨 · Agent Atelier",
         description: "Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。",
         h1: "Maka 演进史",
         sub: "默认按已合并 PR 浏览发展链路；成员 commit 嵌套在详情页。认知轨章节保持里程碑叙事，这里提供完整可追溯档案。",
-        wip: "area / author / time / search 在客户端对 pin 筛选（静态托管可用）。first-parent / full-DAG 高级视图仍未上线——勿当作完成。",
+        wip: "模式：PR-first（默认）/ first-parent / full DAG。筛选在客户端对 pin 运行。PR 内嵌套 commit、无 PR orphan 桶等仍属 WIP。",
         empty: "尚未找到 data/maka-history/ 快照。请先运行 npm run history:ingest。",
         prev: "← 上一页",
         next: "下一页 →",
         pager: "分页",
         filters: "筛选",
+        mode: "模式",
+        modePr: "PR-first",
+        modeFp: "First-parent",
+        modeDag: "Full DAG",
         area: "区域",
         author: "作者",
         range: "时间",
@@ -91,9 +110,12 @@ const copy =
         showing: "显示",
         of: "/",
         prs: "条 PR",
+        commits: "条 commit",
         filtered: "（已筛选）",
-        none: "没有匹配当前筛选的 PR。",
+        none: "没有匹配当前筛选的条目。",
         loading: "正在载入时间线…",
+        merge: "merge",
+        parents: "parents",
       };
 ---
 
@@ -123,7 +145,7 @@ const copy =
     </header>
 
     <aside class="stub" aria-label="WIP">
-      <p class="stub__tag">WIP · filters v1</p>
+      <p class="stub__tag">WIP · modes v1</p>
       <p>{copy.wip}</p>
     </aside>
 
@@ -143,10 +165,13 @@ const copy =
             showing: copy.showing,
             of: copy.of,
             prs: copy.prs,
+            commits: copy.commits,
             filtered: copy.filtered,
             none: copy.none,
             prev: copy.prev,
             next: copy.next,
+            merge: copy.merge,
+            parents: copy.parents,
           })}
         >
           <script
@@ -155,25 +180,48 @@ const copy =
             is:inline
             set:html={JSON.stringify(prIndex)}
           />
+          <script
+            type="application/json"
+            id="history-commit-index"
+            is:inline
+            set:html={JSON.stringify(commitIndex)}
+          />
+          <script
+            type="application/json"
+            id="history-filter-options"
+            is:inline
+            set:html={JSON.stringify({
+              pr: { authors: authorsPr, areas: areasPr },
+              commit: { authors: authorsCommit, areas: areasCommit },
+            })}
+          />
 
           <form class="history-filters" id="history-filter-form" aria-label={copy.filters}>
+            <fieldset class="history-modes">
+              <legend>{copy.mode}</legend>
+              <label>
+                <input type="radio" name="mode" value="pr" id="hf-mode-pr" checked />
+                {copy.modePr}
+              </label>
+              <label>
+                <input type="radio" name="mode" value="fp" id="hf-mode-fp" />
+                {copy.modeFp}
+              </label>
+              <label>
+                <input type="radio" name="mode" value="dag" id="hf-mode-dag" />
+                {copy.modeDag}
+              </label>
+            </fieldset>
             <label class="history-filters__field">
               <span>{copy.area}</span>
               <select name="area" id="hf-area">
                 <option value="">{copy.all}</option>
-                {areas.map((a) => (
-                  <option value={a}>{a}</option>
-                ))}
               </select>
             </label>
             <label class="history-filters__field">
               <span>{copy.author}</span>
               <input name="author" id="hf-author" list="history-authors" autocomplete="off" />
-              <datalist id="history-authors">
-                {authors.map((a) => (
-                  <option value={a} />
-                ))}
-              </datalist>
+              <datalist id="history-authors"></datalist>
             </label>
             <label class="history-filters__field">
               <span>{copy.range}</span>
@@ -186,7 +234,7 @@ const copy =
             </label>
             <label class="history-filters__field history-filters__field--grow">
               <span>{copy.search}</span>
-              <input name="q" id="hf-q" type="search" placeholder="title / #n" />
+              <input name="q" id="hf-q" type="search" placeholder="title / subject / #n" />
             </label>
             <div class="history-filters__actions">
               <button type="submit">{copy.apply}</button>
@@ -207,9 +255,25 @@ const copy =
 
 <script>
   type PrRow = { n: number; t: string; a: string; m: string; areas: string[] };
+  type CommitRow = {
+    s: string;
+    sub: string;
+    a: string;
+    d: string;
+    areas: string[];
+    m: boolean;
+    p: string[];
+  };
+  type Mode = "pr" | "fp" | "dag";
 
   function qs(): URLSearchParams {
     return new URLSearchParams(window.location.search);
+  }
+
+  function parseMode(raw: string | null): Mode {
+    if (raw === "fp" || raw === "first-parent") return "fp";
+    if (raw === "dag" || raw === "full") return "dag";
+    return "pr";
   }
 
   function rangeStart(range: string): number | null {
@@ -221,7 +285,7 @@ const copy =
     return null;
   }
 
-  function filterRows(rows: PrRow[], sp: URLSearchParams): PrRow[] {
+  function filterPrs(rows: PrRow[], sp: URLSearchParams): PrRow[] {
     const area = (sp.get("area") || "").trim();
     const author = (sp.get("author") || "").trim();
     const q = (sp.get("q") || "").trim().toLowerCase();
@@ -238,6 +302,23 @@ const copy =
     });
   }
 
+  function filterCommits(rows: CommitRow[], sp: URLSearchParams): CommitRow[] {
+    const area = (sp.get("area") || "").trim();
+    const author = (sp.get("author") || "").trim();
+    const q = (sp.get("q") || "").trim().toLowerCase();
+    const start = rangeStart(sp.get("range") || "all");
+    return rows.filter((c) => {
+      if (author && c.a !== author) return false;
+      if (area && !c.areas.includes(area)) return false;
+      if (start != null) {
+        const t = Date.parse(c.d);
+        if (!Number.isFinite(t) || t < start) return false;
+      }
+      if (q && !`${c.sub} ${c.s} ${c.a}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
   function fmtDate(iso: string, locale: string): string {
     try {
       return new Intl.DateTimeFormat(locale, {
@@ -250,18 +331,67 @@ const copy =
     }
   }
 
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function fillFilterOptions(mode: Mode) {
+    const raw = document.getElementById("history-filter-options");
+    if (!raw) return;
+    const opts = JSON.parse(raw.textContent || "{}") as {
+      pr: { authors: string[]; areas: string[] };
+      commit: { authors: string[]; areas: string[] };
+    };
+    const pack = mode === "pr" ? opts.pr : opts.commit;
+    const areaEl = document.getElementById("hf-area") as HTMLSelectElement | null;
+    const list = document.getElementById("history-authors");
+    if (areaEl) {
+      const current = areaEl.value;
+      const allLabel = areaEl.options[0]?.textContent || "";
+      areaEl.innerHTML = `<option value="">${escapeHtml(allLabel)}</option>${pack.areas
+        .map((a) => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`)
+        .join("")}`;
+      if (pack.areas.includes(current)) areaEl.value = current;
+    }
+    if (list) {
+      list.innerHTML = pack.authors
+        .map((a) => `<option value="${escapeHtml(a)}"></option>`)
+        .join("");
+    }
+  }
+
   function render() {
     const app = document.getElementById("history-app");
-    const raw = document.getElementById("history-pr-index");
-    if (!app || !raw) return;
+    const prRaw = document.getElementById("history-pr-index");
+    const cRaw = document.getElementById("history-commit-index");
+    if (!app || !prRaw || !cRaw) return;
 
     const base = app.dataset.base || "/history";
     const detailBase = app.dataset.detailBase || "/history";
     const pageSize = Number(app.dataset.pageSize || "50");
     const dateLocale = app.dataset.dateLocale || "zh-CN";
     const i18n = JSON.parse(app.dataset.i18n || "{}") as Record<string, string>;
-    const rows = JSON.parse(raw.textContent || "[]") as PrRow[];
+    const prs = JSON.parse(prRaw.textContent || "[]") as PrRow[];
+    const commitPack = JSON.parse(cRaw.textContent || "{}") as {
+      commits: CommitRow[];
+      firstParent: string[];
+    };
+    const byShort = new Map(commitPack.commits.map((c) => [c.s, c]));
     const sp = qs();
+    const mode = parseMode(sp.get("mode"));
+
+    fillFilterOptions(mode);
+
+    const modePr = document.getElementById("hf-mode-pr") as HTMLInputElement | null;
+    const modeFp = document.getElementById("hf-mode-fp") as HTMLInputElement | null;
+    const modeDag = document.getElementById("hf-mode-dag") as HTMLInputElement | null;
+    if (modePr) modePr.checked = mode === "pr";
+    if (modeFp) modeFp.checked = mode === "fp";
+    if (modeDag) modeDag.checked = mode === "dag";
 
     const areaEl = document.getElementById("hf-area") as HTMLSelectElement | null;
     const authorEl = document.getElementById("hf-author") as HTMLInputElement | null;
@@ -272,36 +402,32 @@ const copy =
     if (rangeEl) rangeEl.value = sp.get("range") || "all";
     if (qEl) qEl.value = sp.get("q") || "";
 
-    const filtered = filterRows(rows, sp);
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    let page = Number(sp.get("page") || "1");
-    if (!Number.isFinite(page) || page < 1) page = 1;
-    page = Math.min(page, totalPages);
-    const start = (page - 1) * pageSize;
-    const slice = filtered.slice(start, start + pageSize);
-    const active =
-      Boolean(sp.get("area")) ||
-      Boolean(sp.get("author")) ||
-      Boolean(sp.get("q")) ||
-      (sp.get("range") && sp.get("range") !== "all");
+    let unit = i18n.prs || "";
+    let totalBase = 0;
+    let filteredLen = 0;
+    let listHtml = "";
 
-    const count = document.getElementById("history-count");
-    if (count) {
-      count.innerHTML = `${i18n.showing || ""} <strong>${filtered.length}</strong> ${i18n.of || ""} ${rows.length} ${i18n.prs || ""}${active ? ` ${i18n.filtered || ""}` : ""}`;
-    }
-
-    const root = document.getElementById("history-list-root");
-    if (root) {
-      if (slice.length === 0) {
-        root.innerHTML = `<p class="history-empty">${i18n.none || ""}</p>`;
-      } else {
-        root.innerHTML = `<ol class="history-list" start="${start + 1}">${slice
-          .map((pr) => {
-            const chips = pr.areas
-              .slice(0, 3)
-              .map((c) => `<span class="chip">${escapeHtml(c)}</span>`)
-              .join("");
-            return `<li class="history-row">
+    if (mode === "pr") {
+      const filtered = filterPrs(prs, sp);
+      totalBase = prs.length;
+      filteredLen = filtered.length;
+      unit = i18n.prs || "";
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      let page = Number(sp.get("page") || "1");
+      if (!Number.isFinite(page) || page < 1) page = 1;
+      page = Math.min(page, totalPages);
+      const start = (page - 1) * pageSize;
+      const slice = filtered.slice(start, start + pageSize);
+      listHtml =
+        slice.length === 0
+          ? `<p class="history-empty">${i18n.none || ""}</p>`
+          : `<ol class="history-list" start="${start + 1}">${slice
+              .map((pr) => {
+                const chips = pr.areas
+                  .slice(0, 3)
+                  .map((c) => `<span class="chip">${escapeHtml(c)}</span>`)
+                  .join("");
+                return `<li class="history-row">
               <a class="history-row__link" href="${detailBase}/pr/${pr.n}">
                 <span class="history-row__num">#${pr.n}</span>
                 <span class="history-row__title">${escapeHtml(pr.t)}</span>
@@ -312,38 +438,113 @@ const copy =
                 ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
               </div>
             </li>`;
-          })
-          .join("")}</ol>`;
-      }
+              })
+              .join("")}</ol>`;
+      paintPager(sp, base, page, totalPages, i18n);
+    } else {
+      const ordered: CommitRow[] =
+        mode === "fp"
+          ? commitPack.firstParent.map((s) => byShort.get(s)).filter(Boolean) as CommitRow[]
+          : [...commitPack.commits].sort((a, b) => Date.parse(b.d) - Date.parse(a.d));
+      const filtered = filterCommits(ordered, sp);
+      totalBase = ordered.length;
+      filteredLen = filtered.length;
+      unit = i18n.commits || "";
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      let page = Number(sp.get("page") || "1");
+      if (!Number.isFinite(page) || page < 1) page = 1;
+      page = Math.min(page, totalPages);
+      const start = (page - 1) * pageSize;
+      const slice = filtered.slice(start, start + pageSize);
+      listHtml =
+        slice.length === 0
+          ? `<p class="history-empty">${i18n.none || ""}</p>`
+          : `<ol class="history-list" start="${start + 1}">${slice
+              .map((c) => {
+                const chips = c.areas
+                  .slice(0, 3)
+                  .map((x) => `<span class="chip">${escapeHtml(x)}</span>`)
+                  .join("");
+                const merge = c.m
+                  ? `<span class="chip chip--merge">${i18n.merge || "merge"}</span>`
+                  : "";
+                const parents =
+                  mode === "dag" && c.p.length
+                    ? `<span>${i18n.parents || "parents"} ${c.p
+                        .map((p) => escapeHtml(p))
+                        .join(" · ")}</span>`
+                    : "";
+                return `<li class="history-row">
+              <a class="history-row__link" href="${detailBase}/c/${escapeHtml(c.s)}">
+                <span class="history-row__num">${escapeHtml(c.s)}</span>
+                <span class="history-row__title">${escapeHtml(c.sub)}</span>
+              </a>
+              <div class="history-row__meta">
+                <span>${escapeHtml(c.a)}</span>
+                <span>${fmtDate(c.d, dateLocale)}</span>
+                ${merge}
+                ${parents}
+                ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
+              </div>
+            </li>`;
+              })
+              .join("")}</ol>`;
+      paintPager(sp, base, page, totalPages, i18n);
     }
 
-    const pager = document.getElementById("history-pager");
-    if (pager) {
-      const hrefFor = (p: number) => {
-        const next = new URLSearchParams(sp);
-        if (p <= 1) next.delete("page");
-        else next.set("page", String(p));
-        const s = next.toString();
-        return s ? `${base}?${s}` : base;
-      };
-      const prev =
-        page > 1
-          ? `<a href="${hrefFor(page - 1)}">${i18n.prev || ""}</a>`
-          : `<span class="history-pager__disabled">${i18n.prev || ""}</span>`;
-      const next =
-        page < totalPages
-          ? `<a href="${hrefFor(page + 1)}">${i18n.next || ""}</a>`
-          : `<span class="history-pager__disabled">${i18n.next || ""}</span>`;
-      pager.innerHTML = `${prev}<span class="history-pager__status">${page} / ${totalPages}</span>${next}`;
+    const active =
+      Boolean(sp.get("area")) ||
+      Boolean(sp.get("author")) ||
+      Boolean(sp.get("q")) ||
+      (sp.get("range") && sp.get("range") !== "all");
+
+    const count = document.getElementById("history-count");
+    if (count) {
+      count.innerHTML = `${i18n.showing || ""} <strong>${filteredLen}</strong> ${i18n.of || ""} ${totalBase} ${unit}${active ? ` ${i18n.filtered || ""}` : ""}`;
     }
+
+    const root = document.getElementById("history-list-root");
+    if (root) root.innerHTML = listHtml;
   }
 
-  function escapeHtml(s: string): string {
-    return s
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
+  function paintPager(
+    sp: URLSearchParams,
+    base: string,
+    page: number,
+    totalPages: number,
+    i18n: Record<string, string>,
+  ) {
+    const pager = document.getElementById("history-pager");
+    if (!pager) return;
+    const hrefFor = (p: number) => {
+      const next = new URLSearchParams(sp);
+      if (p <= 1) next.delete("page");
+      else next.set("page", String(p));
+      const s = next.toString();
+      return s ? `${base}?${s}` : base;
+    };
+    const prev =
+      page > 1
+        ? `<a href="${hrefFor(page - 1)}">${i18n.prev || ""}</a>`
+        : `<span class="history-pager__disabled">${i18n.prev || ""}</span>`;
+    const next =
+      page < totalPages
+        ? `<a href="${hrefFor(page + 1)}">${i18n.next || ""}</a>`
+        : `<span class="history-pager__disabled">${i18n.next || ""}</span>`;
+    pager.innerHTML = `${prev}<span class="history-pager__status">${page} / ${totalPages}</span>${next}`;
+  }
+
+  function collectParams(form: HTMLFormElement): URLSearchParams {
+    const fd = new FormData(form);
+    const next = new URLSearchParams();
+    const mode = String(fd.get("mode") || "pr");
+    if (mode && mode !== "pr") next.set("mode", mode);
+    for (const key of ["area", "author", "range", "q"]) {
+      const v = String(fd.get(key) || "").trim();
+      if (!v || (key === "range" && v === "all")) continue;
+      next.set(key, v);
+    }
+    return next;
   }
 
   function bind() {
@@ -354,16 +555,20 @@ const copy =
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const fd = new FormData(form);
-      const next = new URLSearchParams();
-      for (const key of ["area", "author", "range", "q"]) {
-        const v = String(fd.get(key) || "").trim();
-        if (!v || (key === "range" && v === "all")) continue;
-        next.set(key, v);
-      }
+      const next = collectParams(form);
       const url = next.toString() ? `${base}?${next}` : base;
       history.pushState({}, "", url);
       render();
+    });
+
+    form.querySelectorAll('input[name="mode"]').forEach((el) => {
+      el.addEventListener("change", () => {
+        const next = collectParams(form);
+        next.delete("page");
+        const url = next.toString() ? `${base}?${next}` : base;
+        history.pushState({}, "", url);
+        render();
+      });
     });
 
     document.getElementById("history-pager")?.addEventListener("click", (e) => {
@@ -383,6 +588,44 @@ const copy =
 </script>
 
 <style>
+  .history-modes {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.1rem;
+    align-items: center;
+    margin: 0 0 0.25rem;
+    padding: 0;
+    border: 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  .history-modes legend {
+    padding: 0;
+    margin: 0 0.75rem 0 0;
+    color: var(--accent);
+  }
+
+  .history-modes label {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: normal;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+
+  .history-modes input {
+    accent-color: var(--accent);
+  }
+
   .history-filters {
     display: flex;
     flex-wrap: wrap;
@@ -522,6 +765,11 @@ const copy =
     border: 1px solid var(--hair);
     background: var(--softer);
     color: var(--mute);
+  }
+
+  :global(.chip--merge) {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--hair));
+    color: var(--accent);
   }
 
   .history-pager {

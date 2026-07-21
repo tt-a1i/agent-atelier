@@ -237,3 +237,65 @@ export function historyFilterQuery(filters: HistoryPrFilters, page?: number): st
   const s = sp.toString();
   return s ? `?${s}` : "";
 }
+
+/** Compact commit row for client-side advanced modes (static-hosting safe). */
+export type HistoryCommitRow = {
+  s: string;
+  sub: string;
+  a: string;
+  d: string;
+  areas: string[];
+  /** True when commit has more than one parent. */
+  m: boolean;
+  /** Parent short shas (≤2) for DAG chrome. */
+  p: string[];
+};
+
+function shortByShaMap(): Map<string, string> {
+  return new Map(loadCommits().map((x) => [x.sha, x.short]));
+}
+
+export function buildHistoryCommitIndex(): {
+  commits: HistoryCommitRow[];
+  /** First-parent short shas, tip → root (newest first). */
+  firstParent: string[];
+} {
+  const all = loadCommits();
+  const shorts = shortByShaMap();
+  const commits = all.map((c) => ({
+    s: c.short,
+    sub: c.subject,
+    a: c.author.name,
+    d: c.committer.date || c.author.date,
+    areas: areaChips(c.pathPrefixes, 3),
+    m: c.parents.length > 1,
+    p: c.parents.slice(0, 2).map((sha) => shorts.get(sha) || sha.slice(0, 8)),
+  }));
+
+  const bySha = new Map(all.map((c) => [c.sha, c]));
+  const firstParent: string[] = [];
+  const seen = new Set<string>();
+  let sha: string | undefined = loadMeta().source.sourceSha;
+  while (sha && bySha.has(sha) && !seen.has(sha)) {
+    seen.add(sha);
+    const c = bySha.get(sha)!;
+    firstParent.push(c.short);
+    sha = c.parents[0];
+  }
+
+  return { commits, firstParent };
+}
+
+export function listCommitAuthors(commits = loadCommits()): string[] {
+  return [...new Set(commits.map((c) => c.author.name).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+
+export function listCommitAreas(commits = loadCommits()): string[] {
+  const set = new Set<string>();
+  for (const c of commits) {
+    for (const p of c.pathPrefixes) set.add(p);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
