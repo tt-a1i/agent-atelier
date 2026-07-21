@@ -715,6 +715,20 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
         <code>history-compact-*.test.ts</code>.
       </p>
     </aside>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · synthesis cache</p>
+      <p>
+        Archive <code>economic-mechanisms-benchmark.md</code> (#578): after archive, replay could
+        re-hydrate the full raw payload; the synthesis cache persists a compact synthesis block
+        (summary + coverage + source refs) on first retrieval and injects that block on later replays.
+        Mock A/B: 2818 → 764 tokens (−72.9%; test floor &gt;40%). The write gate needs
+        <strong>cross-turn</strong> archive-then-retrieve; a single long-turn Harbor task shape may
+        never reach it — workload mismatch, not missing wiring. Current:
+        <code>loadSynthesisCache</code> / <code>writeSynthesisCache</code> +
+        <code>contextBudget.synthesisCache</code>; still under this chapter’s fail-open — never fake
+        coverage.
+      </p>
+    </aside>
   </Section>
 
   <Section

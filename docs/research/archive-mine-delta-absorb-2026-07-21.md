@@ -38,4 +38,7 @@
 
 ## Remaining mine-delta (not this pass)
 
-`heavy-task-mainline-system-design.md`, `maka-memory-whitebox-contract.md`, `runtime-v2-architecture-evolution.md`, `runtime-kernel.md`, `maka-core-tech-walkthrough.md`, `economic-mechanisms-benchmark.md`, archive `README.md` inventory — still queued.
+~~Queued items below~~ — **absorbed in batch 2** ([`archive-mine-delta-absorb-batch2-2026-07-21.md`](./archive-mine-delta-absorb-batch2-2026-07-21.md)):  
+`heavy-task-mainline-system-design.md`, `maka-memory-whitebox-contract.md`, `runtime-v2-architecture-evolution.md`, `runtime-kernel.md`, `maka-core-tech-walkthrough.md`, `economic-mechanisms-benchmark.md`.  
+
+Still index-only: archive `README.md`.

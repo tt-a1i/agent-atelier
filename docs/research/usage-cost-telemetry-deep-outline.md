@@ -2,8 +2,8 @@
 
 **Ticket:** [#61](https://github.com/tt-a1i/agent-atelier/issues/61) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline — subsection shipped under §01 `#request-shape` (`#usage-stores`)  
-**Atelier home:** §01 `#request-shape` → `#usage-stores` · optional `/guides/cost` still fog  
+**Status:** **deep shipped** 2026-07-21 — §01 `#usage-stores` dual-store matrix + pricing + capture pipeline (CN+EN); Task #81  
+**Atelier home:** §01 `#request-shape` → `#usage-stores` · optional `/guides/cost` still fog (not required)  
 **Cross-links:** existing hit/miss/write teaching · archive `deepseek-reasonix-cost-runtime-design.md` (mine-delta) · storage (#55)
 
 ## Specimen sources (authority order)

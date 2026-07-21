@@ -2,8 +2,8 @@
 
 **Ticket:** [#57](https://github.com/tt-a1i/agent-atelier/issues/57) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline — lean §01 gateway note shipped; full companion still fog  
-**Atelier home:** lean callout in §01 (`#runtime-host`) · companion `/guides/runtime-host` if needed  
+**Status:** **deep shipped** 2026-07-21 — §01 `#runtime-host` four-op contract + trust boundary + failure codes (CN+EN); Task #81  
+**Atelier home:** §01 `#runtime-host` (nested under `#stores`) · companion `/guides/runtime-host` optional  
 **Cross-links:** storage root-authority (#55) · §01 recovery / root-turn admission
 
 ## Specimen sources (authority order)

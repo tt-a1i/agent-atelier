@@ -162,6 +162,17 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         pedagogical delta only.
       </p>
     </aside>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · runtime-kernel</p>
+      <p>
+        Archive <code>runtime-kernel.md</code> explains <strong>why</strong> ToolRuntime /
+        ModelAdapter / AgentRun ledger were extracted: after a crash you must answer “did the stream
+        start, were we waiting on permission, which tool was in flight, was usage recorded?” — not
+        leave those answers smeared across session + backend + wrap logic. Recovery remains
+        conservative terminal close (<code>app_restarted</code>), not warm replay. Current authority is
+        <a href="#agent-run-recovery">#agent-run-recovery</a> and the code.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -733,108 +744,497 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
     id="stores"
     label="§01 · Stores"
     title="Authority boundaries of three stores"
-    lede="Authority mix-ups are classic bugs: UI projection, ops index, and semantic ledger answer different questions."
+    lede="Authority mix-ups are classic bugs: UI projection, ops index, and semantic ledger answer different questions. On-disk ≠ fsync; a torn tail ≠ a legal prefix."
   >
+    <h3 id="root-gate" class="subhead">Storage root and single writer</h3>
+    <p>
+      The interactive root is gated by <code>packages/storage/src/root-authority.ts</code>: marker
+      <code>.maka-storage-root.json</code>, interactive write lock, lease. Writers open via
+      <code>openInteractiveExecutionStoresForWrite</code>; root-identity drift throws
+      <code>StorageRootAuthorityError</code>. Same-key writes are serialized by
+      <code>chainWrite</code> (write-queue) — not “anyone may append.”
+    </p>
+
+    <h3 id="three-ledgers" class="subhead">What each ledger answers</h3>
     <div class="table-wrap" role="region" aria-label="Three-store authority" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
             <th scope="col">Store</th>
-            <th scope="col">Answers</th>
+            <th scope="col">Canonical for</th>
             <th scope="col">Not for</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <th scope="row">SessionStore</th>
-            <td>UI / compat / in-flight projection (StoredMessage)</td>
-            <td>Sole authority for completed semantics</td>
+            <td>Transcript + header (<code>session.jsonl</code>) · UI / compat projection</td>
+            <td>Sole authority for completed semantics; execution terminal truth</td>
           </tr>
           <tr>
             <th scope="row">AgentRunStore</th>
-            <td>Run lifecycle ops index (run.json + operational events)</td>
-            <td>Replacing interaction semantics</td>
+            <td><code>run.json</code> + ops <code>events.jsonl</code> + admissions</td>
+            <td>Replacing interaction semantics; treating <code>projections/*</code> as source</td>
           </tr>
           <tr>
             <th scope="row">RuntimeEventStore</th>
-            <td>Canonical AI interaction facts (runtime-events.jsonl)</td>
-            <td>Unlimited partial-delta spam</td>
+            <td>Canonical AI interaction facts (JSONL or SQLite)</td>
+            <td>Unlimited partial-delta spam; Settings billing warehouse</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · runtime-v2</p>
+      <p>
+        Archive <code>runtime-v2-architecture-evolution.md</code> freezes the evolution motive: one run
+        was once told through StoredMessage / SessionEvent / AgentRunEvent / RunTrace / telemetry
+        <strong>at once</strong> — hard to answer “what is truth?” Current gravity is
+        <strong>Invocation + RuntimeEvent + projections</strong>; Session / AgentRun ops / telemetry
+        are derived or side ledgers. Layer names follow this chapter and code — not the archive proposal
+        diagram.
+      </p>
+    </aside>
 
     <pre class="code-block" aria-label="File-backed directory sketch">&#123;workspaceRoot&#125;/
   .maka-storage-root.json
-  runtime.sqlite                 # optional canonical RuntimeEvent
+  telemetry.json                 # TelemetryRepo (not session JSONL)
+  runtime.sqlite                 # optional canonical RuntimeEvent + tool journal
   sessions/&lt;sessionId&gt;/
     session.jsonl                # header + StoredMessage
     task-events.jsonl + tasks.json
+    turn-admissions/&lt;turnId&gt;     # RootTurnAdmission (durable)
     runs/&lt;runId&gt;/
       run.json
-      events.jsonl
-      runtime-events.jsonl
+      events.jsonl               # AgentRun ops
+      runtime-events.jsonl       # default RuntimeEvent backplane
       runtime-partials/
     shell-runs/&lt;id&gt;/state.jsonl
-  artifacts/…</pre>
+  artifacts/…                    # blobs + metadata.jsonl</pre>
     <p>
       Partial streams are bounded, replaceable snapshots; the final non-partial covers the semantic
       slot. Do not treat live deltas as durable truth forever.
     </p>
 
-    <h3 id="durability" class="subhead">What is actually durable</h3>
+    <h3 id="durability" class="subhead">What is actually durable: fsync truth</h3>
     <p>
-      <code>appendJsonl(..., &#123; durable: true &#125;)</code> <code>fsync</code>s the file and syncs the
-      directory chain under <code>durabilityRoot</code>; failures wrap as
-      <code>DurableStoreWriteError</code>. Terminal RuntimeEvents and root-turn admissions use this path.
-      Session message appends, task ledger, shell-run checkpoints, and artifact blobs are
-      <strong>not</strong> directory-chain fsync by default — they may be atomic renames or best-effort
-      appends. Calling “written to disk” “crash-safe” is a classic authority mix-up.
+      The primitive is <code>appendJsonl(path, payload, options)</code> (<code>jsonl-append.ts</code>).
+      Invariants:
     </p>
-    <div class="table-wrap" role="region" aria-label="Durability contrast" tabindex="0">
+    <ul class="plain-list">
+      <li>Payload <strong>must</strong> end with <code>\n</code> or the call throws.</li>
+      <li>
+        Flags: <code>O_RDWR | O_APPEND</code> (optional <code>O_CREAT</code>);
+        <code>requireExistingRecord</code> forbids an empty file (Session appends).
+      </li>
+      <li>
+        <code>durable: true</code> → <code>handle.sync()</code> +
+        <code>syncDirectoryChain(dirname, durabilityRoot)</code>; missing
+        <code>durabilityRoot</code> throws; failures wrap as <code>DurableStoreWriteError</code>.
+      </li>
+      <li>
+        <code>syncDirectoryChain</code> fsyncs directories up to the root; escaping
+        <code>durabilityRoot</code> throws. On Windows, directory sync is a no-op (honest limit).
+      </li>
+    </ul>
+    <div class="table-wrap" role="region" aria-label="Durability matrix" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
-            <th scope="col">Write</th>
+            <th scope="col">Write path</th>
             <th scope="col">Current durability</th>
+            <th scope="col">Honest meaning</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row">RuntimeEvent terminal / root-turn admission</th>
-            <td><code>durable: true</code> (file + dir chain)</td>
+            <th scope="row">RuntimeEvent terminal</th>
+            <td>
+              <code>ensureTerminalRuntimeEventDurable</code> →
+              <code>durable: true</code>
+            </td>
+            <td>File + dir chain; only a final terminal may cross the barrier</td>
+          </tr>
+          <tr>
+            <th scope="row">Root-turn admission</th>
+            <td><code>writeExclusiveAtomic(..., &#123; durable: true &#125;)</code></td>
+            <td>Host <code>turn.start</code> must pass before Run creation</td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <code>provider_request_captured</code> (ledger)
+            </th>
+            <td><code>durable: true</code></td>
+            <td>
+              Metadata durable; body in artifact (see
+              <a href="#usage-stores">#usage-stores</a>)
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">AgentRun ops append</th>
+            <td>Caller may pass <code>durable</code></td>
+            <td>Not default-on; check the caller</td>
           </tr>
           <tr>
             <th scope="row">Session JSONL messages</th>
-            <td>Best-effort append (no default fsync)</td>
+            <td>Repair yes · <strong>no</strong> default fsync</td>
+            <td>Product transcript ≠ execution terminal ledger</td>
           </tr>
           <tr>
             <th scope="row">Task / ShellRun / Artifact</th>
-            <td>Projection or checkpoint; no dir-chain sync</td>
+            <td>Atomic rename or best-effort; no dir-chain sync</td>
+            <td>Contract-complete ≠ power-loss safe</td>
           </tr>
           <tr>
-            <th scope="row">SQLite RuntimeEvent (when enabled)</th>
-            <td><code>synchronous=FULL</code> + WAL</td>
+            <th scope="row">SQLite RuntimeEvent</th>
+            <td>
+              <code>journal_mode=WAL</code> +
+              <code>synchronous=FULL</code> + transactions
+            </td>
+            <td>Alternate canonical path; adds tool-journal tables</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>telemetry.json</code></th>
+            <td>tmp + rename; no fsync</td>
+            <td>Corrupt load <strong>refuses to overwrite</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <blockquote class="pull">
+      “Written to disk” ≠ “crash-safe.” Calling Session append or artifact rename fsync-durable is a
+      classic authority mix-up.
+    </blockquote>
+
+    <h3 id="jsonl-repair" class="subhead">JSONL tail-repair protocol</h3>
+    <p>
+      Repair is <strong>embedded in the next <code>appendJsonl</code></strong> — there is no standalone
+      CLI. If the file does not end with <code>\n</code> before append:
+    </p>
+    <ol class="plain-list numbered">
+      <li><code>findTrailingRecordStart</code> reverse-scans to the prior record start.</li>
+      <li>
+        <code>classifyJsonRecord(tail)</code> (<code>json-prefix.ts</code>) returns
+        <code>complete | incomplete-prefix | invalid</code> — comment locks: whether missing only
+        trailing bytes could make valid JSON.
+      </li>
+      <li><code>complete</code> → add a <code>\n</code> separator, then append.</li>
+      <li>
+        <code>incomplete-prefix</code> → <code>truncate(tailStart)</code> + <code>sync</code>, then
+        append; truncating into the header with <code>requireExistingRecord</code> throws
+        <code>Cannot repair a truncated JSONL document header</code>.
+      </li>
+      <li>
+        <code>invalid</code> → throw
+        <code>Cannot append after an invalid JSONL tail record</code> (fail closed).
+      </li>
+    </ol>
+    <div class="table-wrap" role="region" aria-label="Read paths on torn tails" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Read path</th>
+            <th scope="col">Torn / corrupt behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Ordinary Session read</th>
+            <td>
+              Incomplete final line may be skipped; other corrupt → soft
+              <code>system_note</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <code>readMessagesForRecovery</code> /
+              <code>readEventsForRecovery</code>
+            </th>
+            <td><strong>Throw strictly</strong> (with line)</td>
+          </tr>
+          <tr>
+            <th scope="row">Phase0 prefix decision</th>
+            <td>
+              A torn JSON row is storage corruption — <strong>not</strong> a legal committed prefix
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
     <p>
-      JSONL tail repair: if the file lacks a trailing newline, truncate an
-      <code>incomplete-prefix</code> via <code>classifyJsonRecord</code>; <code>invalid</code> rejects
-      the append. Ordinary Session reads may soft-degrade to <code>system_note</code>; recovery /
-      RuntimeEvent reads <strong>throw strictly</strong>. A torn JSON row is storage corruption — not a
-      legal Phase0 prefix.
+      Specimens: <code>execution-stores.test.ts</code> (unterminated tail repaired before the next
+      durable append); <code>jsonl-append</code> / recovery-read tests. The Phase0 harness does
+      <strong>not</strong> claim power-loss / OS-level fsync coverage — see maka’s crash-contract docs.
     </p>
 
-    <h3 id="runtime-host" class="subhead">Runtime-host: a thin gateway, not full RPC</h3>
+    <h3 id="runtime-dual" class="subhead">RuntimeEvent dual backplane: JSONL vs SQLite</h3>
     <p>
-      Optional desktop path: <code>@maka/runtime-host</code> elects a single-writer Host on a local unix
-      socket and exposes only <code>host.status</code> / <code>turn.start</code> /
-      <code>turn.query</code> / <code>turn.stop</code>. <code>turn.start</code> performs durable
-      root-turn admission before creating a Run; client/protocol must not import
-      <code>@maka/runtime</code>. Headless/CLI may bypass the Host entirely. Do not teach it as “the
-      entire remote Runtime API.”
+      Default is per-run <code>runtime-events.jsonl</code>. When <code>runtime.sqlite</code> is present
+      at the root, <code>openRuntimeEventPersistence</code> may use
+      <code>SqliteRuntimeStore</code> (schema v4):
+    </p>
+    <ul class="plain-list">
+      <li>
+        Tables: <code>runtime_events</code> (PK <code>event_id</code>;
+        <code>UNIQUE(invocation_id, event_seq)</code>) · <code>tool_journal_events</code> ·
+        <code>tool_operations</code> · <code>runtime_partial_snapshots</code> ·
+        <code>runtime_import_sources</code>
+      </li>
+      <li>
+        Store pins: <code>durability = 'canonical'</code>;
+        <code>toolBoundaryProtocol = 't1_after_preflight_v1'</code>
+      </li>
+      <li>
+        Same terminal barrier: only a final terminal RuntimeEvent may
+        <code>ensureTerminalRuntimeEventDurable</code>
+      </li>
+      <li>
+        Migration: <code>BEGIN IMMEDIATE</code> → SQL → <code>user_version</code> →
+        <code>COMMIT</code>
+      </li>
+    </ul>
+    <p>
+      The SQLite path additionally carries the tool journal (T1/T2 boundary projection). JSONL and
+      SQLite are <strong>alternate canonicals</strong> — not dual-write replication. Teach the dual
+      honestly; do not invent an active-active story.
+    </p>
+
+    <h3 id="derived-stores" class="subhead">Derived / weaker-durability stores</h3>
+    <div class="table-wrap" role="region" aria-label="Derived stores" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Store</th>
+            <th scope="col">Role</th>
+            <th scope="col">Durability honesty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">task-ledger-store</th>
+            <td>Session short-key todo events + <code>tasks.json</code> projection</td>
+            <td><code>appendFile</code>; <strong>no</strong> appendJsonl/fsync</td>
+          </tr>
+          <tr>
+            <th scope="row">shell-run-store</th>
+            <td>Per-run <code>state.jsonl</code> rewrite</td>
+            <td>Live process in runtime manager; checkpoint without fsync</td>
+          </tr>
+          <tr>
+            <th scope="row">artifact-store</th>
+            <td>Blob + <code>metadata.jsonl</code></td>
+            <td>tmp+rename; a corrupt metadata line may skip then compact</td>
+          </tr>
+          <tr>
+            <th scope="row">usage-stats-store</th>
+            <td>Read-only scan of session token/tool rows</td>
+            <td>
+              Does not write; Settings UI aggregate (see
+              <a href="#usage-stores">#usage-stores</a>)
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="store-failures" class="subhead">Failure matrix</h3>
+    <div class="table-wrap" role="region" aria-label="Store failure matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Unterminated JSONL tail</td>
+            <td>Next append truncates incomplete-prefix</td>
+          </tr>
+          <tr>
+            <td>Invalid JSONL tail</td>
+            <td>Append rejected</td>
+          </tr>
+          <tr>
+            <td>Corrupt durable line (strict read)</td>
+            <td>Throw with line</td>
+          </tr>
+          <tr>
+            <td>Terminal RuntimeEvent mismatch</td>
+            <td>Throw (exists but payload differs)</td>
+          </tr>
+          <tr>
+            <td>Root identity drift</td>
+            <td><code>StorageRootAuthorityError</code></td>
+          </tr>
+          <tr>
+            <td>Concurrent same-key writes</td>
+            <td><code>chainWrite</code> serializes</td>
+          </tr>
+          <tr>
+            <td>Durable fsync failure</td>
+            <td><code>DurableStoreWriteError</code>; Host may drain</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Research outline: <code>docs/research/storage-ledgers-deep-outline.md</code> (#55 → Task #81).
+    </p>
+
+    <h3 id="runtime-host" class="subhead">Runtime-host: four-op thin gateway</h3>
+    <p>
+      <code>@maka/runtime-host</code> is an optional Desktop <strong>thin orchestration shell</strong> —
+      not a full Runtime RPC surface, and not a multi-tenant remote SaaS boundary. Motive: elect a
+      single-writer Host on local IPC, hold the storage lock / root-turn admission, and keep the tool
+      loop / Permission UI inside server-only composition.
+    </p>
+
+    <h4 class="subhead">Trust boundary</h4>
+    <pre class="code-block" aria-label="runtime-host trust boundary">Client → unix socket + hello
+  → Host authenticates InteractiveRootOwner
+  → Admission by HostLifecycleState + residency
+  → Server-only composition: SessionManager + execution stores
+
+Host owns: interactive write lock · registration · op admission · composition hook
+Host does NOT own: tool-loop API · Permission UI op · full session CRUD · settings · shell runs</pre>
+    <ul class="plain-list">
+      <li>
+        Protocol constants: <code>RUNTIME_HOST_PROTOCOL_VERSION = 2</code>;
+        <code>RUNTIME_HOST_MAX_FRAME_BYTES = 64 KiB</code>; newline-delimited JSON.
+      </li>
+      <li>
+        Handshake: <code>ClientHello</code> → <code>accepted | incompatible | draining</code>;
+        registration <code>kind: 'maka-runtime-host'</code>, <code>rootId</code> =
+        <code>/^[a-f0-9]&#123;64&#125;$/</code>.
+      </li>
+      <li>
+        Endpoint: POSIX socket (dir <code>0o700</code> / sock <code>0o600</code>) or Windows named
+        pipe; uid + mode checked.
+      </li>
+      <li>
+        <strong>Hard test:</strong> <code>dependency-boundary.test.ts</code> —
+        <code>protocol/</code> and <code>client/</code> must <strong>not</strong> import
+        <code>@maka/runtime</code> / execution-stores; only <code>server/</code> may.
+      </li>
+      <li>Headless / CLI may <strong>bypass the Host entirely</strong> and talk to SessionManager.</li>
+    </ul>
+
+    <h4 class="subhead">Exactly four operations (<code>HOST_OPERATION_SPECS</code>)</h4>
+    <div class="table-wrap" role="region" aria-label="Four-op contract" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Op</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Admission</th>
+            <th scope="col">Retry</th>
+            <th scope="col">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>host.status</code></th>
+            <td>query</td>
+            <td>bootstrap</td>
+            <td>safe</td>
+            <td>epoch · state · connections / ops / residencies</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.start</code></th>
+            <td>command</td>
+            <td>session</td>
+            <td>semantic</td>
+            <td>
+              <code>&#123;sessionId, turnId, text≤48KiB&#125;</code> →
+              <code>TurnSnapshot</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.query</code></th>
+            <td>query</td>
+            <td>ready</td>
+            <td>safe</td>
+            <td>Poll the same TurnSnapshot</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.stop</code></th>
+            <td>control</td>
+            <td>session</td>
+            <td>semantic</td>
+            <td>Cancel; requires <code>runId</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Frame: <code>&#123; requestId, operation, input &#125;</code> →
+      <code>ok: true, result</code> or <code>ok: false, error: &#123; code, message &#125;</code>.
+      <code>TurnRunStatus</code>:
+      <code>admitted → created → running → waiting_permission → completed|failed|cancelled</code>.
+      Terminals carry <code>terminalEventId</code> (+ <code>failureClass</code> /
+      <code>abortSource</code>).
+    </p>
+    <p>
+      There is <strong>no</strong> messages / permission-decision / shell / sandbox op. Permission
+      appears only as <code>waiting_permission</code> on the snapshot; tool authorization stays inside
+      <code>SessionManager</code> / PermissionEngine. Sandbox executors live in
+      <code>@maka/runtime</code>, not the host package.
+    </p>
+
+    <h4 class="subhead">Lifecycle and admission</h4>
+    <p>
+      Host states: <code>starting → recovering → ready → draining</code> (plus
+      <code>containing</code>). Kernel <code>#beginOperation</code>:
+    </p>
+    <ul class="plain-list">
+      <li>Non-bootstrap and state ≠ <code>ready</code> → <code>host_not_ready</code></li>
+      <li>Commands while draining / shutting down → <code>host_draining</code></li>
+      <li>
+        <code>admission: 'session'</code> is further checked by
+        <code>RootTurnCoordinator</code> for busy / archived
+      </li>
+    </ul>
+    <p>
+      <code>turn.start</code>: durable root-turn admission <strong>before</strong> Run creation.
+      Admission durability failure → turn.start error <strong>and</strong> Host drain — do not sacrifice
+      the single-writer ledger to “just start running.”
+    </p>
+    <div class="table-wrap" role="region" aria-label="Host failure codes" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Code / failure</th>
+            <th scope="col">Client should</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>host_draining</code> / <code>host_not_ready</code></td>
+            <td>Wait / re-spawn</td>
+          </tr>
+          <tr>
+            <td><code>session_busy</code></td>
+            <td>One active root turn per session</td>
+          </tr>
+          <tr>
+            <td><code>session_archived</code></td>
+            <td>Reject start</td>
+          </tr>
+          <tr>
+            <td>Pre-start durable failure</td>
+            <td>turn.start error + host drain</td>
+          </tr>
+          <tr>
+            <td>Epoch mismatch</td>
+            <td>Re-read registration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Research outline: <code>docs/research/runtime-host-gateway-deep-outline.md</code> (#57 → Task
+      #81). Do not invent a fifth op.
     </p>
   </Section>
 
@@ -1282,6 +1682,17 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · memory whitebox</p>
+      <p>
+        Archive <code>maka-memory-whitebox-contract.md</code> freezes the two-switch model:
+        <code>enabled</code> (file feature) vs <code>agentReadEnabled</code> (may enter the system
+        prompt; default OFF) — a transparent local file must <strong>not</strong> become implicit
+        durable memory the agent reads by default. Disk format / field names follow Current
+        <code>local-memory</code> code; while TOC has no dedicated memory chapter, the field table
+        lives in <code>docs/research/memory-whitebox-archive-delta.md</code>.
+      </p>
+    </aside>
 
     <h3 id="prefix-vs-tail" class="subhead">Durable prefix vs turn tail</h3>
     <p>
@@ -1520,33 +1931,114 @@ providerTools = [...visibleTools, invalid]         # invalid never advertised</p
       <code>tool-availability.test.ts</code> (full / economy / inert / prepareStep / ledger seed).
     </p>
 
-    <h3 id="usage-stores" class="subhead">Usage dual-store and pricing honesty</h3>
+    <h3 id="usage-stores" class="subhead">Usage dual-store, pricing, and capture</h3>
     <p>
-      Above hit/miss/write diagnostics sit two stores that answer
-      <strong>different questions</strong> — do not collapse them into “the billing truth”:
+      Hit/miss/write diagnostics (above) answer “why did the request shape move?” The three paths below
+      answer <strong>different questions</strong> — do not collapse them into “the billing truth”:
     </p>
+    <div class="table-wrap" role="region" aria-label="Three usage paths" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Store / path</th>
+            <th scope="col">Written by</th>
+            <th scope="col">Read by</th>
+            <th scope="col">Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">
+              <code>telemetry.json</code> (TelemetryRepo)
+            </th>
+            <td>
+              <code>recordLlmCall</code> /
+              <code>recordToolInvocation</code>
+            </td>
+            <td>summary / buckets / logs / pricing CRUD</td>
+            <td>Full usage records + <code>pricingOverrides</code></td>
+          </tr>
+          <tr>
+            <th scope="row">Session JSONL → usage-stats-store</th>
+            <td>
+              Runtime materializes <code>token_usage</code> / tool rows (parallel to telemetry)
+            </td>
+            <td>Settings <code>usageStats()</code></td>
+            <td>
+              Aggregates <code>costUsd</code> already on the transcript;
+              does <strong>not</strong> read telemetry.json; <code>pricing: []</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">provider_request_capture</th>
+            <td>Artifact body + AgentRun ledger metadata</td>
+            <td>Headless trace / debug</td>
+            <td>
+              Serialized request evidence; hidden by default in desktop UI;
+              <strong>≠</strong> billing telemetry; ≠ provider cache key
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="subhead">Pricing key and computeCost</h4>
     <ul class="plain-list">
       <li>
-        <strong><code>telemetry.json</code> (TelemetryRepo)</strong> — written by
-        <code>recordLlmCall</code> / <code>recordToolInvocation</code>; holds pricing overrides;
-        pricing key is <code>providerId:modelId</code>; missing unit prices yield
-        <strong>$0</strong> cost (not an error).
+        Pricing key = <code>providerId:modelId</code>. Lookup = override ??
+        <code>getBuiltinPricing</code>.
       </li>
       <li>
-        <strong>Session JSONL aggregation (usage-stats-store)</strong> — Settings
-        <code>usageStats()</code> scans each session’s <code>token_usage</code> / tool rows; it does
-        <strong>not</strong> read telemetry.json.
+        <code>computeCost</code>: cacheMiss / cacheRead / cacheWrite / output components × unit price /
+        1e6; <strong>missing unit price → all $0</strong>, not an error.
       </li>
       <li>
-        <strong>Provider request capture</strong> — full serialized request into an artifact + ledger
-        event <code>provider_request_captured</code> for debug/replay; hidden by default in desktop UI;
-        <strong>not</strong> billing telemetry. Do not treat it as a provider cache key.
+        <code>recordLlmCall</code> is async best-effort via <code>queueMicrotask</code>; failures
+        <code>console.error</code> and must <strong>not</strong> block the turn.
+      </li>
+      <li>
+        When the provider omits native miss:
+        <code>cacheMissInputSource: 'derived'</code> =
+        <code>max(0, input − hit − write)</code>. Local <code>prefixHash</code> /
+        <code>requestShapeHash</code> enter diagnostic fields only — they
+        <strong>do not</strong> drive the price formula.
+      </li>
+      <li>
+        Builtin pricing is a dated snapshot; special plans need overrides. Do not pretend it is always
+        current.
       </li>
     </ul>
+
+    <h4 class="subhead">Capture pipeline (≠ billing)</h4>
+    <ol class="plain-list numbered">
+      <li>
+        Provider seam: <code>secretFreeParams</code> strips <code>abortSignal</code> and
+        <code>headers</code> — comment locks “Exact secret-free model-call parameters.”
+      </li>
+      <li>
+        <code>persistProviderRequestCaptureArtifact</code>: full <code>serializedRequest</code> into an
+        artifact (<code>source: 'provider_request_capture'</code>).
+      </li>
+      <li>
+        <code>AgentRun.recordProviderRequestCapture</code>: ledger
+        <strong>deliberately omits</strong> the body — metadata + <code>artifactId</code> only; written
+        with <code>durable: true</code>.
+      </li>
+      <li>Order: artifact first, then ledger (body stripped). Attempt records may be best-effort.</li>
+    </ol>
     <p>
-      WebSearch query strings are scrubbed at the <code>recordToolInvocation</code> boundary (privacy
-      commitment). Builtin pricing is a dated snapshot; special plans need overrides — do not pretend
-      it is always current.
+      WebSearch query strings are scrubbed at the <code>recordToolInvocation</code>
+      <code>argsSummary</code> boundary (privacy contract; see
+      <code>web-search-telemetry-scrub-contract.test.ts</code>).
+    </p>
+    <blockquote class="pull">
+      Telemetry books · Session aggregates for UI · Capture for debug/replay — three questions, three
+      answers; collapsing them into “billing truth” is always wrong.
+    </blockquote>
+    <p>
+      Research outline: <code>docs/research/usage-cost-telemetry-deep-outline.md</code> (#61 → Task
+      #81). Optional <code>/guides/cost</code> remains fog — do not open it while this section teaches
+      the protocol.
     </p>
 
     <h3 id="cost-fail-open" class="subhead">Never delete facts to chase cache</h3>

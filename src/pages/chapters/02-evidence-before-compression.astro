@@ -693,6 +693,18 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
         <code>history-compact-*.test.ts</code>。
       </p>
     </aside>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · synthesis cache</p>
+      <p>
+        Archive <code>economic-mechanisms-benchmark.md</code>（#578）：archive 后的回放本可整段水合
+        raw；synthesis cache 把首次检索压成 synthesis block（summary + coverage + source
+        refs），后续回放注入 block 而非 raw。Mock A/B：2818 → 764 tokens（−72.9%；测试钉
+        &gt;40%）。机制触发依赖<strong>跨 turn</strong> archive-then-retrieve；单长 turn 的 Harbor
+        任务形状可能到不了 write 门——那是 workload 错配，不是接线缺失。Current：
+        <code>loadSynthesisCache</code> / <code>writeSynthesisCache</code> +
+        <code>contextBudget.synthesisCache</code>；仍服从本章 fail-open——永不假装 coverage。
+      </p>
+    </aside>
   </Section>
 
   <Section

@@ -2,8 +2,8 @@
 
 **Ticket:** [#55](https://github.com/tt-a1i/agent-atelier/issues/55) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline mined from **code + contract tests** — narrative deepen shipped lean into §01 `#stores`  
-**Atelier home:** deepen §01 `#stores` (+ durability subsection); optional `/guides/storage-ledgers` if §01 explodes  
+**Status:** **deep shipped** 2026-07-21 — §01 `#stores` / `#durability` / `#jsonl-repair` / `#runtime-dual` / `#runtime-host` protocol tables (CN+EN); Task #81  
+**Atelier home:** §01 `#stores` (+ nested anchors); optional `/guides/storage-ledgers` only if §01 explodes further  
 **Cross-links:** §01 recovery (torn JSON ≠ legal prefix) · §04 TaskRun durability · execution-evidence spine (#50)
 
 ## Specimen sources (authority order)

@@ -260,6 +260,19 @@ cancelled → pending       only explicitReopen</pre>
       Runtime Events 保存每次 Agent 执行的语义事实；Task Events 保存跨执行的任务事实。Task Events
       <strong>引用</strong> Runtime execution，不复制或改写 RuntimeEvent truth——两层 ledger 各有权威边界。
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · heavy-task 三平面</p>
+      <p>
+        Archive <code>heavy-task-mainline-system-design.md</code> 钉住端到端不是「函数串起来」：同时有
+        <strong>control plane</strong>（autonomous loop / retry / timeout）、
+        <strong>model-visible plane</strong>（prompt policy / inventory / todo / self-check 工具）、
+        <strong>ledger-projection plane</strong>（TaskRun events → projection / export）。三平面不能互相替代——self-check
+        pass ≠ control terminal ≠ official verifier；compact evidence ≠ raw 公开执行；retry =
+        projection continuation，不是 checkpoint resume。live state 不是另起 memory
+        store，而是 typed Task Events 上的投影。Current 以本章 / §05 gate 与 headless 代码为准；吸收记录见
+        <code>docs/research/archive-mine-delta-absorb-batch2-2026-07-21.md</code>。
+      </p>
+    </aside>
   </Section>
 
   <Section

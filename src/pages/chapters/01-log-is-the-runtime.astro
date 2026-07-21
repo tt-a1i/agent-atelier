@@ -135,6 +135,16 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         ledger</strong>。聊天字符串压扁不了 tool call / permission / terminal。Current 身份与事件模型以本章与代码为准；手册只作教学增量。
       </p>
     </aside>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · runtime-kernel</p>
+      <p>
+        Archive <code>runtime-kernel.md</code> 解释
+        <strong>为什么</strong>抽出 ToolRuntime / ModelAdapter / AgentRun ledger：崩溃后要能回答「流是否开始、是否在等权限、停在哪把工具、usage
+        是否记过」——而不是把答案摊在 session + backend + wrap 逻辑里。Recovery
+        仍是保守关终态（<code>app_restarted</code>），不是 warm replay。Current 以
+        <a href="#agent-run-recovery">#agent-run-recovery</a> 与代码为准。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -674,105 +684,483 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     id="stores"
     label="§01 · Stores"
     title="三套存储的权威边界"
-    lede="权威串味是经典事故：UI 投影、ops 索引与语义 ledger 各答不同问题。"
+    lede="权威串味是经典事故：UI 投影、ops 索引与语义 ledger 各答不同问题。落盘 ≠ fsync；撕裂尾 ≠ 合法前缀。"
   >
+    <h3 id="root-gate" class="subhead">存储根与单写者</h3>
+    <p>
+      Interactive root 由 <code>packages/storage/src/root-authority.ts</code> 门禁：marker
+      <code>.maka-storage-root.json</code>、interactive write lock、lease。写路径经
+      <code>openInteractiveExecutionStoresForWrite</code> 打开；根身份漂移抛
+      <code>StorageRootAuthorityError</code>。同 key 写入由 <code>chainWrite</code>（write-queue）串行化——不是「随便谁都能 append」。
+    </p>
+
+    <h3 id="three-ledgers" class="subhead">三套 ledger 各答什么</h3>
     <div class="table-wrap" role="region" aria-label="三套存储权威" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
             <th scope="col">Store</th>
-            <th scope="col">回答什么</th>
+            <th scope="col">Canonical for</th>
             <th scope="col">不该用来</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <th scope="row">SessionStore</th>
-            <td>UI / 兼容 / 进行中投影（StoredMessage）</td>
-            <td>completed semantics 的唯一权威</td>
+            <td>Transcript + header（<code>session.jsonl</code>）· UI / 兼容投影</td>
+            <td>completed semantics 的唯一权威；当执行终态真相</td>
           </tr>
           <tr>
             <th scope="row">AgentRunStore</th>
-            <td>Run 生命周期 ops 索引（run.json + operational events）</td>
-            <td>替代交互语义</td>
+            <td><code>run.json</code> + ops <code>events.jsonl</code> + admissions</td>
+            <td>替代交互语义；把 <code>projections/*</code> 当源</td>
           </tr>
           <tr>
             <th scope="row">RuntimeEventStore</th>
-            <td>Canonical AI 交互事实（runtime-events.jsonl）</td>
-            <td>无限 partial delta 垃圾场</td>
+            <td>Canonical AI 交互事实（JSONL 或 SQLite）</td>
+            <td>无限 partial delta 垃圾场；当 Settings 账单库</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · runtime-v2</p>
+      <p>
+        Archive <code>runtime-v2-architecture-evolution.md</code> 钉住演进动机：同一 run 曾被
+        StoredMessage / SessionEvent / AgentRunEvent / RunTrace / telemetry
+        <strong>多套表示</strong>同时讲述——难回答「谁是真相」。Current 重心是
+        <strong>Invocation + RuntimeEvent + projections</strong>；Session / AgentRun ops / telemetry
+        是派生或旁路 ledger。层名以本章与代码为准，不以 archive 提案图为 Current。
+      </p>
+    </aside>
 
     <pre class="code-block" aria-label="文件背板目录草图">&#123;workspaceRoot&#125;/
   .maka-storage-root.json
-  runtime.sqlite                 # optional canonical RuntimeEvent
+  telemetry.json                 # TelemetryRepo（非 session JSONL）
+  runtime.sqlite                 # optional canonical RuntimeEvent + tool journal
   sessions/&lt;sessionId&gt;/
     session.jsonl                # header + StoredMessage
     task-events.jsonl + tasks.json
+    turn-admissions/&lt;turnId&gt;     # RootTurnAdmission（durable）
     runs/&lt;runId&gt;/
       run.json
-      events.jsonl
-      runtime-events.jsonl
+      events.jsonl               # AgentRun ops
+      runtime-events.jsonl       # default RuntimeEvent backplane
       runtime-partials/
     shell-runs/&lt;id&gt;/state.jsonl
-  artifacts/…</pre>
+  artifacts/…                    # blobs + metadata.jsonl</pre>
     <p>
       Partial 流是有界、可替换的快照；最终 non-partial 覆盖同一语义槽。不要把直播 delta
       永远当成 durable 真相。
     </p>
 
-    <h3 id="durability" class="subhead">什么真正 durable</h3>
+    <h3 id="durability" class="subhead">什么真正 durable：fsync 真相</h3>
     <p>
-      <code>appendJsonl(..., &#123; durable: true &#125;)</code> 会
-      <code>fsync</code> 文件并沿 <code>durabilityRoot</code> 同步目录链；失败包装为
-      <code>DurableStoreWriteError</code>。Terminal RuntimeEvent 与 root-turn admission 走这条路径。Session
-      消息追加、task ledger、shell-run 检查点、artifact blob
-      <strong>默认不是</strong>目录链 fsync——它们可以是原子 rename 或 best-effort append。把「落盘了」说成「崩溃安全」是经典串味。
+      原语是 <code>appendJsonl(path, payload, options)</code>（<code>jsonl-append.ts</code>）。不变量：
     </p>
-    <div class="table-wrap" role="region" aria-label="durable 对照" tabindex="0">
+    <ul class="plain-list">
+      <li>payload <strong>必须</strong>以 <code>\n</code> 结尾，否则 throw。</li>
+      <li>
+        flags：<code>O_RDWR | O_APPEND</code>（可选 <code>O_CREAT</code>）；
+        <code>requireExistingRecord</code> 时禁止空文件（Session 追加用）。
+      </li>
+      <li>
+        <code>durable: true</code> → <code>handle.sync()</code> +
+        <code>syncDirectoryChain(dirname, durabilityRoot)</code>；缺
+        <code>durabilityRoot</code> → throw；失败包装为 <code>DurableStoreWriteError</code>。
+      </li>
+      <li>
+        <code>syncDirectoryChain</code> 从 path 向上 fsync 到 root；路径逃逸
+        <code>durabilityRoot</code> → throw。Windows 上目录 sync 为空操作（诚实限制）。
+      </li>
+    </ul>
+    <div class="table-wrap" role="region" aria-label="durable 矩阵" tabindex="0">
       <table class="proto-table">
         <thead>
           <tr>
-            <th scope="col">写入</th>
+            <th scope="col">写入路径</th>
             <th scope="col">Current 耐久</th>
+            <th scope="col">诚实含义</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row">RuntimeEvent terminal / root-turn admission</th>
-            <td><code>durable: true</code>（file + dir chain）</td>
+            <th scope="row">RuntimeEvent terminal</th>
+            <td>
+              <code>ensureTerminalRuntimeEventDurable</code> →
+              <code>durable: true</code>
+            </td>
+            <td>file + dir chain；仅 final terminal 可过屏障</td>
+          </tr>
+          <tr>
+            <th scope="row">Root-turn admission</th>
+            <td><code>writeExclusiveAtomic(..., &#123; durable: true &#125;)</code></td>
+            <td>Host <code>turn.start</code> 在创 Run 前必须过</td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <code>provider_request_captured</code>（ledger）
+            </th>
+            <td><code>durable: true</code></td>
+            <td>元数据 durable；body 在 artifact（见
+              <a href="#usage-stores">#usage-stores</a>）</td>
+          </tr>
+          <tr>
+            <th scope="row">AgentRun ops append</th>
+            <td>调用方可传 <code>durable</code></td>
+            <td>非默认全开；看调用方</td>
           </tr>
           <tr>
             <th scope="row">Session JSONL messages</th>
-            <td>Best-effort append（无默认 fsync）</td>
+            <td>repair 有 · <strong>无</strong>默认 fsync</td>
+            <td>产品 transcript ≠ 执行终态账本</td>
           </tr>
           <tr>
             <th scope="row">Task / ShellRun / Artifact</th>
-            <td>投影或检查点；无目录链 sync</td>
+            <td>atomic rename 或 best-effort；无 dir-chain sync</td>
+            <td>合同完整 ≠ 掉电安全</td>
           </tr>
           <tr>
-            <th scope="row">SQLite RuntimeEvent（若启用）</th>
-            <td><code>synchronous=FULL</code> + WAL</td>
+            <th scope="row">SQLite RuntimeEvent</th>
+            <td>
+              <code>journal_mode=WAL</code> +
+              <code>synchronous=FULL</code> + 事务
+            </td>
+            <td>另一条 canonical；带 tool journal 表</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>telemetry.json</code></th>
+            <td>tmp + rename；无 fsync</td>
+            <td>corrupt load <strong>拒绝覆盖</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <blockquote class="pull">
+      「落盘了」≠「崩溃安全」。把 Session append 或 artifact rename 说成 fsync-durable，是经典权威串味。
+    </blockquote>
+
+    <h3 id="jsonl-repair" class="subhead">JSONL 尾修复协议</h3>
+    <p>
+      修复<strong>内嵌在下次 <code>appendJsonl</code></strong>——没有独立 CLI。追加前若文件不以
+      <code>\n</code> 结尾：
+    </p>
+    <ol class="plain-list numbered">
+      <li><code>findTrailingRecordStart</code> 反向扫描上一记录起点。</li>
+      <li>
+        <code>classifyJsonRecord(tail)</code>（<code>json-prefix.ts</code>）判定
+        <code>complete | incomplete-prefix | invalid</code>——注释钉住：是否「只缺尾部字节就能变成合法
+        JSON」。
+      </li>
+      <li><code>complete</code> → 补 <code>\n</code> separator，再 append。</li>
+      <li>
+        <code>incomplete-prefix</code> → <code>truncate(tailStart)</code> +
+        <code>sync</code>，再 append；若截到 header 且
+        <code>requireExistingRecord</code> → throw
+        <code>Cannot repair a truncated JSONL document header</code>。
+      </li>
+      <li>
+        <code>invalid</code> → throw
+        <code>Cannot append after an invalid JSONL tail record</code>（fail closed）。
+      </li>
+    </ol>
+    <div class="table-wrap" role="region" aria-label="读路径对 torn" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">读路径</th>
+            <th scope="col">Torn / corrupt 行为</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">普通 Session 读</th>
+            <td>
+              incomplete 末行可跳过；其他 corrupt → 软
+              <code>system_note</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <code>readMessagesForRecovery</code> /
+              <code>readEventsForRecovery</code>
+            </th>
+            <td><strong>严格抛错</strong>（带行号）</td>
+          </tr>
+          <tr>
+            <th scope="row">Phase0 前缀判决</th>
+            <td>撕裂 JSON 行 = storage corruption，<strong>不是</strong>合法 committed 前缀</td>
           </tr>
         </tbody>
       </table>
     </div>
     <p>
-      JSONL 尾修复：追加前若缺换行，按 <code>classifyJsonRecord</code> 截断
-      <code>incomplete-prefix</code>；<code>invalid</code> 则拒绝追加。普通 Session 读可软降级为
-      <code>system_note</code>；recovery / RuntimeEvent 读<strong>严格抛错</strong>。撕裂的 JSON
-      行是存储 corruption，不是 Phase0 合法前缀。
+      标本：<code>execution-stores.test.ts</code>（unterminated tail 在下次 durable append 前被修）；
+      <code>jsonl-append</code> / recovery 读路径测试。Phase0 harness
+      <strong>不</strong>宣称测掉电 / OS 级 fsync——见 maka crash-contract 文档。
     </p>
 
-    <h3 id="runtime-host" class="subhead">Runtime-host：薄网关，不是全量 RPC</h3>
+    <h3 id="runtime-dual" class="subhead">RuntimeEvent 双背板：JSONL vs SQLite</h3>
     <p>
-      Desktop 可选路径：<code>@maka/runtime-host</code> 在本地 unix socket 上选举单写者 Host，只暴露
-      <code>host.status</code> / <code>turn.start</code> / <code>turn.query</code> /
-      <code>turn.stop</code>。<code>turn.start</code> 在创建 Run 前做 durable root-turn
-      admission；client/protocol 不得 import <code>@maka/runtime</code>。Headless/CLI
-      可完全绕过 Host。不要把它教成「远程 Runtime 的全部 API」。
+      默认 per-run <code>runtime-events.jsonl</code>。若根上存在
+      <code>runtime.sqlite</code>，<code>openRuntimeEventPersistence</code> 可走
+      <code>SqliteRuntimeStore</code>（schema v4）：
+    </p>
+    <ul class="plain-list">
+      <li>
+        表：<code>runtime_events</code>（PK <code>event_id</code>；
+        <code>UNIQUE(invocation_id, event_seq)</code>）·
+        <code>tool_journal_events</code> · <code>tool_operations</code> ·
+        <code>runtime_partial_snapshots</code> · <code>runtime_import_sources</code>
+      </li>
+      <li>
+        Store 钉死：<code>durability = 'canonical'</code>；
+        <code>toolBoundaryProtocol = 't1_after_preflight_v1'</code>
+      </li>
+      <li>
+        Terminal 屏障同语义：只有 final terminal RuntimeEvent 能
+        <code>ensureTerminalRuntimeEventDurable</code>
+      </li>
+      <li>迁移：<code>BEGIN IMMEDIATE</code> → SQL → <code>user_version</code> → <code>COMMIT</code></li>
+    </ul>
+    <p>
+      SQLite 路径额外承载 tool journal（T1/T2 边界投影）。JSONL 与 SQLite
+      <strong>二选一 canonical</strong>，不是「两边各写一份当双活」——教双背板诚实，不要教成双写复制。
+    </p>
+
+    <h3 id="derived-stores" class="subhead">派生 / 弱耐久 store</h3>
+    <div class="table-wrap" role="region" aria-label="派生 store" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Store</th>
+            <th scope="col">角色</th>
+            <th scope="col">耐久诚实</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">task-ledger-store</th>
+            <td>Session 短键待办事件 + <code>tasks.json</code> 投影</td>
+            <td><code>appendFile</code>；<strong>无</strong> appendJsonl/fsync</td>
+          </tr>
+          <tr>
+            <th scope="row">shell-run-store</th>
+            <td>每 run <code>state.jsonl</code> 改写</td>
+            <td>活进程在 runtime manager；检查点无 fsync</td>
+          </tr>
+          <tr>
+            <th scope="row">artifact-store</th>
+            <td>blob + <code>metadata.jsonl</code></td>
+            <td>tmp+rename；metadata 单行 corrupt 可 skip 后 compact</td>
+          </tr>
+          <tr>
+            <th scope="row">usage-stats-store</th>
+            <td>只读扫描 sessions 的 token/tool 行</td>
+            <td>不写；Settings UI 聚合（见
+              <a href="#usage-stores">#usage-stores</a>）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="store-failures" class="subhead">失败矩阵</h3>
+    <div class="table-wrap" role="region" aria-label="存储失败矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">失败</th>
+            <th scope="col">行为</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Unterminated JSONL tail</td>
+            <td>下次 append 截断 incomplete-prefix</td>
+          </tr>
+          <tr>
+            <td>Invalid JSONL tail</td>
+            <td>Append 拒绝</td>
+          </tr>
+          <tr>
+            <td>Corrupt durable line（strict 读）</td>
+            <td>Throw with line</td>
+          </tr>
+          <tr>
+            <td>Terminal RuntimeEvent mismatch</td>
+            <td>Throw（已存在但 payload 不同）</td>
+          </tr>
+          <tr>
+            <td>Root identity drift</td>
+            <td><code>StorageRootAuthorityError</code></td>
+          </tr>
+          <tr>
+            <td>Concurrent same-key writes</td>
+            <td><code>chainWrite</code> 串行</td>
+          </tr>
+          <tr>
+            <td>Durable fsync 失败</td>
+            <td><code>DurableStoreWriteError</code>；Host 可 drain</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      研究大纲：<code>docs/research/storage-ledgers-deep-outline.md</code>（#55 → Task #81）。
+    </p>
+
+    <h3 id="runtime-host" class="subhead">Runtime-host：四操作薄网关</h3>
+    <p>
+      <code>@maka/runtime-host</code> 是 Desktop 可选的<strong>薄编排壳</strong>——不是全量 Runtime
+      RPC，也不是多租户远程 SaaS 边界。动机：在本地 IPC 上选举单写者 Host，守住 storage lock /
+      root-turn admission，同时把 tool loop / Permission UI 留在 Host 进程内部 composition。
+    </p>
+
+    <h4 class="subhead">信任边界</h4>
+    <pre class="code-block" aria-label="runtime-host 信任边界">Client → unix socket + hello
+  → Host authenticates InteractiveRootOwner
+  → Admission by HostLifecycleState + residency
+  → Server-only composition: SessionManager + execution stores
+
+Host owns: interactive write lock · registration · op admission · composition hook
+Host does NOT own: tool loop API · Permission UI op · full session CRUD · settings · shell runs</pre>
+    <ul class="plain-list">
+      <li>
+        协议常量：<code>RUNTIME_HOST_PROTOCOL_VERSION = 2</code>；
+        <code>RUNTIME_HOST_MAX_FRAME_BYTES = 64 KiB</code>；newline-delimited JSON。
+      </li>
+      <li>
+        Handshake：<code>ClientHello</code> → <code>accepted | incompatible | draining</code>；
+        registration <code>kind: 'maka-runtime-host'</code>，<code>rootId</code> =
+        <code>/^[a-f0-9]&#123;64&#125;$/</code>。
+      </li>
+      <li>
+        端点：POSIX socket（目录 <code>0o700</code> / sock <code>0o600</code>）或 Windows named
+        pipe；校验 uid + mode。
+      </li>
+      <li>
+        <strong>硬测试</strong>：<code>dependency-boundary.test.ts</code> —
+        <code>protocol/</code> 与 <code>client/</code>
+        <strong>不得</strong> import <code>@maka/runtime</code> / execution-stores；仅
+        <code>server/</code> 可触达。
+      </li>
+      <li>Headless / CLI 可<strong>完全绕过</strong> Host，直连 SessionManager。</li>
+    </ul>
+
+    <h4 class="subhead">恰好四个操作（<code>HOST_OPERATION_SPECS</code>）</h4>
+    <div class="table-wrap" role="region" aria-label="四操作契约" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Op</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Admission</th>
+            <th scope="col">Retry</th>
+            <th scope="col">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>host.status</code></th>
+            <td>query</td>
+            <td>bootstrap</td>
+            <td>safe</td>
+            <td>epoch · state · connections / ops / residencies</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.start</code></th>
+            <td>command</td>
+            <td>session</td>
+            <td>semantic</td>
+            <td>
+              <code>&#123;sessionId, turnId, text≤48KiB&#125;</code> →
+              <code>TurnSnapshot</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.query</code></th>
+            <td>query</td>
+            <td>ready</td>
+            <td>safe</td>
+            <td>轮询同一 TurnSnapshot</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>turn.stop</code></th>
+            <td>control</td>
+            <td>session</td>
+            <td>semantic</td>
+            <td>取消；需 <code>runId</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Frame：<code>&#123; requestId, operation, input &#125;</code> →
+      <code>ok: true, result</code> 或 <code>ok: false, error: &#123; code, message &#125;</code>。
+      <code>TurnRunStatus</code>：
+      <code>admitted → created → running → waiting_permission → completed|failed|cancelled</code>。
+      终态分别带 <code>terminalEventId</code>（+ <code>failureClass</code> /
+      <code>abortSource</code>）。
+    </p>
+    <p>
+      <strong>没有</strong> messages / permission-decision / shell / sandbox op。Permission
+      只以 <code>waiting_permission</code> 出现在 snapshot；工具授权在
+      <code>SessionManager</code> / PermissionEngine 内完成。Sandbox 执行器在
+      <code>@maka/runtime</code>，不在 host 包。
+    </p>
+
+    <h4 class="subhead">生命周期与 admission</h4>
+    <p>
+      Host 状态：<code>starting → recovering → ready → draining</code>（另有
+      <code>containing</code>）。Kernel <code>#beginOperation</code>：
+    </p>
+    <ul class="plain-list">
+      <li>非 bootstrap 且 state ≠ <code>ready</code> → <code>host_not_ready</code></li>
+      <li>draining / shutdown 中的 command → <code>host_draining</code></li>
+      <li>
+        <code>admission: 'session'</code> 再由 <code>RootTurnCoordinator</code> 查
+        busy / archived
+      </li>
+    </ul>
+    <p>
+      <code>turn.start</code>：先 durable root-turn admission，再创建 Run。Admission
+      耐久失败 → turn.start 错误 <strong>且</strong> Host drain——不为了「先跑起来」牺牲单写者账本。
+    </p>
+    <div class="table-wrap" role="region" aria-label="host 失败码" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Code / 失败</th>
+            <th scope="col">Client 应</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>host_draining</code> / <code>host_not_ready</code></td>
+            <td>等待 / 再 spawn</td>
+          </tr>
+          <tr>
+            <td><code>session_busy</code></td>
+            <td>同一 session 一个 active root turn</td>
+          </tr>
+          <tr>
+            <td><code>session_archived</code></td>
+            <td>拒绝 start</td>
+          </tr>
+          <tr>
+            <td>Pre-start durable failure</td>
+            <td>turn.start error + host drain</td>
+          </tr>
+          <tr>
+            <td>Epoch mismatch</td>
+            <td>重读 registration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      研究大纲：<code>docs/research/runtime-host-gateway-deep-outline.md</code>（#57 → Task
+      #81）。不要发明第五个 op。
     </p>
   </Section>
 
@@ -1198,6 +1586,17 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · memory whitebox</p>
+      <p>
+        Archive <code>maka-memory-whitebox-contract.md</code> 冻结双开关模型：
+        <code>enabled</code>（文件功能）与 <code>agentReadEnabled</code>（是否进 system
+        prompt；默认 OFF）——透明本地文件<strong>不得</strong>默认可被 agent 当隐式 durable
+        memory。磁盘格式 / 字段名以 Current <code>local-memory</code> 代码为准；TOC
+        未单开 memory 章时，完整字段表见
+        <code>docs/research/memory-whitebox-archive-delta.md</code>。
+      </p>
+    </aside>
 
     <h3 id="prefix-vs-tail" class="subhead">Durable prefix vs turn tail</h3>
     <p>
@@ -1429,31 +1828,112 @@ providerTools = [...visibleTools, invalid]         # invalid 永不广告</pre>
       <code>tool-availability.test.ts</code>（full / economy / inert / prepareStep / ledger seed）。
     </p>
 
-    <h3 id="usage-stores" class="subhead">Usage 双存储与定价诚实</h3>
+    <h3 id="usage-stores" class="subhead">Usage 双存储、定价与 capture</h3>
     <p>
-      Hit/miss/write 诊断之上，还有两条<strong>不同问题</strong>的存储路径，不要混成「账单真相」：
+      Hit/miss/write 诊断（上文）回答「请求形状为何动」；下面三条路径回答<strong>完全不同的问题</strong>——不要塌成「账单真相」：
     </p>
+    <div class="table-wrap" role="region" aria-label="usage 三路径" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Store / 路径</th>
+            <th scope="col">写入</th>
+            <th scope="col">读取</th>
+            <th scope="col">角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">
+              <code>telemetry.json</code>（TelemetryRepo）
+            </th>
+            <td>
+              <code>recordLlmCall</code> /
+              <code>recordToolInvocation</code>
+            </td>
+            <td>summary / buckets / logs / pricing CRUD</td>
+            <td>完整 usage 记录 + <code>pricingOverrides</code></td>
+          </tr>
+          <tr>
+            <th scope="row">Session JSONL → usage-stats-store</th>
+            <td>
+              runtime materialize <code>token_usage</code> / tool 行（并行于 telemetry）
+            </td>
+            <td>Settings <code>usageStats()</code></td>
+            <td>
+              聚合 transcript 内已写 <code>costUsd</code>；
+              <strong>不读</strong> telemetry.json；<code>pricing: []</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">provider_request_capture</th>
+            <td>artifact body + AgentRun ledger 元数据</td>
+            <td>headless trace / debug</td>
+            <td>
+              序列化请求证据；桌面 UI 默认隐藏；
+              <strong>≠</strong> 计费 telemetry；≠ provider cache key
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="subhead">定价键与 computeCost</h4>
     <ul class="plain-list">
       <li>
-        <strong><code>telemetry.json</code>（TelemetryRepo）</strong> —
-        <code>recordLlmCall</code> / <code>recordToolInvocation</code> 写入；含 pricing
-        overrides；定价键是 <code>providerId:modelId</code>，查不到单价则成本记
-        <strong>$0</strong>（不是抛错）。
+        定价键 = <code>providerId:modelId</code>。Lookup =
+        override ?? <code>getBuiltinPricing</code>。
       </li>
       <li>
-        <strong>Session JSONL 聚合（usage-stats-store）</strong> — Settings
-        <code>usageStats()</code> 扫描各 session 的 <code>token_usage</code> /
-        tool 行；<strong>不读</strong> telemetry.json。
+        <code>computeCost</code>：按 cacheMiss / cacheRead / cacheWrite / output 分量 × 单价 /
+        1e6；<strong>查不到单价 → 全 $0</strong>，不是抛错。
       </li>
       <li>
-        <strong>Provider request capture</strong> — 完整序列化请求进 artifact + ledger 事件
-        <code>provider_request_captured</code>，供 debug/replay；桌面 UI 默认隐藏；<strong>不是</strong>
-        计费 telemetry。不要把它当成 provider cache key。
+        <code>recordLlmCall</code> 经 <code>queueMicrotask</code> 异步最佳努力；失败
+        <code>console.error</code>，<strong>不阻塞</strong> turn。
+      </li>
+      <li>
+        Provider 省略 native miss 时：
+        <code>cacheMissInputSource: 'derived'</code> =
+        <code>max(0, input − hit − write)</code>。本地
+        <code>prefixHash</code> / <code>requestShapeHash</code> 只进诊断字段——
+        <strong>不驱动</strong>价格公式。
+      </li>
+      <li>
+        Builtin pricing 是有日期的快照；特殊套餐靠 overrides。不要假装永远最新。
       </li>
     </ul>
+
+    <h4 class="subhead">Capture 管道（≠ billing）</h4>
+    <ol class="plain-list numbered">
+      <li>
+        Provider seam：<code>secretFreeParams</code> 剥离
+        <code>abortSignal</code> 与 <code>headers</code>——注释钉住
+        「Exact secret-free model-call parameters」。
+      </li>
+      <li>
+        <code>persistProviderRequestCaptureArtifact</code>：完整
+        <code>serializedRequest</code> 进 artifact（
+        <code>source: 'provider_request_capture'</code>）。
+      </li>
+      <li>
+        <code>AgentRun.recordProviderRequestCapture</code>：ledger
+        <strong>故意 omit</strong> body，只留 metadata +
+        <code>artifactId</code>；以 <code>durable: true</code> 写入。
+      </li>
+      <li>顺序：先 artifact，再 ledger（strip body）。Attempt 记录可 best-effort。</li>
+    </ol>
     <p>
-      WebSearch 的查询字符串在 <code>recordToolInvocation</code> 边界被 scrub（隐私承诺）。Builtin
-      pricing 是有日期的快照；特殊套餐靠 overrides——不要假装永远最新。
+      WebSearch 查询字符串在 <code>recordToolInvocation</code> 的
+      <code>argsSummary</code> 边界被 scrub（隐私合同；见
+      <code>web-search-telemetry-scrub-contract.test.ts</code>）。
+    </p>
+    <blockquote class="pull">
+      Telemetry 记账 · Session 聚合展示 · Capture 调试回放——三问三答；混成「账单真相」必错。
+    </blockquote>
+    <p>
+      研究大纲：<code>docs/research/usage-cost-telemetry-deep-outline.md</code>（#61 → Task
+      #81）。可选 <code>/guides/cost</code> 仍 fog——本节够教协议时不必另开。
     </p>
 
     <h3 id="cost-fail-open" class="subhead">不为 cache 删除事实</h3>

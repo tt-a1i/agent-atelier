@@ -91,11 +91,11 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | **Agent swarm + expert team** | `agent-swarm.md`, `expert-team-runtime.md`, swarm/team tools | A+G | §04 `#swarm` | **outline+shipped** → [`agent-swarm-expert-team-deep-outline.md`](./agent-swarm-expert-team-deep-outline.md) |
 | **Skill catalog policy** | `skill-catalog-policy.md`, `skills.ts`, `skill-invocation.ts` | A+G | §01 `#skills` | **outline+shipped** → [`skill-catalog-policy-deep-outline.md`](./skill-catalog-policy-deep-outline.md) |
 | **Headless trust / Harbor isolation** | `packages/headless/README.md`, harbor/*, eval adapters | D+G | §04 `#harbor-trust` | **outline+shipped** → [`headless-harbor-trust-deep-outline.md`](./headless-harbor-trust-deep-outline.md) |
-| **Storage ledgers** | `packages/storage/**` (JSONL, sqlite-runtime, task/artifact stores) | G+D | §01 `#stores` + `#durability` | **outline** → [`storage-ledgers-deep-outline.md`](./storage-ledgers-deep-outline.md); lean durability shipped |
-| **Usage / cost telemetry code** | `telemetry/*`, `usage-stats-store.ts`, provider-request telemetry | G | §01 `#request-shape` → `#usage-stores` | **outline** → [`usage-cost-telemetry-deep-outline.md`](./usage-cost-telemetry-deep-outline.md); dual-store/pricing shipped |
+| **Storage ledgers** | `packages/storage/**` (JSONL, sqlite-runtime, task/artifact stores) | G+D | §01 `#stores` + `#durability` | **deep** → [`storage-ledgers-deep-outline.md`](./storage-ledgers-deep-outline.md); Task #81 |
+| **Usage / cost telemetry code** | `telemetry/*`, `usage-stats-store.ts`, provider-request telemetry | G | §01 `#request-shape` → `#usage-stores` | **deep** → [`usage-cost-telemetry-deep-outline.md`](./usage-cost-telemetry-deep-outline.md); Task #81 |
 | **Shell / PTY / workspace executor** | `shell-*.ts`, `pty-*.ts`, `workspace-executor.ts` | G | §02 `#shell-side-effects` + §01 sandbox pointer | **deep** (shipped #68) → [`shell-pty-executor-deep-outline.md`](./shell-pty-executor-deep-outline.md) |
 | **Filesystem worker / path containment** | `filesystem-worker/**`, `path-containment.ts` | G | §02 `#filesystem-worker` + §01 sandbox pointer | **deep** (shipped #71) → [`filesystem-worker-path-containment-deep-outline.md`](./filesystem-worker-path-containment-deep-outline.md) |
-| **Runtime-host / gateway** | `packages/runtime-host/**` | G | §01 `#runtime-host` lean; companion fog | **outline** → [`runtime-host-gateway-deep-outline.md`](./runtime-host-gateway-deep-outline.md); lean note shipped |
+| **Runtime-host / gateway** | `packages/runtime-host/**` | G | §01 `#runtime-host` | **deep** → [`runtime-host-gateway-deep-outline.md`](./runtime-host-gateway-deep-outline.md); Task #81 |
 | **Bot onboarding / IM bridges** | `bot-onboarding-runtime.zh-CN.md`, `runtime/src/bots/**` | B+G | Companion `/guides/bot-im` | **deep** (shipped #69) → [`bot-im-onboarding-deep-outline.md`](./bot-im-onboarding-deep-outline.md) · live guide |
 | **Workspace privacy + SECURITY** | `workspace-privacy-context.md`, `SECURITY.md` | A | §01 `#trust` + `/guides/security-privacy` | **outline+shipped** → [`trust-privacy-security-deep-outline.md`](./trust-privacy-security-deep-outline.md) · live companion |
 | **Desktop main composition** | `apps/desktop/src/main/**`, desktop/renderer READMEs | D+G | Companion `/guides/desktop-host` | **deep** (shipped #73) → [`desktop-main-composition-deep-outline.md`](./desktop-main-composition-deep-outline.md) · live guide |
@@ -175,15 +175,15 @@ A seam is mined enough for Destination only when:
 | [#52](https://github.com/tt-a1i/agent-atelier/issues/52) | Agent swarm + expert team | **closed** — outline + §04 `#swarm` |
 | [#53](https://github.com/tt-a1i/agent-atelier/issues/53) | Skill catalog policy | **closed** — outline + §01 `#skills` |
 | [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | **closed** — outline + §04 `#harbor-trust` |
-| [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **closed research** · lean `#stores` remain (see `depth-corpus-status.md`) |
+| [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **closed research** · **deep** via Task [#81](https://github.com/tt-a1i/agent-atelier/issues/81) |
 | [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **closed** research · [#68](https://github.com/tt-a1i/agent-atelier/issues/68) shipped §02 |
 | [#70](https://github.com/tt-a1i/agent-atelier/issues/70) / [#71](https://github.com/tt-a1i/agent-atelier/issues/71) | Filesystem worker / path containment | **closed** · §02 `#filesystem-worker` |
 | [#72](https://github.com/tt-a1i/agent-atelier/issues/72) / [#73](https://github.com/tt-a1i/agent-atelier/issues/73) | Desktop main composition | **closed** · `/guides/desktop-host` |
-| [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **closed research** · lean `#runtime-host` remain |
+| [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **closed research** · **deep** via Task [#81](https://github.com/tt-a1i/agent-atelier/issues/81) |
 | [#58](https://github.com/tt-a1i/agent-atelier/issues/58) | Bot onboarding / IM | **closed** research · [#69](https://github.com/tt-a1i/agent-atelier/issues/69) shipped `/guides/bot-im` |
 | [#59](https://github.com/tt-a1i/agent-atelier/issues/59) | Workspace privacy + SECURITY | **closed** research + companion `/guides/security-privacy` shipped |
 | [#60](https://github.com/tt-a1i/agent-atelier/issues/60) | Archive-that-still-teaches sweep | **done** + top-3 absorb → `archive-mine-delta-absorb-2026-07-21.md` |
-| [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **closed research** · lean `#usage-stores` remain |
+| [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **closed research** · **deep** via Task [#81](https://github.com/tt-a1i/agent-atelier/issues/81) |
 | [#80](https://github.com/tt-a1i/agent-atelier/issues/80) | AgentRunRecovery vs RuntimeRecovery | **closed** · §01 `#agent-run-recovery` |
 | [#79](https://github.com/tt-a1i/agent-atelier/issues/79) | Autonomous budget × projection | **closed** · §04 `#budget` deepen |
 | [#77](https://github.com/tt-a1i/agent-atelier/issues/77) | Heavy-task gate → official | **closed** · §05 `#repair` triad |

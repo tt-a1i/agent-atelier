@@ -72,11 +72,13 @@
 1. ~~`runtime-mainline-teaching-manual.md`~~ — **absorbed 2026-07-21** → §01 deltas + [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md)  
 2. ~~`deepseek-reasonix-cost-runtime-design.md`~~ — **absorbed 2026-07-21** → cost spine honesty + usage outline  
 3. ~~CU hardening suite~~ — **absorbed 2026-07-21** → `/guides/computer-use` `#evidence-hardening`  
-4. `heavy-task-mainline-system-design.md` — §04/§05 cross-check  
-5. `maka-memory-whitebox-contract.md` — if memory enters TOC  
-6. `runtime-v2-architecture-evolution.md` / `runtime-kernel.md` / `maka-core-tech-walkthrough.md` — §01 deltas only  
-7. `economic-mechanisms-benchmark.md` — synthesis cache aside  
+4. ~~`heavy-task-mainline-system-design.md`~~ — **absorbed batch2** → §04 `#events` three-plane aside  
+5. ~~`maka-memory-whitebox-contract.md`~~ — **absorbed batch2** → §01 aside + [`memory-whitebox-archive-delta.md`](./memory-whitebox-archive-delta.md) (TOC memory chapter still deferred)  
+6. ~~`runtime-v2-architecture-evolution.md`~~ / ~~`runtime-kernel.md`~~ / ~~`maka-core-tech-walkthrough.md`~~ — **absorbed batch2** → §01 asides + [`maka-core-walkthrough-archive-delta.md`](./maka-core-walkthrough-archive-delta.md)  
+7. ~~`economic-mechanisms-benchmark.md`~~ — **absorbed batch2** → §02 synthesis-cache aside  
+
+**Remaining mine-delta:** archive `README.md` (inventory authority only). Batch-2 record: [`archive-mine-delta-absorb-batch2-2026-07-21.md`](./archive-mine-delta-absorb-batch2-2026-07-21.md).
 
 ## Acceptance
 
-No silent skip: every archive file classified. Mine-plan Cluster 2 points here. Destination bodies cite Current code; archive labeled archive. Top-3 absorb pass recorded in [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md).
+No silent skip: every archive file classified. Mine-plan Cluster 2 points here. Destination bodies cite Current code; archive labeled archive. Top-3 + batch-2 absorb passes recorded.
