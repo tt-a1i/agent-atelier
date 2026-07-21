@@ -104,6 +104,9 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 
 | Rank | Seam | Home | Key paths | Depth |
 | ---: | --- | --- | --- | --- |
+| — | ContextBudgetPolicy two-plane DSL | §03 `#budget-dsl` | `context-budget*.ts` · `composePrepareStep` | **shipped** · outline `context-budget-policy-pipeline-deep-outline.md` · [#74](https://github.com/tt-a1i/agent-atelier/issues/74) |
+| — | Semantic compact failedOpen / privacy / savings | §03 `#semantic-gates` | `semantic-compact.ts` | **shipped** · outline `semantic-compact-gates-deep-outline.md` · [#75](https://github.com/tt-a1i/agent-atelier/issues/75) |
+| — | Permission park/remember vs escalation one-shot | §01 `#park-remember` | `permission-engine.ts` · `sandbox-escalation.ts` | **shipped** · outline `permission-park-remember-escalation-deep-outline.md` · [#76](https://github.com/tt-a1i/agent-atelier/issues/76) |
 | 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 / `/guides/sandbox` | `permission-profile.ts` · `sandbox/**` | outline → Task #62 |
 | 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | empty |
 | 8 | Execution evidence spine | cross-cut §02/04/05/06 | `execution-evidence.ts` · `execution-evidence-spine.md` | empty |
@@ -173,5 +176,8 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | #3 Checkpoint V2 + headAnchor | [#65](https://github.com/tt-a1i/agent-atelier/issues/65) | **closed** — outline + §03 `#mid-turn` |
 | #4 Mid-turn shaping ≠ verdict | [#66](https://github.com/tt-a1i/agent-atelier/issues/66) | **closed** — outline + §03 `#capacity-shaping` |
 | #5 providerTools ≠ activeTools | [#67](https://github.com/tt-a1i/agent-atelier/issues/67) | **closed** — outline + §01 `#tool-economy` deepen |
+| ContextBudgetPolicy two-plane DSL | [#74](https://github.com/tt-a1i/agent-atelier/issues/74) | **closed** — outline + §03 `#budget-dsl` |
+| Semantic compact gates | [#75](https://github.com/tt-a1i/agent-atelier/issues/75) | **closed** — outline + §03 `#semantic-gates` |
+| Park/remember vs escalation one-shot | [#76](https://github.com/tt-a1i/agent-atelier/issues/76) | **closed** — outline + §01 `#park-remember` |
 
 Corpus lane tickets #46–#62 remain the broader frontier — integrate, do not duplicate.

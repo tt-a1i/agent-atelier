@@ -10,6 +10,7 @@ import ExecSpineFlow from "../../components/diagrams/ExecSpineFlow.astro";
 import DualStreamBridge from "../../components/diagrams/DualStreamBridge.astro";
 import ModelToolLoop from "../../components/diagrams/ModelToolLoop.astro";
 import PermissionControlFlow from "../../components/diagrams/PermissionControlFlow.astro";
+import ParkRememberVsEscalationFlow from "../../components/diagrams/ParkRememberVsEscalationFlow.astro";
 import SandboxOwnershipFlow from "../../components/diagrams/SandboxOwnershipFlow.astro";
 import RecoveryLayersFlow from "../../components/diagrams/RecoveryLayersFlow.astro";
 import T1T2BoundaryFlow from "../../components/diagrams/T1T2BoundaryFlow.astro";
@@ -396,6 +397,66 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       配对：synthetic error result 保 call/result pairing（完整协议见 §02）。批准之后是否还要包一层 OS
       沙箱，是下一节的正交问题——不要把二者混成「用户点了允许就等于不安全执行」。
     </p>
+
+    <h3 class="subhead" id="park-remember">Park · remember-for-turn · 一锤子提权</h3>
+    <DiagramFigure
+      caption="图 7a · PROMPT park 之后分岔：remember-for-turn（scope 记入本轮并自动放行同 scope 兄弟）vs one-shot grant（禁止 remember · TTL · 单次消费）。"
+      alt="三框：Park Promise；remember-for-turn scope；sandbox escalation one-shot。"
+    >
+      <ParkRememberVsEscalationFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>prompt</code> 把 Promise 停在 turn-scoped 注册表（按 <code>requestId</code>）；Kernel
+      <code>respondToPermission</code> 才 resolve——Run 身份始终在。普通工具权限常允许
+      <code>rememberForTurn</code>：allow + remember 把 tool-intent <code>scopeKey</code> 写入本轮
+      remembered 集，并<strong>自动放行</strong>已 park 的同 scope 兄弟请求（并行
+      <code>browser_*</code> 批次不必连点）。Sandbox escalation 与 additional-permission 提案则固定
+      <code>rememberForTurnAllowed: false</code>——响应里带 <code>rememberForTurn</code> 直接抛错；批准后的
+      grant 绑定精确 command/cwd/intent（或 permissionsHash），TTL 内<strong>只能消费一次</strong>。Turn
+      结束时仍 park 的请求以 user_stop / escalation_aborted 拒绝——禁止静默放行。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="remember vs one-shot" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">轴</th>
+            <th scope="col">普通 permission（可 remember）</th>
+            <th scope="col">Escalation / additional（one-shot）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Park</th>
+            <td>是</td>
+            <td>是（同一 registry，不同 event.kind）</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>rememberForTurnAllowed</code></th>
+            <td>常为 true</td>
+            <td><strong>恒为 false</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">Grant 寿命</th>
+            <td>本轮 scope，直到 turn end</td>
+            <td>TTL + 单次 consume；错配 → typed error</td>
+          </tr>
+          <tr>
+            <th scope="row">批准之后</th>
+            <td>仍走正常 sandbox profile</td>
+            <td>仅这一次调用可跳过沙箱变换——不是常驻 unsandboxed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Escalation 变换细节与 Seatbelt/bwrap 选择矩阵见下一节
+      <a href="#sandbox">#sandbox</a>；此处只钉「remember ≠ one-shot」。标本：
+      <code>permission-engine.ts</code> · <code>sandbox-escalation.ts</code> · maka
+      <a href={`${import.meta.env.BASE_URL}history/pr/1016`}>#1016</a> /
+      <a href={`${import.meta.env.BASE_URL}history/pr/969`}>#969</a>。
+    </p>
   </Section>
 
   <Section
@@ -473,8 +534,9 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     <p>
       Bash 可声明 <code>sandbox_permissions.mode = require_escalated</code>（须带 justification）。规划层在
       explore 模式直接 block，bypass 可跳过；否则进入 PermissionEngine 的
-      <code>sandbox_escalation</code> prompt（<code>rememberForTurnAllowed: false</code>）。批准后的
-      grant 绑定精确 command / cwd / intentHash，默认 TTL 内<strong>只能消费一次</strong>——命令变更、二次消费或过期分别得到
+      <code>sandbox_escalation</code> prompt（<code>rememberForTurnAllowed: false</code>——与普通
+      remember-for-turn 的对照见 <a href="#park-remember">#park-remember</a>）。批准后的 grant 绑定精确
+      command / cwd / intentHash，默认 TTL 内<strong>只能消费一次</strong>——命令变更、二次消费或过期分别得到
       <code>command_mismatch</code> / <code>grant_consumed</code> / <code>grant_expired</code>。这是一次性提权，不是常驻
       unsandboxed 模式；proposal 的 risk 摘要诚实标出 unrestricted FS/network 与 protected metadata 暴露。
     </p>

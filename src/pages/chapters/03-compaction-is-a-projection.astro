@@ -11,6 +11,8 @@ import HighWaterCompactFlow from "../../components/diagrams/HighWaterCompactFlow
 import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFlow.astro";
 import MidTurnHeadAnchorFlow from "../../components/diagrams/MidTurnHeadAnchorFlow.astro";
 import ShapingVsVerdictFlow from "../../components/diagrams/ShapingVsVerdictFlow.astro";
+import ContextBudgetPipelineFlow from "../../components/diagrams/ContextBudgetPipelineFlow.astro";
+import SemanticCompactGatesFlow from "../../components/diagrams/SemanticCompactGatesFlow.astro";
 ---
 
 <ChapterShell chapterId="03">
@@ -142,14 +144,14 @@ Next model context = Materialize(
     highWaterName, highWaterSeq
   coverage
     eventCount, turnCount
-    through {'{'} runId, turnId, runtimeEventId {'}'}
+    through {"{ runId, turnId, runtimeEventId }"}
     sourceDigest          # SHA-256 of stable-serialized covered prefix
   projection
     summary, limitations, estimatedTokens
   lineage
     previousCheckpointId?
   phase?                  # absent | pre_turn | mid_turn（absent ≡ pre_turn）
-  headAnchor?             # mid_turn 必填：{ runtimeEventId, turnId }
+  headAnchor?             # mid_turn 必填：{"{ runtimeEventId, turnId }"}
   source?                 # evidence-spine：runtime_event_projection cursors</pre>
 
     <div class="table-wrap" role="region" aria-label="字段组证明什么" tabindex="0">
@@ -323,8 +325,78 @@ mid_turn  → [synthetic compact block, verbatim headAnchor, …uncoveredTail]</
     </ol>
     <p>
       两条着陆真理：Compaction 发生在 <strong>model-history projection</strong>，不在 RuntimeEvent append
-      path。Checkpoint 还不是 provider message——仍要经过 replay planning 与 capability gates。
+      path。Checkpoint 还不是 provider message——仍要经过 replay planning 与 capability gates。同一
+      <code>ContextBudgetPolicy</code> 还编排<strong>同轮 prepareStep</strong> 平面——顺序合同见
+      <a href="#budget-dsl">#budget-dsl</a>。
     </p>
+  </Section>
+
+  <Section
+    id="budget-dsl"
+    label="§03 · Budget DSL"
+    title="ContextBudgetPolicy：投影流水线 DSL"
+    lede="Policy 不是一袋互不相关的开关；它是两套有序 shaping 平面的组合语言——顺序是合同。"
+  >
+    <DiagramFigure
+      caption="图 3b · 平面 A prior-replay（stale → historyCompact → turn retention）；平面 B prepareStep（toolAvailability → midTurn → active prune → semantic）；钩子只 shape，verdict 在平面 B 之后。"
+      alt="两条泳道：prior-replay 与 composePrepareStep 的编号阶段；页脚强调 hooks shape、单一 verdict owner。"
+    >
+      <ContextBudgetPipelineFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>buildDefaultContextBudgetPolicy</code> 是跨 CLI / desktop / headless 的默认唯一所有者：historyCompact（及由
+      window−reserve 派生的 midTurn）默认开；stale / active prune 默认开；<code>semanticCompact</code>
+      <strong>默认关</strong>，须显式 opt-in。<code>MAKA_CONTEXT_BUDGET=off</code> 整份 policy 为
+      <code>undefined</code>。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="两平面顺序" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">平面</th>
+            <th scope="col">合同顺序</th>
+            <th scope="col">Mutates</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">A · prior-replay</th>
+            <td>
+              <code>staleToolResultPrune</code> → <code>historyCompact</code> → turn retention（token
+              cap 优先于 <code>minRecentTurns</code> 愿望）
+            </td>
+            <td>budgeted RuntimeEvent 投影（可选 archive / search / synthesis 旁路）</td>
+          </tr>
+          <tr>
+            <th scope="row">B · prepareStep</th>
+            <td>
+              toolAvailability → midTurn capacity → active prune → semantic/active-full；capacity
+              已替换的 step 上 semantic <strong>让位</strong>（<code>mid_turn_capacity_precedence</code>）
+            </td>
+            <td>provider-visible <code>ModelMessage[]</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      为何 midTurn 必须先于 active prune / semantic：后面的钩子要在<strong>已折叠的投影</strong>上再收敛——prune
+      重归档重建 tail 里的大 tool result；同一 step 禁止两个 summarizer 打架。每个钩子只
+      <strong>SHAPES</strong>；pass/terminate 仍只属于
+      <a href="#capacity-shaping">#capacity-shaping</a> 的 final-request estimate。三生命周期「谁在何时」的证据侧见
+      <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression`}>§02</a>。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        跨 surface 默认：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1018`}>maka:pr:1018</a>。顺序与单 verdict：
+        <a href={`${import.meta.env.BASE_URL}history/pr/996`}>maka:pr:996</a>。domain leaf 拆分：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1237`}>maka:pr:1237</a>。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -619,8 +691,11 @@ sourceDigest recomputed over full covered prefix</pre>
           </tr>
           <tr>
             <td><code>semanticCompact</code></td>
-            <td>Best-effort diagnostic block；invocation-local</td>
-            <td>signed savings / cache miss 是诊断，不是硬拒绝；head/protocol gates 仍硬</td>
+            <td>Best-effort；invocation-local（非 V2 durable CAS）</td>
+            <td>
+              三姿态：failedOpen 保 raw · privacy/summarizer 硬拒 · savings
+              <strong>警告仍可替换</strong>（见 <a href="#semantic-gates">#semantic-gates</a>）
+            </td>
           </tr>
         </tbody>
       </table>
@@ -633,6 +708,79 @@ sourceDigest recomputed over full covered prefix</pre>
       <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>），不等于 shaping/verdict
       分权本身。
     </p>
+  </Section>
+
+  <Section
+    id="semantic-gates"
+    label="§03 · Semantic gates"
+    title="semanticCompact：failedOpen · 隐私硬拒 · savings 软警告"
+    lede="Opt-in 的 attention-first 实验。三种门控姿态不能塌成一句「fail-open」。"
+  >
+    <DiagramFigure
+      caption="图 7c · 左 failedOpen 保 raw；中 privacy/summarizer 硬拒；右 savings 不足仍可 replaced + warning。"
+      alt="三列：failedOpen、hard reject、soft savings；页脚 opt-in 与 mid-turn 让位。"
+    >
+      <SemanticCompactGatesFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="semanticCompact 决策矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">姿态</th>
+            <th scope="col">典型原因</th>
+            <th scope="col">Provider messages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>failedOpen</code></th>
+            <td>
+              <code>head_anchor_mismatch</code> · source validation 失败 · selection
+              <code>failedOpen</code>
+            </td>
+            <td><strong>保持原样</strong> + diagnostic</td>
+          </tr>
+          <tr>
+            <th scope="row">硬拒（<code>unchanged</code>）</th>
+            <td>
+              <code>private_verifier_surface</code> · summarizer/truncation ·
+              <code>projection_budget_exceeded</code> · brake cooldown
+            </td>
+            <td>不替换；计 invalid / cooldown</td>
+          </tr>
+          <tr>
+            <th scope="row">软 savings</th>
+            <td>
+              <code>below_min_savings_tokens</code> / ratio / net（默认阈值量级 256 / 5%）
+            </td>
+            <td>
+              仍可 <code>replaced</code>；acceptance 带 warning reason（函数名
+              <code>…RejectionReason</code> 是历史命名）
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>隐私门：</strong>摘要不得<strong>新引入</strong>公开 provider-visible 源文本里没有的
+      hidden/private/official verifier·evaluation 话术——这是硬拒，不是诊断。Savings 门测的是 signed
+      saved 与减去加权 compact-call 后的 net；Current 测试钉死「未达 margin → accept with warning」。默认 policy
+      根本不装配 <code>semanticCompact</code>，除非
+      <code>MAKA_CONTEXT_SEMANTIC_COMPACT</code> 或非 <code>off</code> 的 mode 显式 opt-in。Capacity
+      已替换的 step 上 semantic 让位——见 <a href="#budget-dsl">#budget-dsl</a>。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Attention-first：
+        <a href={`${import.meta.env.BASE_URL}history/pr/986`}>maka:pr:986</a>。128K high water：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1069`}>maka:pr:1069</a>。跨 surface 默认仍保持
+        opt-in：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1018`}>maka:pr:1018</a>。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -860,8 +1008,8 @@ sourceDigest recomputed over full covered prefix</pre>
   <div slot="outline">
     <ul class="outline-list">
       <li>
-        协议深度：schema · mid_turn/headAnchor · capacity shaping≠verdict · prior-messages · synthetic ·
-        fail-open · 十二不变量
+        协议深度：schema · budget DSL 两平面 · mid_turn/headAnchor · capacity shaping≠verdict ·
+        semantic gates · prior-messages · synthetic · fail-open · 十二不变量
       </li>
       <li>
         机制旁注

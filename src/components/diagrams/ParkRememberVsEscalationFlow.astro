@@ -1,0 +1,151 @@
+---
+/**
+ * §01 protocol — park + rememberForTurn vs sandbox escalation one-shot.
+ */
+---
+
+<svg
+  class="pre-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="pre-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="pre-kicker pre-stage pre-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · PARK · REMEMBER-FOR-TURN ≠ ONE-SHOT ESCALATION
+  </text>
+  <line
+    class="pre-stage pre-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="pre-stage pre-stage--1" transform="translate(8,48)">
+    <rect width="200" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pre-idx" x="14" y="26" fill="var(--accent)">PROMPT</text>
+    <text class="pre-title" x="14" y="56" fill="var(--ink)">Park Promise</text>
+    <text class="pre-mute" x="14" y="84" fill="var(--mute)">turn-scoped registry</text>
+    <text class="pre-mute" x="14" y="106" fill="var(--mute)">Run keeps identity</text>
+  </g>
+
+  <path
+    class="pre-stage pre-stage--1"
+    d="M 220 108 H 252"
+    stroke="var(--accent)"
+    stroke-width="1.25"
+    fill="none"
+    marker-end="url(#pre-arrow)"
+  ></path>
+
+  <g class="pre-stage pre-stage--2" transform="translate(260,48)">
+    <rect width="288" height="120" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="288" height="2" fill="var(--accent)"></rect>
+    <text class="pre-idx" x="14" y="26" fill="var(--accent)">REMEMBER ALLOWED</text>
+    <text class="pre-title" x="14" y="56" fill="var(--ink)">scopeKey → turn set</text>
+    <text class="pre-mute" x="14" y="84" fill="var(--mute)">sibling parks auto-allow</text>
+    <text class="pre-mute" x="14" y="106" fill="var(--mute)">until turn end</text>
+  </g>
+
+  <g class="pre-stage pre-stage--3" transform="translate(568,48)">
+    <rect width="292" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="292" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="pre-idx" x="14" y="26" fill="var(--accent)">ONE-SHOT GRANT</text>
+    <text class="pre-title" x="14" y="56" fill="var(--ink)">rememberForTurn FORBIDDEN</text>
+    <text class="pre-mute" x="14" y="84" fill="var(--mute)">bind command/cwd · TTL</text>
+    <text class="pre-mute" x="14" y="106" fill="var(--mute)">consume once · mismatch fails</text>
+  </g>
+
+  <text class="pre-foot pre-stage pre-stage--4" x="8" y="210" fill="var(--mute)">
+    Sandbox escalation and additional-permission proposals set rememberForTurnAllowed=false. Carrying rememberForTurn on the response throws.
+  </text>
+  <text class="pre-foot pre-stage pre-stage--4" x="8" y="234" fill="var(--mute)">
+    Approval is not a standing unsandboxed mode. OS transform still lives in #sandbox — orthogonal to park/remember.
+  </text>
+  <text class="pre-foot pre-stage pre-stage--4" x="8" y="268" fill="var(--mute)">
+    Turn end rejects still-parked requests — never silent allow.
+  </text>
+</svg>
+
+<style>
+  .pre-flow {
+    font-family: var(--sans);
+  }
+  .pre-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .pre-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+  .pre-title {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .pre-mute {
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .pre-foot {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pre-stage {
+      opacity: 0;
+      animation: pre-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .pre-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .pre-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .pre-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .pre-stage--3 {
+      animation-delay: 0.4s;
+    }
+    .pre-stage--4 {
+      animation-delay: 0.52s;
+    }
+    @keyframes pre-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pre-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

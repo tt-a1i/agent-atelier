@@ -90,11 +90,11 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | **Storage ledgers** | `packages/storage/**` (JSONL, sqlite-runtime, task/artifact stores) | G+D | §01 `#stores` + `#durability` | **outline** → [`storage-ledgers-deep-outline.md`](./storage-ledgers-deep-outline.md); lean durability shipped |
 | **Usage / cost telemetry code** | `telemetry/*`, `usage-stats-store.ts`, provider-request telemetry | G | §01 `#request-shape` → `#usage-stores` | **outline** → [`usage-cost-telemetry-deep-outline.md`](./usage-cost-telemetry-deep-outline.md); dual-store/pricing shipped |
 | **Shell / PTY / workspace executor** | `shell-*.ts`, `pty-*.ts`, `workspace-executor.ts` | G | §02 `#shell-side-effects` + §01 sandbox pointer | **deep** (shipped #68) → [`shell-pty-executor-deep-outline.md`](./shell-pty-executor-deep-outline.md) |
-| **Filesystem worker / path containment** | `filesystem-worker/**`, `path-containment.ts` | G | §01/§02 | **empty** |
+| **Filesystem worker / path containment** | `filesystem-worker/**`, `path-containment.ts` | G | §02 `#filesystem-worker` + §01 sandbox pointer | **deep** (shipped #71) → [`filesystem-worker-path-containment-deep-outline.md`](./filesystem-worker-path-containment-deep-outline.md) |
 | **Runtime-host / gateway** | `packages/runtime-host/**` | G | §01 `#runtime-host` lean; companion fog | **outline** → [`runtime-host-gateway-deep-outline.md`](./runtime-host-gateway-deep-outline.md); lean note shipped |
 | **Bot onboarding / IM bridges** | `bot-onboarding-runtime.zh-CN.md`, `runtime/src/bots/**` | B+G | Companion `/guides/bot-im` | **deep** (shipped #69) → [`bot-im-onboarding-deep-outline.md`](./bot-im-onboarding-deep-outline.md) · live guide |
 | **Workspace privacy + SECURITY** | `workspace-privacy-context.md`, `SECURITY.md` | A | §01 `#trust` + `/guides/security-privacy` | **outline+shipped** → [`trust-privacy-security-deep-outline.md`](./trust-privacy-security-deep-outline.md) · live companion |
-| **Desktop main composition** | `apps/desktop/src/main/**`, desktop/renderer READMEs | D+G | Entry or companion “product shell” | **empty** |
+| **Desktop main composition** | `apps/desktop/src/main/**`, desktop/renderer READMEs | D+G | Companion `/guides/desktop-host` | **deep** (shipped #73) → [`desktop-main-composition-deep-outline.md`](./desktop-main-composition-deep-outline.md) · live guide |
 
 ### Cluster 2 — Archive that still teaches (must not skip)
 
@@ -173,11 +173,16 @@ A seam is mined enough for Destination only when:
 | [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | **closed** — outline + §04 `#harbor-trust` |
 | [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **outline + lean §01 durability** |
 | [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **closed** research · [#68](https://github.com/tt-a1i/agent-atelier/issues/68) shipped §02 |
+| [#70](https://github.com/tt-a1i/agent-atelier/issues/70) / [#71](https://github.com/tt-a1i/agent-atelier/issues/71) | Filesystem worker / path containment | **closed** · §02 `#filesystem-worker` |
+| [#72](https://github.com/tt-a1i/agent-atelier/issues/72) / [#73](https://github.com/tt-a1i/agent-atelier/issues/73) | Desktop main composition | **closed** · `/guides/desktop-host` |
 | [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **outline + lean §01 note** |
 | [#58](https://github.com/tt-a1i/agent-atelier/issues/58) | Bot onboarding / IM | **closed** research · [#69](https://github.com/tt-a1i/agent-atelier/issues/69) shipped `/guides/bot-im` |
 | [#59](https://github.com/tt-a1i/agent-atelier/issues/59) | Workspace privacy + SECURITY | **closed** research + companion `/guides/security-privacy` shipped |
 | [#60](https://github.com/tt-a1i/agent-atelier/issues/60) | Archive-that-still-teaches sweep | **done** + top-3 absorb → `archive-mine-delta-absorb-2026-07-21.md` |
 | [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **outline + §01 `#usage-stores`** |
+| [#74](https://github.com/tt-a1i/agent-atelier/issues/74) | ContextBudgetPolicy two-plane DSL | **closed** — §03 `#budget-dsl` |
+| [#75](https://github.com/tt-a1i/agent-atelier/issues/75) | Semantic compact gates | **closed** — §03 `#semantic-gates` |
+| [#76](https://github.com/tt-a1i/agent-atelier/issues/76) | Park/remember vs escalation one-shot | **closed** — §01 `#park-remember` |
 
 Research → `docs/research/*`; Task → live zh+en.
 

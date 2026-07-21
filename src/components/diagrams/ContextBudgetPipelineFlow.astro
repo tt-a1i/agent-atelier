@@ -1,0 +1,139 @@
+---
+/**
+ * §03 protocol — ContextBudgetPolicy as two-plane projection-pipeline DSL.
+ */
+---
+
+<svg
+  class="cbp-flow"
+  viewBox="0 0 868 340"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="cbp-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="cbp-kicker cbp-stage cbp-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · CONTEXTBUDGETPOLICY · TWO PLANES · ORDER IS CONTRACT
+  </text>
+  <line
+    class="cbp-stage cbp-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Plane A -->
+  <g class="cbp-stage cbp-stage--1" transform="translate(8,48)">
+    <rect width="852" height="110" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="852" height="2" fill="var(--accent)" opacity="0.45"></rect>
+    <text class="cbp-idx" x="14" y="22" fill="var(--accent)">PLANE A · PRIOR-REPLAY · applyRuntimeEventContextBudget</text>
+    <text class="cbp-step" x="14" y="52" fill="var(--ink)">1 stale prune</text>
+    <path d="M 118 46 H 138" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="148" y="52" fill="var(--ink)">2 historyCompact</text>
+    <path d="M 292 46 H 312" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="322" y="52" fill="var(--ink)">3 turn retention</text>
+    <path d="M 458 46 H 478" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="488" y="52" fill="var(--ink)">budgeted prior events</text>
+    <text class="cbp-mute" x="14" y="82" fill="var(--mute)">optional: archive retrieve · history search · synthesis cache</text>
+    <text class="cbp-mute" x="14" y="100" fill="var(--mute)">token cap beats minRecentTurns wish</text>
+  </g>
+
+  <!-- Plane B -->
+  <g class="cbp-stage cbp-stage--2" transform="translate(8,172)">
+    <rect width="852" height="110" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="852" height="2" fill="var(--accent)"></rect>
+    <text class="cbp-idx" x="14" y="22" fill="var(--accent)">PLANE B · PREPARESTEP · composePrepareStep</text>
+    <text class="cbp-step" x="14" y="52" fill="var(--ink)">1 toolAvailability</text>
+    <path d="M 148 46 H 168" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="178" y="52" fill="var(--ink)">2 midTurn</text>
+    <path d="M 262 46 H 282" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="292" y="52" fill="var(--ink)">3 active prune</text>
+    <path d="M 412 46 H 432" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#cbp-arrow)"></path>
+    <text class="cbp-step" x="442" y="52" fill="var(--ink)">4 semantic / active-full</text>
+    <text class="cbp-mute" x="14" y="82" fill="var(--mute)">mid-turn replaced step → semantic YIELDS (mid_turn_capacity_precedence)</text>
+    <text class="cbp-mute" x="14" y="100" fill="var(--mute)">after all hooks → final-request verdict owner (pass / context_budget_exhausted)</text>
+  </g>
+
+  <text class="cbp-foot cbp-stage cbp-stage--3" x="8" y="314" fill="var(--mute)">
+    Policy knobs compose these stages — they are not an unordered bag of flags. Hooks only shape; one verdict owner measures the outgoing payload.
+  </text>
+</svg>
+
+<style>
+  .cbp-flow {
+    font-family: var(--sans);
+  }
+  .cbp-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .cbp-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+  .cbp-step {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .cbp-mute {
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .cbp-foot {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cbp-stage {
+      opacity: 0;
+      animation: cbp-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .cbp-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .cbp-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .cbp-stage--2 {
+      animation-delay: 0.32s;
+    }
+    .cbp-stage--3 {
+      animation-delay: 0.48s;
+    }
+    @keyframes cbp-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbp-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

@@ -11,6 +11,7 @@ import ExecSpineFlow from "../../../components/diagrams/ExecSpineFlow.astro";
 import DualStreamBridge from "../../../components/diagrams/DualStreamBridge.astro";
 import ModelToolLoop from "../../../components/diagrams/ModelToolLoop.astro";
 import PermissionControlFlow from "../../../components/diagrams/PermissionControlFlow.astro";
+import ParkRememberVsEscalationFlow from "../../../components/diagrams/ParkRememberVsEscalationFlow.astro";
 import SandboxOwnershipFlow from "../../../components/diagrams/SandboxOwnershipFlow.astro";
 import RecoveryLayersFlow from "../../../components/diagrams/RecoveryLayersFlow.astro";
 import T1T2BoundaryFlow from "../../../components/diagrams/T1T2BoundaryFlow.astro";
@@ -442,6 +443,68 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       in §02). Whether an allowed call still needs an OS sandbox wrap is orthogonal — do not conflate
       “user clicked allow” with “unsafe host execution.”
     </p>
+
+    <h3 class="subhead" id="park-remember">Park · remember-for-turn · one-shot escalation</h3>
+    <DiagramFigure
+      caption="Fig. 7a · After PROMPT park: remember-for-turn (scope remembered; sibling parks auto-allow) vs one-shot grant (remember forbidden · TTL · single consume)."
+      alt="Three boxes: Park Promise; remember-for-turn scope; sandbox escalation one-shot."
+    >
+      <ParkRememberVsEscalationFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>prompt</code> parks a Promise in a turn-scoped registry (keyed by <code>requestId</code>);
+      Kernel <code>respondToPermission</code> resolves it — Run identity always stays. Ordinary tool
+      permission often allows <code>rememberForTurn</code>: allow + remember writes the tool-intent
+      <code>scopeKey</code> into this turn’s remembered set and <strong>auto-allows</strong> other
+      already-parked prompts with the same scope (parallel <code>browser_*</code> batches need not
+      click repeatedly). Sandbox escalation and additional-permission proposals fix
+      <code>rememberForTurnAllowed: false</code> — a response carrying <code>rememberForTurn</code>
+      throws; the grant binds exact command/cwd/intent (or permissionsHash) and may be
+      <strong>consumed once</strong> within TTL. Still-parked requests at turn end reject as user_stop
+      / escalation_aborted — never silent allow.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="remember vs one-shot" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Axis</th>
+            <th scope="col">Ordinary permission (remember OK)</th>
+            <th scope="col">Escalation / additional (one-shot)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Park</th>
+            <td>Yes</td>
+            <td>Yes (same registry, different event.kind)</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>rememberForTurnAllowed</code></th>
+            <td>Often true</td>
+            <td><strong>Always false</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">Grant lifetime</th>
+            <td>Turn-scoped scope until turn end</td>
+            <td>TTL + single consume; mismatch → typed error</td>
+          </tr>
+          <tr>
+            <th scope="row">After allow</th>
+            <td>Still under the normal sandbox profile</td>
+            <td>That one call may skip sandbox transform — not a standing unsandboxed mode</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Escalation transform details and the Seatbelt/bwrap selection matrix live in
+      <a href="#sandbox">#sandbox</a>; this section only pins “remember ≠ one-shot.” Specimens:
+      <code>permission-engine.ts</code> · <code>sandbox-escalation.ts</code> · maka
+      <a href={localePath("en", "history/pr/1016")}>#1016</a> /
+      <a href={localePath("en", "history/pr/969")}>#969</a>.
+    </p>
   </Section>
 
   <Section
@@ -519,7 +582,8 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
     <p>
       Bash may declare <code>sandbox_permissions.mode = require_escalated</code> (justification
       required). Planning blocks in explore, may skip in bypass; otherwise PermissionEngine prompts with
-      <code>sandbox_escalation</code> (<code>rememberForTurnAllowed: false</code>). An allow produces a
+      <code>sandbox_escalation</code> (<code>rememberForTurnAllowed: false</code> — contrast with
+      ordinary remember-for-turn in <a href="#park-remember">#park-remember</a>). An allow produces a
       grant bound to exact command / cwd / intentHash — <strong>consumable once</strong> within TTL.
       Changed command, second consume, or expiry → <code>command_mismatch</code> /
       <code>grant_consumed</code> / <code>grant_expired</code>. This is one-shot escalation, not a

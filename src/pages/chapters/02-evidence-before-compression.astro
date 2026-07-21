@@ -11,6 +11,7 @@ import ThreePruneLifecyclesFlow from "../../components/diagrams/ThreePruneLifecy
 import SourceChainFlow from "../../components/diagrams/SourceChainFlow.astro";
 import ShellSpawnTreeFlow from "../../components/diagrams/ShellSpawnTreeFlow.astro";
 import ShellLiveVsResultFlow from "../../components/diagrams/ShellLiveVsResultFlow.astro";
+import FilesystemWorkerStackFlow from "../../components/diagrams/FilesystemWorkerStackFlow.astro";
 ---
 
 <ChapterShell chapterId="02">
@@ -333,6 +334,149 @@ LocalWorkspaceExecutor → Read/Write/Edit/Glob (+ optional bash) · isolation: 
     </aside>
   </Section>
 
+
+  <Section
+    id="filesystem-worker"
+    label="§02 · Filesystem"
+    title="文件工具双后端：path containment 与 filesystem worker"
+    lede="Read/Write/Edit 不是「直接 fs」。共享叶子是 isPathInside；可选 sandboxed worker 走协议 v2，与 LocalWorkspaceExecutor 的 isolation: none 事实正交。"
+  >
+    <DiagramFigure
+      caption="图 4c · 叶子 isPathInside；builtin-tools 按是否注入 FilesystemWorkerClient 分叉：Worker（darwin）走 validate→transform→stdin JSON；否则 LocalWorkspaceExecutor（isolation: none）。底栏钉三层正交。"
+      alt="流程：isPathInside 到 builtin-tools 分叉为 filesystem worker 与 local workspace executor；底栏 path containment、PermissionEngine、OS sandbox 三层正交。"
+    >
+      <FilesystemWorkerStackFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">叶子权威：isPathInside</h3>
+    <p>
+      <code>path-containment.ts</code> 是 runtime / desktop main / headless 的<strong>单一路径 containment
+      叶子</strong>（只依赖 <code>node:path</code>）：separator-aware 地拒绝真正的
+      <code>..</code> 段与 Windows 跨盘符；名字以 <code>..</code> 开头但不是父引用的目录（如
+      <code>..rules</code>）合法——见 maka #1145。技能 id 安全由 <code>isSafeSkillId</code>
+      另管，勿与路径混谈。
+    </p>
+
+    <h3 class="subhead">两条文件后端</h3>
+    <pre class="code-block" aria-label="文件工具双后端">buildBuiltinTools
+  ├─ filesystemWorker?
+  │    → FilesystemWorkerClient.execute
+  │         canRead/WritePath → sandboxManager.transform(worker)
+  │         → stdin JSON (protocol v2) → child → parse response
+  └─ else LocalWorkspaceExecutor
+         resolve*InsideCwd(isPathInside) → direct fs / rg
+         facts = &#123; isolation: 'none', writesAffectHost: true, … &#125;</pre>
+
+    <div class="table-wrap" role="region" aria-label="文件后端对照" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">后端</th>
+            <th scope="col">Containment</th>
+            <th scope="col">OS sandbox</th>
+            <th scope="col">Facts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>LocalWorkspaceExecutor</code></td>
+            <td><code>isPathInside</code> on cwd</td>
+            <td>无</td>
+            <td><code>isolation: 'none'</code></td>
+          </tr>
+          <tr>
+            <td><code>FilesystemWorkerClient</code></td>
+            <td>client 权限 + worker 再检 + <code>isPathInside</code></td>
+            <td>transform worker 进程</td>
+            <td>协议路径，非 local facts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Desktop 只在 <code>process.platform === 'darwin' &amp;&amp; sandboxManager</code> 时注入 worker（见
+      <code>tool-assembly.ts</code>）；否则文件工具落回 LocalWorkspaceExecutor。这与
+      <a href="#shell-side-effects">#shell-side-effects</a> 已钉的「workspace executor ≠ Seatbelt」一致——本节补上<strong>sandboxed
+      worker 另一条路</strong>。
+    </p>
+
+    <h3 class="subhead">协议 v2：hash + expectedTarget</h3>
+    <ul class="plain-list">
+      <li>
+        Request：<code>version</code>、<code>requestId</code>、<code>operation</code>、
+        <code>operationPermission</code>、<code>permissionsHash</code>、<code>expectedTarget</code>。
+      </li>
+      <li>
+        <code>permissionsHash</code> 必须匹配
+        <code>hashAdditionalPermissionProfile(operationPermission)</code>（client 与 worker 双侧）。
+      </li>
+      <li>
+        Worker <code>assertTargetUnchanged</code>：路径或 <code>targetType</code> 在批准后变化 →
+        <code>path_changed</code>（TOCTOU）。
+      </li>
+      <li>
+        Client 阶段：<code>validation</code> / <code>transform</code> / <code>launch</code> /
+        <code>protocol</code> / <code>operation</code>；请求体上限 16 MiB。
+      </li>
+    </ul>
+
+    <div class="table-wrap" role="region" aria-label="Filesystem 失败矩阵" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Surface</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>cwd 逃逸（local）</td>
+            <td>resolve*InsideCwd throw</td>
+          </tr>
+          <tr>
+            <td>profile deny</td>
+            <td><code>path_denied</code>（validation）</td>
+          </tr>
+          <tr>
+            <td>hash mismatch</td>
+            <td><code>invalid_request</code></td>
+          </tr>
+          <tr>
+            <td>target 变化</td>
+            <td><code>path_changed</code></td>
+          </tr>
+          <tr>
+            <td>transform / spawn / timeout</td>
+            <td>client stage <code>transform</code> / <code>launch</code></td>
+          </tr>
+          <tr>
+            <td>非 darwin Desktop</td>
+            <td>无 worker → LocalWorkspaceExecutor</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>三层正交：</strong>path containment（叶子）⟂ PermissionEngine 批准 ⟂ OS sandbox
+      transform。Seatbelt 生成见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#sandbox`}>§01 · #sandbox</a>；产品组合见
+      <a href={`${import.meta.env.BASE_URL}guides/desktop-host`}>/guides/desktop-host</a>。
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        路径叶子修正（<code>..rules</code> 误杀）：maka #1145。验证：
+        <code>path-containment.test.ts</code> · <code>filesystem-worker.test.ts</code> ·
+        <code>filesystem-worker-client.test.ts</code> · <code>builtin-tools-file-worker.test.ts</code> ·
+        <code>workspace-executor.test.ts</code>。提纲：
+        <code>docs/research/filesystem-worker-path-containment-deep-outline.md</code>（#70 → Task #71）。
+      </p>
+    </aside>
+  </Section>
+
   <Section
     id="turn"
     label="§02 · Boundary"
@@ -527,7 +671,11 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
       第三条生命周期用 checkpoint（V2 <code>sourceDigest</code>、可选
       <code>phase: mid_turn</code> + <code>headAnchor</code>）折叠<strong>已完成前缀</strong>；它不是「再跑一遍
       tool-result archive」。协议正文、digest 匹配与 fail-open 矩阵见
-      <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection`}>§03</a>。本章要求读者先建立：
+      <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection`}>§03</a>。三者如何被
+      <code>ContextBudgetPolicy</code> 排进 prior-replay / prepareStep 两平面（顺序是合同）见
+      <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection#budget-dsl`}
+        >§03 · #budget-dsl</a
+      >。本章要求读者先建立：
       <strong>Active ≠ Stale ≠ Compact</strong>，再进入投影语义。
     </p>
 

@@ -1,0 +1,137 @@
+---
+/**
+ * §03 protocol — semanticCompact gate postures: failedOpen / hard reject / soft savings.
+ */
+---
+
+<svg
+  class="scg-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="scg-kicker scg-stage scg-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · SEMANTICCOMPACT · THREE GATE POSTURES · OPT-IN
+  </text>
+  <line
+    class="scg-stage scg-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="scg-stage scg-stage--1" transform="translate(8,48)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.5"></rect>
+    <text class="scg-idx" x="14" y="26" fill="var(--accent)">FAILEDOPEN</text>
+    <text class="scg-title" x="14" y="56" fill="var(--ink)">Keep raw messages</text>
+    <text class="scg-mute" x="14" y="86" fill="var(--mute)">head_anchor_mismatch</text>
+    <text class="scg-mute" x="14" y="108" fill="var(--mute)">source_validation_failed</text>
+    <text class="scg-mute" x="14" y="130" fill="var(--mute)">selection failedOpen</text>
+    <text class="scg-line" x="14" y="158" fill="var(--ink)">diagnostic · no fold</text>
+  </g>
+
+  <g class="scg-stage scg-stage--2" transform="translate(298,48)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="scg-idx" x="14" y="26" fill="var(--accent)">HARD REJECT</text>
+    <text class="scg-title" x="14" y="56" fill="var(--ink)">unchanged · no replace</text>
+    <text class="scg-mute" x="14" y="86" fill="var(--mute)">private_verifier_surface</text>
+    <text class="scg-mute" x="14" y="108" fill="var(--mute)">summarizer / truncated</text>
+    <text class="scg-mute" x="14" y="130" fill="var(--mute)">projection_budget_exceeded</text>
+    <text class="scg-line" x="14" y="158" fill="var(--ink)">privacy is not soft</text>
+  </g>
+
+  <g class="scg-stage scg-stage--3" transform="translate(588,48)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="scg-idx" x="14" y="26" fill="var(--accent)">SOFT SAVINGS</text>
+    <text class="scg-title" x="14" y="56" fill="var(--ink)">replaced + warning</text>
+    <text class="scg-mute" x="14" y="86" fill="var(--mute)">below_min_savings_tokens</text>
+    <text class="scg-mute" x="14" y="108" fill="var(--mute)">below_min_savings_ratio</text>
+    <text class="scg-mute" x="14" y="130" fill="var(--mute)">below_min_net_savings</text>
+    <text class="scg-line" x="14" y="158" fill="var(--ink)">warn ≠ refuse</text>
+  </g>
+
+  <text class="scg-foot scg-stage scg-stage--4" x="8" y="250" fill="var(--mute)">
+    Default policy omits semanticCompact until explicit opt-in. Mid-turn capacity-replaced step → semantic yields (precedence).
+  </text>
+  <text class="scg-foot scg-stage scg-stage--4" x="8" y="274" fill="var(--mute)">
+    Not historyCompact durable CAS — invocation-local best-effort projection with honest diagnostics.
+  </text>
+</svg>
+
+<style>
+  .scg-flow {
+    font-family: var(--sans);
+  }
+  .scg-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .scg-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .scg-title {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .scg-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .scg-mute {
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .scg-foot {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .scg-stage {
+      opacity: 0;
+      animation: scg-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .scg-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .scg-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .scg-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .scg-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .scg-stage--4 {
+      animation-delay: 0.5s;
+    }
+    @keyframes scg-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scg-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

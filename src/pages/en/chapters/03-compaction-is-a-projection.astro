@@ -12,6 +12,8 @@ import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactF
 import RollingCheckpointFlow from "../../../components/diagrams/RollingCheckpointFlow.astro";
 import MidTurnHeadAnchorFlow from "../../../components/diagrams/MidTurnHeadAnchorFlow.astro";
 import ShapingVsVerdictFlow from "../../../components/diagrams/ShapingVsVerdictFlow.astro";
+import ContextBudgetPipelineFlow from "../../../components/diagrams/ContextBudgetPipelineFlow.astro";
+import SemanticCompactGatesFlow from "../../../components/diagrams/SemanticCompactGatesFlow.astro";
 ---
 
 <ChapterShell chapterId="03" locale="en">
@@ -153,14 +155,14 @@ Next model context = Materialize(
     highWaterName, highWaterSeq
   coverage
     eventCount, turnCount
-    through {'{'} runId, turnId, runtimeEventId {'}'}
+    through {"{ runId, turnId, runtimeEventId }"}
     sourceDigest          # SHA-256 of stable-serialized covered prefix
   projection
     summary, limitations, estimatedTokens
   lineage
     previousCheckpointId?
   phase?                  # absent | pre_turn | mid_turn (absent ≡ pre_turn)
-  headAnchor?             # required for mid_turn: { runtimeEventId, turnId }
+  headAnchor?             # required for mid_turn: {"{ runtimeEventId, turnId }"}
   source?                 # evidence-spine: runtime_event_projection cursors</pre>
 
     <div class="table-wrap" role="region" aria-label="What field groups prove" tabindex="0">
@@ -337,8 +339,81 @@ mid_turn  → [synthetic compact block, verbatim headAnchor, …uncoveredTail]</
     <p>
       Two landing truths: Compaction lives in <strong>model-history projection</strong>, not in the
       RuntimeEvent append path. A checkpoint is not yet a provider message — it still passes replay
-      planning and capability gates.
+      planning and capability gates. The same <code>ContextBudgetPolicy</code> also orchestrates the
+      <strong>same-turn prepareStep</strong> plane — order contract in
+      <a href="#budget-dsl">#budget-dsl</a>.
     </p>
+  </Section>
+
+  <Section
+    id="budget-dsl"
+    label="§03 · Budget DSL"
+    title="ContextBudgetPolicy: a projection-pipeline DSL"
+    lede="The policy is not a bag of unrelated flags — it is a composition language for two ordered shaping planes. Order is contract."
+  >
+    <DiagramFigure
+      caption="Fig. 3b · Plane A prior-replay (stale → historyCompact → turn retention); Plane B prepareStep (toolAvailability → midTurn → active prune → semantic); hooks only shape; verdict after Plane B."
+      alt="Two swimlanes: numbered prior-replay and composePrepareStep stages; footer: hooks shape, single verdict owner."
+    >
+      <ContextBudgetPipelineFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>buildDefaultContextBudgetPolicy</code> is the single owner of defaults across CLI / desktop /
+      headless: historyCompact (and midTurn derived from window−reserve) on by default; stale / active
+      prune on by default; <code>semanticCompact</code> <strong>off</strong> until explicit opt-in.
+      <code>MAKA_CONTEXT_BUDGET=off</code> yields <code>undefined</code> for the whole policy.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="Two-plane order" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Plane</th>
+            <th scope="col">Contract order</th>
+            <th scope="col">Mutates</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">A · prior-replay</th>
+            <td>
+              <code>staleToolResultPrune</code> → <code>historyCompact</code> → turn retention (token
+              cap beats <code>minRecentTurns</code> wish)
+            </td>
+            <td>Budgeted RuntimeEvent projection (optional archive / search / synthesis side paths)</td>
+          </tr>
+          <tr>
+            <th scope="row">B · prepareStep</th>
+            <td>
+              toolAvailability → midTurn capacity → active prune → semantic/active-full; on a
+              capacity-replaced step semantic <strong>yields</strong> (
+              <code>mid_turn_capacity_precedence</code>)
+            </td>
+            <td>Provider-visible <code>ModelMessage[]</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Why midTurn before active prune / semantic: later hooks must re-converge on the
+      <strong>already-folded projection</strong> — prune re-archives large tool results in the rebuilt
+      tail; two summarizers must not fight one step. Every hook only <strong>SHAPES</strong>;
+      pass/terminate still belongs solely to the final-request estimate in
+      <a href="#capacity-shaping">#capacity-shaping</a>. Evidence-side “who runs when” for the three
+      lifecycles:
+      <a href={localePath("en", "chapters/02-evidence-before-compression")}>§02</a>.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        Cross-surface defaults:
+        <a href={localePath("en", "history/pr/1018")}>maka:pr:1018</a>. Order + single verdict:
+        <a href={localePath("en", "history/pr/996")}>maka:pr:996</a>. Domain leaf split:
+        <a href={localePath("en", "history/pr/1237")}>maka:pr:1237</a>.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -637,9 +712,10 @@ sourceDigest recomputed over full covered prefix</pre>
           </tr>
           <tr>
             <td><code>semanticCompact</code></td>
-            <td>Best-effort diagnostic block; invocation-local</td>
+            <td>Best-effort; invocation-local (not V2 durable CAS)</td>
             <td>
-              Signed savings / cache miss are diagnostics, not hard reject; head/protocol gates stay hard
+              Three postures: failedOpen keeps raw · privacy/summarizer hard reject · savings
+              <strong>warn-but-replace</strong> (see <a href="#semantic-gates">#semantic-gates</a>)
             </td>
           </tr>
         </tbody>
@@ -653,6 +729,80 @@ sourceDigest recomputed over full covered prefix</pre>
       <a href={localePath("en", "history/pr/1017")}>maka:pr:1017</a>), not the shaping/verdict split
       itself.
     </p>
+  </Section>
+
+  <Section
+    id="semantic-gates"
+    label="§03 · Semantic gates"
+    title="semanticCompact: failedOpen · privacy hard reject · soft savings"
+    lede="An opt-in attention-first experiment. Three gate postures must not collapse into one “fail-open” slogan."
+  >
+    <DiagramFigure
+      caption="Fig. 7c · Left failedOpen keeps raw; middle privacy/summarizer hard reject; right undersaving still replaced + warning."
+      alt="Three columns: failedOpen, hard reject, soft savings; footer opt-in and mid-turn yield."
+    >
+      <SemanticCompactGatesFlow />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="semanticCompact decision matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Posture</th>
+            <th scope="col">Typical reasons</th>
+            <th scope="col">Provider messages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>failedOpen</code></th>
+            <td>
+              <code>head_anchor_mismatch</code> · source validation fail · selection
+              <code>failedOpen</code>
+            </td>
+            <td><strong>Unchanged</strong> + diagnostic</td>
+          </tr>
+          <tr>
+            <th scope="row">Hard reject (<code>unchanged</code>)</th>
+            <td>
+              <code>private_verifier_surface</code> · summarizer/truncation ·
+              <code>projection_budget_exceeded</code> · brake cooldown
+            </td>
+            <td>No replacement; invalid / cooldown counters</td>
+          </tr>
+          <tr>
+            <th scope="row">Soft savings</th>
+            <td>
+              <code>below_min_savings_tokens</code> / ratio / net (default margins ~256 / 5%)
+            </td>
+            <td>
+              Still <code>replaced</code>; acceptance carries a warning reason (helper name
+              <code>…RejectionReason</code> is historical)
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>Privacy gate:</strong> a summary must not <strong>newly surface</strong>
+      hidden/private/official verifier·evaluation language absent from public provider-visible source
+      text — hard reject, not a soft diagnostic. Savings gates measure signed saved tokens and net after
+      weighted compact-call cost; Current tests pin “miss the margin → accept with warning.” Default
+      policy omits <code>semanticCompact</code> unless <code>MAKA_CONTEXT_SEMANTIC_COMPACT</code> or a
+      non-<code>off</code> mode opts in. On a capacity-replaced step semantic yields — see
+      <a href="#budget-dsl">#budget-dsl</a>.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        Attention-first:
+        <a href={localePath("en", "history/pr/986")}>maka:pr:986</a>. 128K high water:
+        <a href={localePath("en", "history/pr/1069")}>maka:pr:1069</a>. Cross-surface defaults keep it
+        opt-in:
+        <a href={localePath("en", "history/pr/1018")}>maka:pr:1018</a>.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -916,8 +1066,8 @@ sourceDigest recomputed over full covered prefix</pre>
   <div slot="outline">
     <ul class="outline-list">
       <li>
-        Protocol depth: schema · mid_turn/headAnchor · capacity shaping≠verdict · prior-messages ·
-        synthetic · fail-open · twelve invariants
+        Protocol depth: schema · budget DSL two planes · mid_turn/headAnchor · capacity
+        shaping≠verdict · semantic gates · prior-messages · synthetic · fail-open · twelve invariants
       </li>
       <li>
         Mechanism asides

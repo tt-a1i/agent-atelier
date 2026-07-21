@@ -12,6 +12,7 @@ import ThreePruneLifecyclesFlow from "../../../components/diagrams/ThreePruneLif
 import SourceChainFlow from "../../../components/diagrams/SourceChainFlow.astro";
 import ShellSpawnTreeFlow from "../../../components/diagrams/ShellSpawnTreeFlow.astro";
 import ShellLiveVsResultFlow from "../../../components/diagrams/ShellLiveVsResultFlow.astro";
+import FilesystemWorkerStackFlow from "../../../components/diagrams/FilesystemWorkerStackFlow.astro";
 ---
 
 <ChapterShell chapterId="02" locale="en">
@@ -346,6 +347,150 @@ LocalWorkspaceExecutor → Read/Write/Edit/Glob (+ optional bash) · isolation: 
     </aside>
   </Section>
 
+
+  <Section
+    id="filesystem-worker"
+    label="§02 · Filesystem"
+    title="File-tool dual backends: path containment and the filesystem worker"
+    lede="Read/Write/Edit is not “just fs”. The shared leaf is isPathInside; an optional sandboxed worker speaks protocol v2, orthogonal to LocalWorkspaceExecutor’s isolation: none facts."
+  >
+    <DiagramFigure
+      caption="Fig. 4c · Leaf isPathInside; builtin-tools branches on FilesystemWorkerClient: Worker (darwin) runs validate→transform→stdin JSON; else LocalWorkspaceExecutor (isolation: none). Footer pins three orthogonal layers."
+      alt="Flow: isPathInside into builtin-tools branching to filesystem worker versus local workspace executor; footer path containment, PermissionEngine, and OS sandbox as orthogonal layers."
+    >
+      <FilesystemWorkerStackFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">Leaf authority: isPathInside</h3>
+    <p>
+      <code>path-containment.ts</code> is the <strong>single path-containment leaf</strong> for runtime,
+      desktop main, and headless (depends only on <code>node:path</code>): separator-aware rejection of
+      real <code>..</code> segments and Windows cross-drive relatives; names that merely start with
+      <code>..</code> (e.g. <code>..rules</code>) stay inside — maka #1145. Skill-id safety is
+      <code>isSafeSkillId</code>, not path math.
+    </p>
+
+    <h3 class="subhead">Two file backends</h3>
+    <pre class="code-block" aria-label="File-tool dual backends">buildBuiltinTools
+  ├─ filesystemWorker?
+  │    → FilesystemWorkerClient.execute
+  │         canRead/WritePath → sandboxManager.transform(worker)
+  │         → stdin JSON (protocol v2) → child → parse response
+  └─ else LocalWorkspaceExecutor
+         resolve*InsideCwd(isPathInside) → direct fs / rg
+         facts = &#123; isolation: 'none', writesAffectHost: true, … &#125;</pre>
+
+    <div class="table-wrap" role="region" aria-label="File backend contrast" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Backend</th>
+            <th scope="col">Containment</th>
+            <th scope="col">OS sandbox</th>
+            <th scope="col">Facts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>LocalWorkspaceExecutor</code></td>
+            <td><code>isPathInside</code> on cwd</td>
+            <td>none</td>
+            <td><code>isolation: 'none'</code></td>
+          </tr>
+          <tr>
+            <td><code>FilesystemWorkerClient</code></td>
+            <td>client profile + worker re-check + <code>isPathInside</code></td>
+            <td>transform worker process</td>
+            <td>protocol path, not local facts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Desktop injects the worker only when <code>process.platform === 'darwin' &amp;&amp; sandboxManager</code>
+      (<code>tool-assembly.ts</code>); otherwise file tools fall back to LocalWorkspaceExecutor. That
+      matches <a href="#shell-side-effects">#shell-side-effects</a> (“workspace executor ≠ Seatbelt”) —
+      this section adds the <strong>sandboxed worker alternative</strong>.
+    </p>
+
+    <h3 class="subhead">Protocol v2: hash + expectedTarget</h3>
+    <ul class="plain-list">
+      <li>
+        Request: <code>version</code>, <code>requestId</code>, <code>operation</code>,
+        <code>operationPermission</code>, <code>permissionsHash</code>, <code>expectedTarget</code>.
+      </li>
+      <li>
+        <code>permissionsHash</code> must match
+        <code>hashAdditionalPermissionProfile(operationPermission)</code> on both client and worker.
+      </li>
+      <li>
+        Worker <code>assertTargetUnchanged</code>: path or <code>targetType</code> drift after approval →
+        <code>path_changed</code> (TOCTOU).
+      </li>
+      <li>
+        Client stages: <code>validation</code> / <code>transform</code> / <code>launch</code> /
+        <code>protocol</code> / <code>operation</code>; max request 16 MiB.
+      </li>
+    </ul>
+
+    <div class="table-wrap" role="region" aria-label="Filesystem failure matrix" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Surface</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>cwd escape (local)</td>
+            <td>resolve*InsideCwd throw</td>
+          </tr>
+          <tr>
+            <td>profile deny</td>
+            <td><code>path_denied</code> (validation)</td>
+          </tr>
+          <tr>
+            <td>hash mismatch</td>
+            <td><code>invalid_request</code></td>
+          </tr>
+          <tr>
+            <td>target drift</td>
+            <td><code>path_changed</code></td>
+          </tr>
+          <tr>
+            <td>transform / spawn / timeout</td>
+            <td>client stage <code>transform</code> / <code>launch</code></td>
+          </tr>
+          <tr>
+            <td>non-darwin Desktop</td>
+            <td>no worker → LocalWorkspaceExecutor</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>Three orthogonal layers:</strong> path containment (leaf) ⟂ PermissionEngine approval ⟂ OS
+      sandbox transform. Seatbelt generation:
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#sandbox"}>§01 · #sandbox</a>. Product
+      composition:
+      <a href={localePath("en", "guides/desktop-host")}>/guides/desktop-host</a>.
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Path-leaf fix (<code>..rules</code> false positive): maka #1145. Tests:
+        <code>path-containment.test.ts</code> · <code>filesystem-worker.test.ts</code> ·
+        <code>filesystem-worker-client.test.ts</code> · <code>builtin-tools-file-worker.test.ts</code> ·
+        <code>workspace-executor.test.ts</code>. Outline:
+        <code>docs/research/filesystem-worker-path-containment-deep-outline.md</code> (#70 → Task #71).
+      </p>
+    </aside>
+  </Section>
+
   <Section
     id="turn"
     label="§02 · Boundary"
@@ -547,8 +692,13 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
       The third lifecycle folds a <strong>completed prefix</strong> behind a checkpoint (V2
       <code>sourceDigest</code>, optional <code>phase: mid_turn</code> + <code>headAnchor</code>); it is
       not “run tool-result archive again.” Protocol body, digest match, and fail-open matrix live in
-      <a href={localePath("en", "chapters/03-compaction-is-a-projection")}>§03</a>. This chapter’s job
-      is: <strong>Active ≠ Stale ≠ Compact</strong> before the reader enters projection semantics.
+      <a href={localePath("en", "chapters/03-compaction-is-a-projection")}>§03</a>. How
+      <code>ContextBudgetPolicy</code> schedules the three into prior-replay / prepareStep planes
+      (order is contract) lives in
+      <a href={localePath("en", "chapters/03-compaction-is-a-projection") + "#budget-dsl"}
+        >§03 · #budget-dsl</a
+      >. This chapter’s job is: <strong>Active ≠ Stale ≠ Compact</strong> before the reader enters
+      projection semantics.
     </p>
 
     <aside class="history-aside">
