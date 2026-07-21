@@ -239,6 +239,22 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
       </p>
     </Section>
 
+    <Section
+      id="failure"
+      label="Desktop · Failure"
+      title="Failure stories"
+      lede="Composition failures should fail closed into user-visible states — not a half-wired runtime."
+    >
+      <ul class="plain-list">
+        <li>Second instance → single-instance lock refuses; no parallel writers on one workspace ledger</li>
+        <li>Invalid workspace / project root on send → refuse the turn; never silently land in the wrong tree</li>
+        <li>Runtime effects fail after settings patch → do not pretend BotRegistry / MCP reconciled</li>
+        <li>Preload asks for cleartext secrets → protocol refuse (masked only)</li>
+        <li>MCP config change during active turn → old backend finishes before snapshot swap (no force-kill)</li>
+        <li>Teaching Desktop main as the <code>runtime-host</code> four-op surface → teaching error</li>
+      </ul>
+    </Section>
+
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside · mechanism</p>
       <p>

@@ -147,6 +147,22 @@ connecting → cancelled (+ guarded rollback)</pre>
     </Section>
 
     <Section
+      id="failure"
+      label="Bot · Failure"
+      title="失败故事"
+      lede="取消与迟到 credential 宁可停本地，也不假装平台已撤销。"
+    >
+      <ul class="plain-list">
+        <li>Abort / 换 session fence → 停 polling；迟到 credential 不落盘</li>
+        <li>CAS predicate 不匹配 → rollback no-op（他人已改 owned fields）</li>
+        <li>非 allowlist 用户 → 不进 SessionManager turn</li>
+        <li>Bridge credential / domain / enabled 变化 → stop old → create new（非原地热更）</li>
+        <li>Discord / QQ：产品面 manual-only；勿教成扫码 onboarding 已接线</li>
+        <li>平台侧无 revoke 承诺——取消只清本地状态</li>
+      </ul>
+    </Section>
+
+    <Section
       id="nongoals"
       label="Bot · Non-goals"
       title="V1 明确不做"

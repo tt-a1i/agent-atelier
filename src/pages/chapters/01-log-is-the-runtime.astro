@@ -927,6 +927,41 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       SQLite 路径额外承载 tool journal（T1/T2 边界投影）。JSONL 与 SQLite
       <strong>二选一 canonical</strong>，不是「两边各写一份当双活」——教双背板诚实，不要教成双写复制。
     </p>
+    <h4 class="subhead">Sticky 迁移：<code>MAKA_RUNTIME_SQLITE_CANONICAL</code> 不是拨开关</h4>
+    <p>
+      <code>openRuntimeEventPersistence(&#123; workspaceRoot, sqliteCanonical &#125;)</code>（
+      <code>runtime-event-transfer.ts</code>）判决：
+    </p>
+    <ul class="plain-list">
+      <li>
+        仅当 <code>sqliteCanonical === false</code> <strong>且</strong> 根上尚无
+        <code>runtime.sqlite</code> → 走 JSONL。
+      </li>
+      <li>
+        否则（旗标为 <code>1</code>，或文件已存在）→ 打开 SQLite，并尽力导入遗留
+        <code>runtime-events.jsonl</code> 树（带 source marker）。
+      </li>
+    </ul>
+    <p>
+      因此 <code>MAKA_RUNTIME_SQLITE_CANONICAL=1</code> 是<strong>workspace 迁移触发器</strong>：一旦出现
+      <code>runtime.sqlite</code>，关掉环境变量也不会退回 JSONL——否则 SQLite-only 事件会突然「消失」。系统
+      <strong>从不双写</strong>两个 RuntimeEvent 真相源。CLI 接线见
+      <code>packages/cli/src/runtime-bootstrap.ts</code>；合同：
+      <code>runtime-event-transfer.test.ts</code>（stickyCanonical）。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Tool journal Current vs Phase 3</p>
+      <p>
+        Phase 2（Current，旗标/文件路径）：SQLite schema、T1/T2、<code>operationId</code>、CAS、partial
+        snapshot、JSONL 导入/导出、单一 canonical writer。Journal 查询状态缩窄为
+        <code>prepared | outcome_committed</code>。崩溃后未配对 call 仍走 Phase0 park——
+        <strong>不是</strong>自动副作用 reconcile。Phase 3 Target：journal
+        <code>indeterminate / reconciled / parked</code> 写入、专用 reconciler、recovery
+        verification——未实现；未标注 Current 的提案勿当产品能力。权威长稿：
+        <code>docs/runtime-resume-tool-journal-design-draft.zh-CN.md</code>（以 ADR + 代码为准覆盖旧「Journal
+        事实源」表述）。
+      </p>
+    </div>
 
     <h3 id="derived-stores" class="subhead">派生 / 弱耐久 store</h3>
     <div class="table-wrap" role="region" aria-label="派生 store" tabindex="0">
@@ -2014,6 +2049,47 @@ providerTools = [...visibleTools, invalid]         # invalid 永不广告</pre>
         <code>SKILL.md</code> 正文是产品内容——本站只教<strong>机制</strong>，不把它们读成 Destination。
       </p>
     </div>
+    <h3 id="skills-failure" class="subhead">失败故事</h3>
+    <div class="table-wrap" role="region" aria-label="Skills 失败矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">情形</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>技能 disabled</td>
+            <td>catalog 与 invoke 列表均排除</td>
+          </tr>
+          <tr>
+            <td>host 缺 <code>required-tools</code> / capabilities</td>
+            <td>隐藏（<code>required_tools_missing</code>）；不广告</td>
+          </tr>
+          <tr>
+            <td>预算超限</td>
+            <td>后序条目省略广告；id 仍列出；仍可按 id 懒加载</td>
+          </tr>
+          <tr>
+            <td>未知 invoke 名</td>
+            <td>单条失败；其他调用与发送继续</td>
+          </tr>
+          <tr>
+            <td>正文过大 / 校验失败</td>
+            <td>load fail；不假装已注入</td>
+          </tr>
+          <tr>
+            <td><code>allowed-tools: Bash</code> 声明</td>
+            <td>仅信息；PermissionEngine 仍门禁</td>
+          </tr>
+          <tr>
+            <td>跨源重复 id</td>
+            <td>先发现者胜</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <aside class="history-aside">
       <p class="history-aside__tag">验证</p>
       <p>
@@ -2079,6 +2155,59 @@ providerTools = [...visibleTools, invalid]         # invalid 永不广告</pre>
         MCP」CRUD。V2 backlog：OAuth 2.1 + PKCE、resources UI、loopback proxy、更细粒度 trusted-server
         policy——不要把 backlog 读成 Current。
       </p>
+    </div>
+    <h3 id="mcp-failure" class="subhead">失败故事</h3>
+    <div class="table-wrap" role="region" aria-label="MCP 失败矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">情形</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>同 server 并发 connect</td>
+            <td>单一 active promise</td>
+          </tr>
+          <tr>
+            <td>Connect fail</td>
+            <td>关闭半开 client/transport；status error</td>
+          </tr>
+          <tr>
+            <td><code>tools/list_changed</code></td>
+            <td>只刷新该 server 的 tool cache</td>
+          </tr>
+          <tr>
+            <td>Config fingerprint 变化</td>
+            <td>受影响 server disconnect + reconnect</td>
+          </tr>
+          <tr>
+            <td>Tool call abort</td>
+            <td>caller abort &gt; timeout</td>
+          </tr>
+          <tr>
+            <td>MCP <code>isError</code></td>
+            <td>进入 Maka error path（带 server/tool 上下文）</td>
+          </tr>
+          <tr>
+            <td>stdio crash</td>
+            <td>stderr 尾 ≤10 行，redact / truncate</td>
+          </tr>
+          <tr>
+            <td>Proxy 名碰撞</td>
+            <td>build 时 throw</td>
+          </tr>
+          <tr>
+            <td><code>readOnlyHint: true</code> 却会突变</td>
+            <td>仍 <code>network_send</code>；explore fail-closed</td>
+          </tr>
+          <tr>
+            <td>安装中途 cancel</td>
+            <td>配置不复活；tools 不可见</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <p>
       Desktop 侧 Computer Use 是另一条正交合同（观察帧 / cua-driver），见

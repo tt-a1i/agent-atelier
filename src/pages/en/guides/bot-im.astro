@@ -155,6 +155,22 @@ connecting → cancelled (+ guarded rollback)</pre>
     </Section>
 
     <Section
+      id="failure"
+      label="Bot · Failure"
+      title="Failure stories"
+      lede="Prefer stopping local work over pretending the platform revoked anything."
+    >
+      <ul class="plain-list">
+        <li>Abort / session-fence change → stop polling; late credentials never land</li>
+        <li>CAS predicate mismatch → rollback no-op (someone else changed owned fields)</li>
+        <li>Non-allowlist user → never reaches SessionManager turn</li>
+        <li>Bridge credential / domain / enabled change → stop old → create new (not in-place hot swap)</li>
+        <li>Discord / QQ: product surface is manual-only — do not teach QR onboarding as wired</li>
+        <li>No platform revoke promise — cancel only clears local state</li>
+      </ul>
+    </Section>
+
+    <Section
       id="nongoals"
       label="Bot · Non-goals"
       title="Explicitly out of V1"

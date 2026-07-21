@@ -239,6 +239,22 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
         <code>docs/research/trust-privacy-security-deep-outline.md</code>.
       </p>
     </Section>
+
+    <Section
+      id="failure"
+      label="Trust · Failure"
+      title="Failure stories"
+      lede="Heuristic screening failure ≠ OS-boundary failure — do not conflate reports."
+    >
+      <ul class="plain-list">
+        <li>Malformed / missing privacy context → fail-closed as incognito block; never “guess allow”</li>
+        <li><code>incognitoActive: true</code> → WebSearch / thread search / local memory consumers blocked</li>
+        <li>credentials path symlink / traversal → refuse read/write</li>
+        <li>Renderer asks for cleartext secrets → IPC refuse; masked only</li>
+        <li>PermissionEngine / redact / allowlist bypass → ordinary bug (not OS boundary breach)</li>
+        <li>Claiming Seatbelt README lag as “already sandboxed” → honesty failure; code + #sandbox win</li>
+      </ul>
+    </Section>
   </article>
 </ReportLayout>
 

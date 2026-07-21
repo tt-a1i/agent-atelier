@@ -619,6 +619,55 @@ cancelled → pending       only explicitReopen</pre>
       Grading requires <code>verification.protectedPaths</code>: restore from the pristine fixture after
       the agent and before the command — rewriting tests must not cheat.
     </p>
+    <h3 id="harbor-failure" class="subhead">Failure stories</h3>
+    <div class="table-wrap" role="region" aria-label="Harbor failure matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Situation</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CLI asks for real backend without isolation</td>
+            <td>Non-zero refuse</td>
+          </tr>
+          <tr>
+            <td>Missing / empty isolation label</td>
+            <td>Validation fail</td>
+          </tr>
+          <tr>
+            <td>Agent rewrites tests under <code>protectedPaths</code></td>
+            <td>Restored from pristine; verify sees clean fixture</td>
+          </tr>
+          <tr>
+            <td>Agent fails verification</td>
+            <td>Valid scored data; process may exit 0</td>
+          </tr>
+          <tr>
+            <td>Invalid spec / crash before result</td>
+            <td>Infra; non-zero</td>
+          </tr>
+          <tr>
+            <td><code>isolation_required</code> / <code>setup_failed</code></td>
+            <td>infra_failure; shouldThrow</td>
+          </tr>
+          <tr>
+            <td>Budget / timeout patterns</td>
+            <td>budget_exhausted; shouldThrow false</td>
+          </tr>
+          <tr>
+            <td>Agent incomplete / tool_failed</td>
+            <td>agent_incomplete; shouldThrow false</td>
+          </tr>
+          <tr>
+            <td>Path escape in isolated tools</td>
+            <td>Reject before exec</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <aside class="history-aside">
       <p class="history-aside__tag">Verification</p>
       <p>
@@ -716,6 +765,55 @@ cancelled → pending       only explicitReopen</pre>
         ledger (corpus #49). Do not read one <code>agent_swarm</code> call as a cross-process durable
         checkpoint.
       </p>
+    </div>
+    <h3 id="swarm-failure" class="subhead">Failure stories</h3>
+    <div class="table-wrap" role="region" aria-label="Swarm/Team failure matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Situation</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nested <code>agent_swarm</code> in child</td>
+            <td>Tool excluded / unavailable</td>
+          </tr>
+          <tr>
+            <td>Invalid item before start</td>
+            <td>Whole call fails; no partial start</td>
+          </tr>
+          <tr>
+            <td>One child fails</td>
+            <td>Siblings kept; aggregate status reflects mix</td>
+          </tr>
+          <tr>
+            <td>Parent cancel mid-batch</td>
+            <td>Active signalled; queued never start; cancelled rows</td>
+          </tr>
+          <tr>
+            <td>Expert widens tools beyond archetype</td>
+            <td>Definition/build rejects (narrow-only)</td>
+          </tr>
+          <tr>
+            <td>Claim already taken</td>
+            <td>Fail closed</td>
+          </tr>
+          <tr>
+            <td>Fresh member omits <code>after_seq</code></td>
+            <td>Reads role history from start of <strong>current</strong> lead run</td>
+          </tr>
+          <tr>
+            <td>Corrupt mailbox log</td>
+            <td>Fail closed</td>
+          </tr>
+          <tr>
+            <td>Treat swarm as durable TaskRun</td>
+            <td><strong>Teaching error</strong> — different identity</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <aside class="history-aside">
       <p class="history-aside__tag">Verification</p>

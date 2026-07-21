@@ -226,6 +226,22 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
         <code>docs/research/trust-privacy-security-deep-outline.md</code>。
       </p>
     </Section>
+
+    <Section
+      id="failure"
+      label="Trust · Failure"
+      title="失败故事"
+      lede="启发式筛查失败不等于 OS 边界失败——不要混报。"
+    >
+      <ul class="plain-list">
+        <li>畸形 / 缺失 privacy context → fail-closed 当隐身拦截，永不「猜允许」</li>
+        <li><code>incognitoActive: true</code> → WebSearch / thread search / local memory 等消费者阻断</li>
+        <li>credentials 路径 symlink / traversal → 拒绝读写</li>
+        <li>Renderer 索取明文 secret → IPC 拒绝；只给 masked</li>
+        <li>PermissionEngine / redact / allowlist 被绕过 → 普通 bug（非 OS 安全边界破裂）</li>
+        <li>把 Seatbelt README 滞后当「已沙箱」对外声称 → 诚实失败；以 code + #sandbox 为准</li>
+      </ul>
+    </Section>
   </article>
 </ReportLayout>
 

@@ -235,6 +235,22 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
       </p>
     </Section>
 
+    <Section
+      id="failure"
+      label="Desktop · Failure"
+      title="失败故事"
+      lede="Main 组合失败应 fail closed 到用户可见，而不是半接线 runtime。"
+    >
+      <ul class="plain-list">
+        <li>Second instance → 单实例锁拒绝；不并行写同一 workspace ledger</li>
+        <li>Session send 时 workspace / project root 无效 → 拒绝 turn，不静默落到错误目录</li>
+        <li>Settings patch 后 runtime effects 失败 → 不假装 BotRegistry / MCP 已 reconcile</li>
+        <li>Preload 请求明文 secret → 协议层拒绝（masked only）</li>
+        <li>Active turn 期间 MCP 配置变更 → 旧 backend 跑完再换 snapshot（不强杀）</li>
+        <li>把 Desktop main 当成 <code>runtime-host</code> 四操作面 → 教学错误</li>
+      </ul>
+    </Section>
+
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注 · 机制</p>
       <p>

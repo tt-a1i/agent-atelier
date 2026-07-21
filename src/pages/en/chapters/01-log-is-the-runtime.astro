@@ -998,6 +998,42 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       SQLite are <strong>alternate canonicals</strong> — not dual-write replication. Teach the dual
       honestly; do not invent an active-active story.
     </p>
+    <h4 class="subhead">Sticky migration: <code>MAKA_RUNTIME_SQLITE_CANONICAL</code> is not a toggle</h4>
+    <p>
+      <code>openRuntimeEventPersistence(&#123; workspaceRoot, sqliteCanonical &#125;)</code> (
+      <code>runtime-event-transfer.ts</code>) decides:
+    </p>
+    <ul class="plain-list">
+      <li>
+        Only when <code>sqliteCanonical === false</code> <strong>and</strong>
+        <code>runtime.sqlite</code> is absent at the root → JSONL.
+      </li>
+      <li>
+        Otherwise (flag <code>1</code>, or the file already exists) → open SQLite and best-effort
+        import the legacy <code>runtime-events.jsonl</code> tree (with source markers).
+      </li>
+    </ul>
+    <p>
+      So <code>MAKA_RUNTIME_SQLITE_CANONICAL=1</code> is a <strong>workspace migration trigger</strong>:
+      once <code>runtime.sqlite</code> exists, clearing the env var does not fall back to JSONL —
+      otherwise SQLite-only events would vanish. The system <strong>never dual-writes</strong> two
+      RuntimeEvent sources of truth. CLI wiring:
+      <code>packages/cli/src/runtime-bootstrap.ts</code>; contract:
+      <code>runtime-event-transfer.test.ts</code> (stickyCanonical).
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Tool journal Current vs Phase 3</p>
+      <p>
+        Phase 2 (Current, flag/file path): SQLite schema, T1/T2, <code>operationId</code>, CAS,
+        partial snapshots, JSONL import/export, single canonical writer. Journal query states narrow
+        to <code>prepared | outcome_committed</code>. Unmatched calls after crash still park via
+        Phase0 — <strong>not</strong> automatic side-effect reconcile. Phase 3 Target: journal
+        <code>indeterminate / reconciled / parked</code> writes, dedicated reconciler, recovery
+        verification — not shipped; do not read unmarked proposals as product. Long draft:
+        <code>docs/runtime-resume-tool-journal-design-draft.zh-CN.md</code> (ADR + code override older
+        “journal as truth” wording).
+      </p>
+    </div>
 
     <h3 id="derived-stores" class="subhead">Derived / weaker-durability stores</h3>
     <div class="table-wrap" role="region" aria-label="Derived stores" tabindex="0">
@@ -2125,6 +2161,47 @@ providerTools = [...visibleTools, invalid]         # invalid never advertised</p
         <strong>mechanism</strong>, not those essays as Destination.
       </p>
     </div>
+    <h3 id="skills-failure" class="subhead">Failure stories</h3>
+    <div class="table-wrap" role="region" aria-label="Skills failure matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Situation</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Skill disabled</td>
+            <td>Excluded from catalog and invoke list</td>
+          </tr>
+          <tr>
+            <td>Host missing <code>required-tools</code> / capabilities</td>
+            <td>Hidden (<code>required_tools_missing</code>); not advertised</td>
+          </tr>
+          <tr>
+            <td>Budget exceeded</td>
+            <td>Later ads omitted; ids listed; still loadable by id</td>
+          </tr>
+          <tr>
+            <td>Unknown invoke name</td>
+            <td>Per-request failure; others proceed</td>
+          </tr>
+          <tr>
+            <td>Body too large / validation fail</td>
+            <td>Load fail; do not pretend injection succeeded</td>
+          </tr>
+          <tr>
+            <td><code>allowed-tools: Bash</code> claim</td>
+            <td>Informational only; PermissionEngine still gates</td>
+          </tr>
+          <tr>
+            <td>Duplicate id across sources</td>
+            <td>First-found wins</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <aside class="history-aside">
       <p class="history-aside__tag">Verification</p>
       <p>
@@ -2191,6 +2268,59 @@ providerTools = [...visibleTools, invalid]         # invalid never advertised</p
         Desktop “Extensions &gt; MCP” CRUD. V2 backlog: OAuth 2.1 + PKCE, resources UI, loopback
         proxy, finer trusted-server policy — do not read backlog as Current.
       </p>
+    </div>
+    <h3 id="mcp-failure" class="subhead">Failure stories</h3>
+    <div class="table-wrap" role="region" aria-label="MCP failure matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Situation</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Concurrent connect same server</td>
+            <td>Single active promise</td>
+          </tr>
+          <tr>
+            <td>Connect fail</td>
+            <td>Close half-open client/transport; status error</td>
+          </tr>
+          <tr>
+            <td><code>tools/list_changed</code></td>
+            <td>Refresh that server’s tool cache only</td>
+          </tr>
+          <tr>
+            <td>Config fingerprint change</td>
+            <td>Disconnect + reconnect affected server</td>
+          </tr>
+          <tr>
+            <td>Tool call abort</td>
+            <td>Caller abort &gt; timeout</td>
+          </tr>
+          <tr>
+            <td>MCP <code>isError</code></td>
+            <td>Maka error path with server/tool context</td>
+          </tr>
+          <tr>
+            <td>stdio crash</td>
+            <td>stderr tail ≤10 lines, redacted/truncated</td>
+          </tr>
+          <tr>
+            <td>Proxy name collision</td>
+            <td>Throw at build time</td>
+          </tr>
+          <tr>
+            <td><code>readOnlyHint: true</code> on mutating tool</td>
+            <td>Still <code>network_send</code>; explore fail-closed</td>
+          </tr>
+          <tr>
+            <td>Cancel mid-install</td>
+            <td>No config resurrection; tools invisible</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <p>
       Desktop Computer Use is an orthogonal contract (observation frames / cua-driver) — see

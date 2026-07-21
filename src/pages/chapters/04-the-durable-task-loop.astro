@@ -585,6 +585,55 @@ cancelled → pending       only explicitReopen</pre>
       <code>verification.protectedPaths</code>：agent 结束后、命令前从 pristine fixture
       恢复——模型改写自己的测试不能作弊。
     </p>
+    <h3 id="harbor-failure" class="subhead">失败故事</h3>
+    <div class="table-wrap" role="region" aria-label="Harbor 失败矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">情形</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CLI 无隔离却要真实 backend</td>
+            <td>非零拒绝</td>
+          </tr>
+          <tr>
+            <td>isolation label 缺失 / 空</td>
+            <td>校验失败</td>
+          </tr>
+          <tr>
+            <td>Agent 改写 <code>protectedPaths</code> 下测试</td>
+            <td>从 pristine 恢复；verify 见干净夹具</td>
+          </tr>
+          <tr>
+            <td>Agent 验证失败</td>
+            <td>合法计分数据；进程可 exit 0</td>
+          </tr>
+          <tr>
+            <td>Invalid spec / 出结果前崩溃</td>
+            <td>infra；非零</td>
+          </tr>
+          <tr>
+            <td><code>isolation_required</code> / <code>setup_failed</code></td>
+            <td>infra_failure；shouldThrow</td>
+          </tr>
+          <tr>
+            <td>Budget / timeout 模式</td>
+            <td>budget_exhausted；shouldThrow false</td>
+          </tr>
+          <tr>
+            <td>Agent incomplete / tool_failed</td>
+            <td>agent_incomplete；shouldThrow false</td>
+          </tr>
+          <tr>
+            <td>隔离工具路径逃逸</td>
+            <td>exec 前拒绝</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <aside class="history-aside">
       <p class="history-aside__tag">验证</p>
       <p>
@@ -677,6 +726,55 @@ cancelled → pending       only explicitReopen</pre>
         <code>TaskRun</code> 解决跨 Attempt 的 durable envelope。二者都不是 session task ledger（见 corpus
         #49）。不要把一次 <code>agent_swarm</code> 误读成已经获得跨进程 durable checkpoint。
       </p>
+    </div>
+    <h3 id="swarm-failure" class="subhead">失败故事</h3>
+    <div class="table-wrap" role="region" aria-label="Swarm/Team 失败矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">情形</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>子项嵌套 <code>agent_swarm</code></td>
+            <td>工具排除 / 不可用</td>
+          </tr>
+          <tr>
+            <td>启动前非法 item</td>
+            <td>整次调用失败；无部分启动</td>
+          </tr>
+          <tr>
+            <td>单 child 失败</td>
+            <td>兄弟保留；聚合 status 反映混合</td>
+          </tr>
+          <tr>
+            <td>父 cancel 中途</td>
+            <td>活跃项信号；队列永不启动；cancelled 行</td>
+          </tr>
+          <tr>
+            <td>Expert 放宽超出 archetype 的工具</td>
+            <td>定义/构建拒绝（narrow-only）</td>
+          </tr>
+          <tr>
+            <td>Task claim 已被占</td>
+            <td>fail closed</td>
+          </tr>
+          <tr>
+            <td>新成员省略 <code>after_seq</code></td>
+            <td>从<strong>当前</strong> lead run 起点读角色历史</td>
+          </tr>
+          <tr>
+            <td>Mailbox 日志损坏</td>
+            <td>fail closed</td>
+          </tr>
+          <tr>
+            <td>把 swarm 当成 durable TaskRun</td>
+            <td><strong>教学错误</strong>——身份不同</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <aside class="history-aside">
       <p class="history-aside__tag">验证</p>
