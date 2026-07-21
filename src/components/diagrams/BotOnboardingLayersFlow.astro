@@ -1,0 +1,164 @@
+---
+/**
+ * /guides/bot-im — onboarding (ephemeral) vs runtime bridge (long-lived).
+ */
+---
+
+<svg
+  class="bo-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="bo-kicker bo-stage bo-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · ONBOARDING ≠ BRIDGE · SECRETS STAY IN MAIN
+  </text>
+  <line
+    class="bo-stage bo-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="bo-stage bo-stage--1" transform="translate(8,52)">
+    <rect width="190" height="96" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="bo-idx" x="12" y="24" fill="var(--accent)">1 · UI</text>
+    <text class="bo-title" x="12" y="50" fill="var(--ink)">Renderer modal</text>
+    <text class="bo-line" x="12" y="76" fill="var(--mute)">opaque sessionId</text>
+  </g>
+
+  <path
+    class="bo-stage bo-stage--1"
+    d="M206 100 H236"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#bo-arrow)"
+  ></path>
+
+  <g class="bo-stage bo-stage--2" transform="translate(244,52)">
+    <rect width="190" height="96" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="bo-idx" x="12" y="24" fill="var(--accent)">2 · MAIN</text>
+    <text class="bo-title" x="12" y="50" fill="var(--ink)">OnboardingService</text>
+    <text class="bo-line" x="12" y="76" fill="var(--mute)">QR / poll / secrets</text>
+  </g>
+
+  <path
+    class="bo-stage bo-stage--2"
+    d="M442 100 H472"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#bo-arrow)"
+  ></path>
+
+  <g class="bo-stage bo-stage--3" transform="translate(480,52)">
+    <rect width="178" height="96" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="bo-idx" x="12" y="24" fill="var(--accent)">3 · STORE</text>
+    <text class="bo-title" x="12" y="50" fill="var(--ink)">SettingsStore</text>
+    <text class="bo-line" x="12" y="76" fill="var(--mute)">updateIf CAS</text>
+  </g>
+
+  <path
+    class="bo-stage bo-stage--3"
+    d="M666 100 H696"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#bo-arrow)"
+  ></path>
+
+  <g class="bo-stage bo-stage--4" transform="translate(704,52)">
+    <rect width="156" height="96" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="bo-idx" x="12" y="24" fill="var(--accent)">4 · RUNTIME</text>
+    <text class="bo-title" x="12" y="50" fill="var(--ink)">BotRegistry</text>
+    <text class="bo-line" x="12" y="76" fill="var(--mute)">long-lived bridge</text>
+  </g>
+
+  <g class="bo-stage bo-stage--5" transform="translate(8,176)">
+    <rect width="852" height="100" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="bo-idx" x="14" y="28" fill="var(--accent)">MESSAGE BOUNDARY</text>
+    <text class="bo-line" x="14" y="56" fill="var(--ink)">
+      platform payload → BotMessageEvent → bot-incoming-main → SessionManager
+    </text>
+    <text class="bo-line" x="14" y="80" fill="var(--mute)">
+      onboarding session map is memory-only · agent JSONL starts only on incoming path
+    </text>
+  </g>
+
+  <defs>
+    <marker id="bo-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .bo-flow {
+    font-family: var(--sans);
+  }
+  .bo-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .bo-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .bo-title {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .bo-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bo-stage {
+      opacity: 0;
+      animation: bo-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .bo-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .bo-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .bo-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .bo-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .bo-stage--4 {
+      animation-delay: 0.5s;
+    }
+    .bo-stage--5 {
+      animation-delay: 0.62s;
+    }
+    @keyframes bo-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bo-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

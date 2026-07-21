@@ -2,7 +2,7 @@
 
 **Ticket:** [#56](https://github.com/tt-a1i/agent-atelier/issues/56) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline — narrative home = §01 `#sandbox` cross-link + §02 ToolRuntime deepen (not yet full ship)  
+**Status:** **shipped** §02 `#shell-side-effects` (CN+EN) via Task [#68](https://github.com/tt-a1i/agent-atelier/issues/68) · research [#56](https://github.com/tt-a1i/agent-atelier/issues/56) 
 **Atelier home:** §02 side-effects deepen + lean pointer from §01 sandbox/spawn  
 **Cross-links:** [`sandbox-boundary-deep-outline.md`](./sandbox-boundary-deep-outline.md) · storage shell-run-store (#55)
 

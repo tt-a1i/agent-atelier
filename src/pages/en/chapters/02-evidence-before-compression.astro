@@ -664,6 +664,15 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
       live in <code>source</code>. That fits Headless heavy-task, but is not universal TurnEvidence
       across Runtime surfaces.
     </p>
+    <p>
+      From Phase 2A, compact tool evidence may point back to an immutable Runtime
+      <code>function_call</code>/<code>function_response</code> range via
+      <code>heavy_task_evidence_provenance_linked</code> — the summary stays on Task; fact ownership
+      stays on Runtime. No committed response → no provenance. Protocol:
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#execution-evidence"}
+        >§01 · #execution-evidence</a
+      >.
+    </p>
   </Section>
 
   <Section
@@ -800,6 +809,14 @@ activeEstimatedTokensSaved</pre>
   .figure-note strong {
     font-weight: 600;
     color: var(--ink);
+  }
+
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
   }
 
   .code-block {

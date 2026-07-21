@@ -1,0 +1,206 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import BotOnboardingLayersFlow from "../../components/diagrams/BotOnboardingLayersFlow.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/bot-im");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Bot / IM 接入 · Agent Atelier"
+  description="Maka Desktop IM 扫码接入与 runtime bridge：onboarding ≠ 长连接；secrets 留在 main；CAS rollback；BotMessageEvent 边界——配套研报，不是第七世界观章。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Bot / IM 接入</span>
+        <span class="masthead__title-en">Bot onboarding &amp; IM bridges</span>
+      </h1>
+      <p class="masthead__sub">
+        产品面：二维码接入与手动配置如何落到 Settings → BotRegistry → SessionManager。正交于 §01–§06
+        Runtime 世界观——从 <a href={`${ch01}#trust`}>§01 · #trust</a> 进入信任边界后，再读本页。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/bot-im</span>
+        <span>Research · #58 · Task · #69</span>
+        <span>
+          <a href={localePath("en", "guides/bot-im")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Bot · Scene"
+      title="两条路径，一种 runtime"
+      lede="快捷扫码与手动配置都落到同一套 channel settings + BotRegistry——不另建第二套 bot runtime。"
+    >
+      <p>
+        Maka Desktop 的 IM 接入支持：扫码（钉钉 / 飞书·Lark / 企业微信 / 微信）自动取得 credential
+        并启用 channel；或 provider-specific 手动配置作为 fallback。Onboarding 是
+        <strong>main-process capability</strong>：不进 MCP manager，不写 agent session
+        JSONL。权威冲突时 <strong>code + contract tests 胜出</strong>。
+      </p>
+      <blockquote class="pull">
+        Onboarding is ephemeral QR/session; the bridge is long-lived. Secrets never cross preload.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="four-layers"
+      label="Bot · Layers"
+      title="四层：contract → service → settings effects → runtime bots"
+      lede="Renderer 只拿 redacted snapshot；device code / poll token / secret 只活在 main。"
+    >
+      <DiagramFigure
+        caption="图 · UI → BotOnboardingService → SettingsStore.updateIf → BotRegistry bridge；底栏钉死 BotMessageEvent → SessionManager。"
+        alt="四层：Renderer modal、OnboardingService、SettingsStore CAS、BotRegistry；底栏消息边界到 SessionManager。"
+      >
+        <BotOnboardingLayersFlow />
+      </DiagramFigure>
+      <ol class="plain-list numbered">
+        <li>
+          <code>@maka/core/bot-onboarding</code> — provider / brand / state / renderer-safe snapshot
+          contract；无 I/O。
+        </li>
+        <li>
+          Desktop main <code>BotOnboardingService</code> — session 权威、HTTP polling、credential
+          落盘、cancel rollback、runtime effect。
+        </li>
+        <li>
+          <code>applySettingsRuntimeEffects</code> → <code>BotRegistry</code> reconcile channel。
+        </li>
+        <li>
+          <code>@maka/runtime/bots</code> — 长连接、消息映射、<code>allowedUserIds</code>、发送。
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="state-machine"
+      label="Bot · State"
+      title="状态机：waiting → connected / cancelled"
+      lede="Renderer 只持 opaque sessionId；同 provider 新建 session 会 abort 旧 session。"
+    >
+      <pre class="code-block" aria-label="Onboarding 状态机">[*] → waiting (QR ready)
+waiting / scanned → connecting (confirmed)
+connecting → connected (persisted + runtime applied)
+waiting / scanned → expired | denied | cancelled | error
+connecting → cancelled (+ guarded rollback)</pre>
+      <p>
+        Snapshot 字段固定：<code>sessionId</code>、<code>provider</code>、可选
+        <code>brand</code>、<code>state</code>、可选 QR data URL / expiry /
+        <code>nextPollAfterMs</code>、<code>canOpenInBrowser</code>、非敏感 identity、redacted
+        error。Credential 已存但 bridge 未健康时，用 <code>warning</code>——诚实通知，不是假
+        connected。
+      </p>
+    </Section>
+
+    <Section
+      id="rollback-cas"
+      label="Bot · Rollback"
+      title="Credential commit 与取消：updateIf CAS"
+      lede="只回滚本次 onboarding 拥有的字段；volatile status 不进 CAS predicate。"
+    >
+      <ol class="plain-list numbered">
+        <li>读取 previous channel snapshot。</li>
+        <li>映射 credential → channel patch（<code>enabled: true</code>、<code>readiness: configured</code>）。</li>
+        <li>原子写入 settings。</li>
+        <li><code>applySettingsRuntimeEffects</code> → BotRegistry reconcile。</li>
+        <li>每个 await 边界后重新检查 current-session fence 与 AbortSignal。</li>
+      </ol>
+      <p>
+        取消时用 <code>SettingsStore.updateIf(predicate, patch)</code>：仅当 owned identity fields
+        仍等于本次写入值才回滚 previous。状态字段（连接 status 等）排除出 predicate，避免无关 status
+        写把 rollback 静默打成 no-op。平台侧不承诺 revoke——取消只停本地 polling / 阻止迟到
+        credential 落盘 / 已 commit 则 guarded rollback。
+      </p>
+    </Section>
+
+    <Section
+      id="message-boundary"
+      label="Bot · Messages"
+      title="消息边界：BotMessageEvent → turn"
+      lede="Onboarding 内存 session map ≠ agent ledger；ledger 只从 incoming path 开始。"
+    >
+      <pre class="code-block" aria-label="消息边界">platform payload
+  → bridge map → BotMessageEvent
+  → bot-incoming-main
+  → SessionManager (turn / JSONL)</pre>
+      <p>
+        Allowlist 是 <code>allowedUserIds</code>——没有远程 pairing 审批。仅 allowlist 变化时，支持的
+        bridge 可原地更新 policy；credential / domain / enabled 变化则 stop old → create new。
+      </p>
+    </Section>
+
+    <Section
+      id="nongoals"
+      label="Bot · Non-goals"
+      title="V1 明确不做"
+      lede="Destination 不要求把 IM 产品 UX 胀进 §01–§06。"
+    >
+      <ul class="plain-list">
+        <li>平台侧撤销 / 删除已创建应用</li>
+        <li>多账号与同 provider 并行 onboarding</li>
+        <li>Keychain at-rest encryption（当前 owner-only settings + masked IPC）</li>
+        <li>远程消息 pairing 审批</li>
+      </ul>
+      <aside class="history-aside">
+        <p class="history-aside__tag">验证</p>
+        <p>
+          机制引入：
+          <a href={`${import.meta.env.BASE_URL}history/pr/1197`}>maka:pr:1197</a>。测试：
+          <code>bot-onboarding-main.test.ts</code> · e2e <code>bot-onboarding.spec.ts</code> ·
+          <code>packages/runtime/src/bots/__tests__/*</code> ·
+          <code>bot-incoming-*.test.ts</code>。提纲：
+          <code>docs/research/bot-im-onboarding-deep-outline.md</code>。
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+</style>

@@ -2,7 +2,7 @@
 
 **Ticket:** [#58](https://github.com/tt-a1i/agent-atelier/issues/58) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline — companion recommended; no Runtime invariant change  
+**Status:** **shipped** companion `/guides/bot-im` (CN+EN) via Task [#69](https://github.com/tt-a1i/agent-atelier/issues/69) · research [#58](https://github.com/tt-a1i/agent-atelier/issues/58) 
 **Atelier home:** companion `/guides/bot-im` · lean §01 input-surface pointer via trust/privacy  
 **Cross-links:** [`trust-privacy-security-deep-outline.md`](./trust-privacy-security-deep-outline.md) · SECURITY input surfaces
 

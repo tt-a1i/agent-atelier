@@ -150,6 +150,16 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       Without an execution envelope the system only sees “some messages appeared,” never “did this
       execution truly end?”
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · teaching manual</p>
+      <p>
+        Archive <code>runtime-mainline-teaching-manual.md</code> pins the same split with three mental
+        models: user-facing <strong>Turn</strong>, system <strong>Run</strong>, and rebuildable
+        <strong>Event ledger</strong>. Chat strings cannot flatten tool calls, permissions, or
+        terminals. Current identity/event models follow this chapter and code; the manual is a
+        pedagogical delta only.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -263,6 +273,13 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         full production guarantee.
       </p>
     </div>
+    <p>
+      Pedagogical failure mode (archive teaching-manual delta): dropping a layer often does
+      <strong>not</strong> stop the system immediately — it squeezes responsibility into the wrong
+      place (Backend owning active runs, Session strings as terminal truth, or each product shell
+      rewriting the agent loop). Layering keeps a shared core reusable while shells (Desktop /
+      headless / Harbor) swap only the control plane.
+    </p>
 
     <aside class="history-aside">
       <p class="history-aside__tag">History aside · mechanism</p>
@@ -534,8 +551,10 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         enforcement: maka #843. If the local sandbox README still claims Linux
         <code>backend_not_implemented</code>, prefer the <code>LinuxBubblewrapBackend</code> registered by
         the default manager. Managed Bash inserts sandbox via <code>transformCommand</code>; PTY is
-        mutually exclusive with mandatory sandbox argv — spawn details in
-        <code>shell-pty-executor-deep-outline.md</code>.
+        mutually exclusive with mandatory sandbox argv — spawn / live≠result in
+        <a href={localePath("en", "chapters/02-evidence-before-compression") + "#shell-side-effects"}
+          >§02 · #shell-side-effects</a
+        >.
       </p>
     </aside>
   </Section>
@@ -572,9 +591,10 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       </li>
     </ul>
     <p>
-      IM / bot channels are one input surface (bot-onboarding contract): credential persistence is
-      separate from long-lived bridges; cancel paths use CAS rollback — do not pretend Keychain is
-      already shipped.
+      IM / bot channels are one input surface: credential persistence is separate from long-lived
+      bridges; cancel paths use CAS rollback — do not pretend Keychain is already shipped. Protocol
+      detail:
+      <a href={localePath("en", "guides/bot-im")}>/guides/bot-im</a>.
     </p>
   </Section>
 
@@ -1067,10 +1087,13 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
     lede="Cost spine: measure hit/miss/write before celebrating shorter prompts. prefixHash is Maka-local diagnostics — not the provider cache key."
   >
     <p>
-      An archived design note (extract durable ideas; <strong>not</strong> Current authority) left a
-      pressure scene: lowering the history budget cut total input tokens while
-      <strong>cache miss and estimated cost rose</strong>. The root is often not “the model got
-      more expensive,” but durable-prefix pollution (cwd/date), active tool-schema churn, or history
+      Cost discipline mounts on the existing execution spine — not a separate
+      <code>CostRuntime</code> (design judgment from archive
+      <code>deepseek-reasonix-cost-runtime-design.md</code>; open decisions defer to Current code). An
+      archived note (extract durable ideas; <strong>not</strong> Current authority) left a pressure
+      scene: lowering the history budget cut total input tokens while
+      <strong>cache miss and estimated cost rose</strong>. The root is often not “the model got more
+      expensive,” but durable-prefix pollution (cwd/date), active tool-schema churn, or history
       projection change — and local <code>prefixHash</code> / <code>requestShapeHash</code> only
       diagnose Maka’s own stable serialization. They are <strong>not</strong> DeepSeek’s (or any
       provider’s) internal cache key.

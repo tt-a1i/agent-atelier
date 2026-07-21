@@ -81,7 +81,7 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | **Sandbox boundary** | `packages/runtime/src/sandbox/**`, `@maka/core` `permission-profile*.ts`, sandbox tests | A+D+G+E | §01 `#sandbox` | **deep** (home locked #46; shipped #62) |
 | **Computer-use suite** | 6 current CU docs + `packages/computer-use` + `openai-computer-*.ts` + archive CU hardening | A+C+G | Companion `/guides/computer-use` + lean §01 pointer | **outline+shipped** → [`computer-use-six-contracts-deep-outline.md`](./computer-use-six-contracts-deep-outline.md) · live guide |
 | **Recovery Phase 0/1 + tool journal** | `runtime-resume-phase0*`, `phase1*`, `runtime-recovery-resolver-adr*`, `runtime-resume-tool-journal*`, `recovery-resolver.ts`, `runtime-resume.ts` | A+B+G | §01 `#recovery` deepen + §04 crash | **deep** (failpoint matrix + Resolver; #48) |
-| **Execution evidence spine** | `execution-evidence-spine.md`, `packages/core` execution-evidence | A+G | Cross-cut §02/§04/§05/§06 | **empty** as named protocol |
+| **Execution evidence spine** | `execution-evidence-spine.md`, `packages/core` execution-evidence | A+G | §01 `#execution-evidence` + lean §02/§04/§05/§06 | **deep** → [`execution-evidence-deep-outline.md`](./execution-evidence-deep-outline.md); live zh+en |
 | **Session task ledger** (≠ TaskRun) | `session-task-ledger-lifecycle.md`, `task-ledger-store.ts`, `task-ledger-tools.ts` | A+G | §04 `#ledger` | **deep** (contrast section; #49) |
 | **MCP runtime** | `mcp-runtime-architecture-draft.zh-CN.md`, `mcp-tools.ts`, `packages/mcp` | B+G | §01 `#mcp` | **outline+shipped** → [`mcp-runtime-deep-outline.md`](./mcp-runtime-deep-outline.md) |
 | **Agent swarm + expert team** | `agent-swarm.md`, `expert-team-runtime.md`, swarm/team tools | A+G | §04 `#swarm` | **outline+shipped** → [`agent-swarm-expert-team-deep-outline.md`](./agent-swarm-expert-team-deep-outline.md) |
@@ -89,23 +89,24 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | **Headless trust / Harbor isolation** | `packages/headless/README.md`, harbor/*, eval adapters | D+G | §04 `#harbor-trust` | **outline+shipped** → [`headless-harbor-trust-deep-outline.md`](./headless-harbor-trust-deep-outline.md) |
 | **Storage ledgers** | `packages/storage/**` (JSONL, sqlite-runtime, task/artifact stores) | G+D | §01 `#stores` + `#durability` | **outline** → [`storage-ledgers-deep-outline.md`](./storage-ledgers-deep-outline.md); lean durability shipped |
 | **Usage / cost telemetry code** | `telemetry/*`, `usage-stats-store.ts`, provider-request telemetry | G | §01 `#request-shape` → `#usage-stores` | **outline** → [`usage-cost-telemetry-deep-outline.md`](./usage-cost-telemetry-deep-outline.md); dual-store/pricing shipped |
-| **Shell / PTY / workspace executor** | `shell-*.ts`, `pty-*.ts`, `workspace-executor.ts` | G | §02 deepen + §01 sandbox pointer | **outline** → [`shell-pty-executor-deep-outline.md`](./shell-pty-executor-deep-outline.md) |
+| **Shell / PTY / workspace executor** | `shell-*.ts`, `pty-*.ts`, `workspace-executor.ts` | G | §02 `#shell-side-effects` + §01 sandbox pointer | **deep** (shipped #68) → [`shell-pty-executor-deep-outline.md`](./shell-pty-executor-deep-outline.md) |
 | **Filesystem worker / path containment** | `filesystem-worker/**`, `path-containment.ts` | G | §01/§02 | **empty** |
 | **Runtime-host / gateway** | `packages/runtime-host/**` | G | §01 `#runtime-host` lean; companion fog | **outline** → [`runtime-host-gateway-deep-outline.md`](./runtime-host-gateway-deep-outline.md); lean note shipped |
-| **Bot onboarding / IM bridges** | `bot-onboarding-runtime.zh-CN.md`, `runtime/src/bots/**` | B+G | Companion `/guides/bot-im` | **outline** → [`bot-im-onboarding-deep-outline.md`](./bot-im-onboarding-deep-outline.md) |
-| **Workspace privacy + SECURITY** | `workspace-privacy-context.md`, `SECURITY.md` | A | §01 `#trust` lean + companion fog | **outline** → [`trust-privacy-security-deep-outline.md`](./trust-privacy-security-deep-outline.md); lean callout shipped |
+| **Bot onboarding / IM bridges** | `bot-onboarding-runtime.zh-CN.md`, `runtime/src/bots/**` | B+G | Companion `/guides/bot-im` | **deep** (shipped #69) → [`bot-im-onboarding-deep-outline.md`](./bot-im-onboarding-deep-outline.md) · live guide |
+| **Workspace privacy + SECURITY** | `workspace-privacy-context.md`, `SECURITY.md` | A | §01 `#trust` + `/guides/security-privacy` | **outline+shipped** → [`trust-privacy-security-deep-outline.md`](./trust-privacy-security-deep-outline.md) · live companion |
 | **Desktop main composition** | `apps/desktop/src/main/**`, desktop/renderer READMEs | D+G | Entry or companion “product shell” | **empty** |
 
 ### Cluster 2 — Archive that still teaches (must not skip)
 
-**Full 40-file classification:** [`archive-still-teaches-sweep.md`](./archive-still-teaches-sweep.md) (2026-07-21) — **14 mine-delta · 15 history-only · 11 discard**.
+**Full 40-file classification:** [`archive-still-teaches-sweep.md`](./archive-still-teaches-sweep.md) (2026-07-21) — **14 mine-delta · 15 history-only · 11 discard**.  
+**Top-3 absorb:** [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md) (teaching manual + cost design + CU hardening).
 
 | Archive | Why mine | Atelier obligation |
 | --- | --- | --- |
-| `deepseek-reasonix-cost-runtime-design.md` | Best cost narrative; already partially mined into §01 | Keep asides honest; optional `/guides/cost` |
-| `runtime-mainline-teaching-manual.md` / `runtime-kernel.md` / v2 evolution | Overlapping teaching narrative; provenance | Diff vs Current §01; harvest only deltas |
+| `deepseek-reasonix-cost-runtime-design.md` | Best cost narrative | **absorbed** → §01 `#request-shape` honesty |
+| `runtime-mainline-teaching-manual.md` / `runtime-kernel.md` / v2 evolution | Overlapping teaching narrative | **manual absorbed**; kernel/v2 still delta-only |
 | `heavy-task-mainline-system-design.md` | Heavy-task chronicle | Cross-check §04/§05 Current |
-| Computer-use archive hardening suite | Incident → policy lessons | Fold into CU companion; do not re-litigate PR logs |
+| Computer-use archive hardening suite | Incident → policy lessons | **absorbed** → CU `#evidence-hardening` |
 | Threat-model archives (memory/search/voice) | Security posture snapshots | Only if atelier teaches those products |
 | `maka-memory-whitebox-contract.md` | Memory boundary | Companion if memory enters TOC |
 | Reverse-eng (codex/cursor, qoderwork) | External comparison | History track or aside only |
@@ -165,17 +166,17 @@ A seam is mined enough for Destination only when:
 | [#47](https://github.com/tt-a1i/agent-atelier/issues/47) | Computer-use suite teaching plan | **closed** — outline + `/guides/computer-use` |
 | [#48](https://github.com/tt-a1i/agent-atelier/issues/48) | Recovery Phase0/1 + tool journal | **closed** — outline + §01 `#recovery` |
 | [#49](https://github.com/tt-a1i/agent-atelier/issues/49) | Session task ledger ≠ TaskRun | **closed** — outline + §04 `#ledger` |
-| [#50](https://github.com/tt-a1i/agent-atelier/issues/50) | Execution-evidence spine | Cross-cut |
+| [#50](https://github.com/tt-a1i/agent-atelier/issues/50) | Execution-evidence spine | **closed** — outline + §01 `#execution-evidence` + lean cross-links |
 | [#51](https://github.com/tt-a1i/agent-atelier/issues/51) | MCP runtime | **closed** — outline + §01 `#mcp` |
 | [#52](https://github.com/tt-a1i/agent-atelier/issues/52) | Agent swarm + expert team | **closed** — outline + §04 `#swarm` |
 | [#53](https://github.com/tt-a1i/agent-atelier/issues/53) | Skill catalog policy | **closed** — outline + §01 `#skills` |
 | [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | **closed** — outline + §04 `#harbor-trust` |
 | [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **outline + lean §01 durability** |
-| [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **outline** (narrative → §02) |
+| [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **closed** research · [#68](https://github.com/tt-a1i/agent-atelier/issues/68) shipped §02 |
 | [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **outline + lean §01 note** |
-| [#58](https://github.com/tt-a1i/agent-atelier/issues/58) | Bot onboarding / IM | **outline** (companion later) |
-| [#59](https://github.com/tt-a1i/agent-atelier/issues/59) | Workspace privacy + SECURITY | **outline + lean §01 `#trust`** |
-| [#60](https://github.com/tt-a1i/agent-atelier/issues/60) | Archive-that-still-teaches sweep | **done** → `archive-still-teaches-sweep.md` |
+| [#58](https://github.com/tt-a1i/agent-atelier/issues/58) | Bot onboarding / IM | **closed** research · [#69](https://github.com/tt-a1i/agent-atelier/issues/69) shipped `/guides/bot-im` |
+| [#59](https://github.com/tt-a1i/agent-atelier/issues/59) | Workspace privacy + SECURITY | **closed** research + companion `/guides/security-privacy` shipped |
+| [#60](https://github.com/tt-a1i/agent-atelier/issues/60) | Archive-that-still-teaches sweep | **done** + top-3 absorb → `archive-mine-delta-absorb-2026-07-21.md` |
 | [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **outline + §01 `#usage-stores`** |
 
 Research → `docs/research/*`; Task → live zh+en.

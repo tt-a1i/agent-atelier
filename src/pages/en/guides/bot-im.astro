@@ -1,0 +1,213 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import BotOnboardingLayersFlow from "../../../components/diagrams/BotOnboardingLayersFlow.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/bot-im");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Bot / IM onboarding · Agent Atelier"
+  description="Maka Desktop IM QR onboarding and runtime bridges: onboarding ≠ long-lived bridge; secrets stay in main; CAS rollback; BotMessageEvent boundary — companion report, not a seventh worldview chapter."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Bot / IM 接入</span>
+        <span class="masthead__title-en">Bot onboarding &amp; IM bridges</span>
+      </h1>
+      <p class="masthead__sub">
+        Product surface: how QR and manual config land in Settings → BotRegistry → SessionManager.
+        Orthogonal to §01–§06 Runtime worldview — enter via
+        <a href={`${ch01}#trust`}>§01 · #trust</a>, then this page.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/bot-im</span>
+        <span>Research · #58 · Task · #69</span>
+        <span>
+          <a href={localePath("zh", "guides/bot-im")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Bot · Scene"
+      title="Two paths, one runtime"
+      lede="QR and manual config both land in the same channel settings + BotRegistry — no second bot runtime."
+    >
+      <p>
+        Maka Desktop IM supports QR onboarding (DingTalk / Feishu·Lark / WeCom / WeChat) that obtains
+        credentials and enables a channel, or provider-specific manual config as fallback. Onboarding
+        is a <strong>main-process capability</strong>: it does not enter the MCP manager and does
+        not write agent session JSONL. When docs disagree, <strong>code + contract tests win</strong>.
+      </p>
+      <blockquote class="pull">
+        Onboarding is ephemeral QR/session; the bridge is long-lived. Secrets never cross preload.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="four-layers"
+      label="Bot · Layers"
+      title="Four layers: contract → service → settings effects → runtime bots"
+      lede="Renderer holds a redacted snapshot only; device codes, poll tokens, and secrets live in main."
+    >
+      <DiagramFigure
+        caption="Fig. · UI → BotOnboardingService → SettingsStore.updateIf → BotRegistry bridge; footer pins BotMessageEvent → SessionManager."
+        alt="Four layers: Renderer modal, OnboardingService, SettingsStore CAS, BotRegistry; footer message boundary into SessionManager."
+      >
+        <BotOnboardingLayersFlow />
+      </DiagramFigure>
+      <ol class="plain-list numbered">
+        <li>
+          <code>@maka/core/bot-onboarding</code> — provider / brand / state / renderer-safe snapshot
+          contract; no I/O.
+        </li>
+        <li>
+          Desktop main <code>BotOnboardingService</code> — session authority, HTTP polling, credential
+          persistence, cancel rollback, runtime effects.
+        </li>
+        <li>
+          <code>applySettingsRuntimeEffects</code> → <code>BotRegistry</code> channel reconcile.
+        </li>
+        <li>
+          <code>@maka/runtime/bots</code> — long-lived connections, message mapping,
+          <code>allowedUserIds</code>, send.
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="state-machine"
+      label="Bot · State"
+      title="State machine: waiting → connected / cancelled"
+      lede="Renderer holds an opaque sessionId only; a new same-provider session aborts the old one."
+    >
+      <pre class="code-block" aria-label="Onboarding state machine">[*] → waiting (QR ready)
+waiting / scanned → connecting (confirmed)
+connecting → connected (persisted + runtime applied)
+waiting / scanned → expired | denied | cancelled | error
+connecting → cancelled (+ guarded rollback)</pre>
+      <p>
+        Snapshot fields are fixed: <code>sessionId</code>, <code>provider</code>, optional
+        <code>brand</code>, <code>state</code>, optional QR data URL / expiry /
+        <code>nextPollAfterMs</code>, <code>canOpenInBrowser</code>, non-sensitive identity, redacted
+        error. When credentials are saved but the bridge is not healthy, surface a
+        <code>warning</code> — honest notice, not a fake connected state.
+      </p>
+    </Section>
+
+    <Section
+      id="rollback-cas"
+      label="Bot · Rollback"
+      title="Credential commit and cancel: updateIf CAS"
+      lede="Roll back only fields owned by this onboarding; exclude volatile status from the CAS predicate."
+    >
+      <ol class="plain-list numbered">
+        <li>Read previous channel snapshot.</li>
+        <li>
+          Map credentials → channel patch (<code>enabled: true</code>,
+          <code>readiness: configured</code>).
+        </li>
+        <li>Atomic settings write.</li>
+        <li><code>applySettingsRuntimeEffects</code> → BotRegistry reconcile.</li>
+        <li>Re-check current-session fence and AbortSignal after every await boundary.</li>
+      </ol>
+      <p>
+        On cancel, <code>SettingsStore.updateIf(predicate, patch)</code> applies previous values only
+        while owned identity fields still equal this write. Volatile status fields stay out of the
+        predicate so an unrelated status write cannot silently no-op rollback. Platforms have no
+        unified revoke — cancel only stops local polling, blocks late credential writes, and runs
+        guarded rollback after the commit window.
+      </p>
+    </Section>
+
+    <Section
+      id="message-boundary"
+      label="Bot · Messages"
+      title="Message boundary: BotMessageEvent → turn"
+      lede="Onboarding’s in-memory session map ≠ the agent ledger; the ledger starts only on the incoming path."
+    >
+      <pre class="code-block" aria-label="Message boundary">platform payload
+  → bridge map → BotMessageEvent
+  → bot-incoming-main
+  → SessionManager (turn / JSONL)</pre>
+      <p>
+        Allowlist is <code>allowedUserIds</code> — no remote pairing approval. Allowlist-only changes
+        may update policy in place; credential / domain / enabled changes stop the old bridge and
+        create a new one.
+      </p>
+    </Section>
+
+    <Section
+      id="nongoals"
+      label="Bot · Non-goals"
+      title="Explicitly out of V1"
+      lede="Destination does not require stuffing IM product UX into §01–§06."
+    >
+      <ul class="plain-list">
+        <li>Platform-side revoke / delete of a created app</li>
+        <li>Multi-account and parallel same-provider onboarding</li>
+        <li>Keychain at-rest encryption (today: owner-only settings + masked IPC)</li>
+        <li>Remote message pairing approval</li>
+      </ul>
+      <aside class="history-aside">
+        <p class="history-aside__tag">Verification</p>
+        <p>
+          Mechanism intro:
+          <a href={localePath("en", "history/pr/1197")}>maka:pr:1197</a>. Tests:
+          <code>bot-onboarding-main.test.ts</code> · e2e <code>bot-onboarding.spec.ts</code> ·
+          <code>packages/runtime/src/bots/__tests__/*</code> ·
+          <code>bot-incoming-*.test.ts</code>. Outline:
+          <code>docs/research/bot-im-onboarding-deep-outline.md</code>.
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+</style>

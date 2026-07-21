@@ -125,6 +125,14 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     <p>
       当前默认路径里 runId 与 invocationId 常常相同，但概念上仍应分开：未来重试与多次尝试不必重写整套事件协议。没有执行封套，系统只能看见「出现过一些消息」，却无法可靠回答「这次执行是否真正结束」。
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Archive delta · teaching manual</p>
+      <p>
+        Archive <code>runtime-mainline-teaching-manual.md</code> 用三个心智模型钉住同一区分：用户视角的
+        <strong>Turn</strong>、系统视角的 <strong>Run</strong>、可重建的 <strong>Event
+        ledger</strong>。聊天字符串压扁不了 tool call / permission / terminal。Current 身份与事件模型以本章与代码为准；手册只作教学增量。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -231,6 +239,11 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         Runner 的 preflight 缝存在；生产路径上 Kernel 未必注入独立 gate——应标为「能力已有 / 入口可能未接线」，不要把测试契约写成全量线上保证。
       </p>
     </div>
+    <p>
+      教学失败模式（archive teaching manual 增量）：少掉任何一层，系统往往<strong>不会立刻停转</strong>，而是把责任挤进错误位置——例如 Backend 管理 active runs、Session
+      字符串充当 terminal 真相、或每个产品壳各自重写 agent loop。分层的收益是共享核心可复用，外壳（Desktop /
+      headless / Harbor）只换控制面。
+    </p>
 
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注 · 机制</p>
@@ -487,8 +500,10 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         <code>sandbox-escalation.test.ts</code>。剩余 enforcement 跟踪 maka #843；本地 sandbox README
         若仍写 Linux <code>backend_not_implemented</code>，以 default manager 注册的
         <code>LinuxBubblewrapBackend</code> 为准。Managed Bash 经
-        <code>transformCommand</code> 插入沙箱；PTY 与强制沙箱 argv 互斥——spawn 细节见研究大纲
-        <code>shell-pty-executor-deep-outline.md</code>。
+        <code>transformCommand</code> 插入沙箱；PTY 与强制沙箱 argv 互斥——spawn / live≠result 见
+        <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression#shell-side-effects`}
+          >§02 · #shell-side-effects</a
+        >。
       </p>
     </aside>
   </Section>
@@ -524,8 +539,9 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       </li>
     </ul>
     <p>
-      IM / bot 通道是输入面之一（见 bot onboarding 合同）：credential 落盘与 bridge 长连接分离；取消路径做
-      CAS rollback，不假装 Keychain 已落地。
+      IM / bot 通道是输入面之一：credential 落盘与 bridge 长连接分离；取消路径做 CAS rollback，不假装
+      Keychain 已落地。协议细节见
+      <a href={`${import.meta.env.BASE_URL}guides/bot-im`}>/guides/bot-im</a>。
     </p>
   </Section>
 
@@ -991,6 +1007,10 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     title="Provider 看见的请求，不等于 ledger 里的消息"
     lede="Cost spine：测量 hit/miss/write 之后再庆祝「更短的 prompt」。prefixHash 是 Maka 本地诊断，不是 provider cache key。"
   >
+    <p>
+      成本纪律装在现有执行主链上——不是另起一条 <code>CostRuntime</code>（archive
+      <code>deepseek-reasonix-cost-runtime-design.md</code> 的设计判断；开放决策以 Current 代码为准）。
+    </p>
     <p>
       归档设计文（extract durable ideas；<strong>不是</strong> Current 权威）留下的压力场景：history
       budget 压低了总 input tokens，但 <strong>cache miss 与估算费用反而上升</strong>。原因往往不在「模型变贵」，而在
