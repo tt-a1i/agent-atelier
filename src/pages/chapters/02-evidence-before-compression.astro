@@ -9,9 +9,26 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
   <div slot="thesis">
     <p>
       当一次 Tool 调用既改变世界又产生巨量输出时，如何留下「发生过什么」的证据，同时不拖垮同一
-      Turn 的下一次推理？本章用 Turn 级证据流水线回答。
+      Turn 的下一次推理？答案不是简单截断，而是先分清事实、原文、证据和上下文，再坚持：
+      <strong>Prune the context, never prune the evidence.</strong>
     </p>
   </div>
+
+  <Section
+    id="scene"
+    label="§02 · Scene"
+    title="从一份巨大的测试日志开始"
+    lede="同一个 Tool Result 在系统里扮演多种角色——不能用一个 JSON 扛全部责任。"
+  >
+    <p>
+      假设模型调用 Bash，测试吐出 80,000 行输出。系统同时要：让模型看见关键错误、在 Runtime
+      里留下可回放事实、必要时取出完整原文、且同一 Turn 的下一步不再携带整份原文。
+    </p>
+    <p>
+      永久塞进 prompt 会拖垮预算；直接删掉会毁掉审计；让模型自称「已验证」又会把观察与判断混在一起。真正的问题是：哪些必须
+      durable，哪些可以重建，哪些只该短暂存在于模型工作集？
+    </p>
+  </Section>
 
   <Section
     id="keystone"
@@ -31,32 +48,88 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
       不变式：<strong>Prune the context, never prune the evidence.</strong>
       流水线隐喻只服务 §02——不是全站统一构图。
     </p>
+  </Section>
 
+  <Section
+    id="four"
+    label="§02 · Four representations"
+    title="一个 Tool Result，四种表示"
+    lede="Evidence compression 可以改变模型以后怎样看见事实，但不能改变事实是否发生过。"
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>Canonical Runtime Fact</strong> — 调用了什么、返回了什么（durable RuntimeEvent）
+      </li>
+      <li>
+        <strong>Raw Artifact</strong> — 完整原文/生成物在哪里（独立生命周期与校验）
+      </li>
+      <li>
+        <strong>Turn Evidence</strong> — 本 Turn 值得后续消费的公开观察（source-bearing、有界）
+      </li>
+      <li>
+        <strong>Model Working Context</strong> — 下一 step 最少要看到什么（临时投影，可 prune）
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="四层流水线">Tool execution
+  → RuntimeEvent(function_call / function_response)
+  → Artifact(raw payload)
+  → TurnEvidence(source-bearing bounded projection)
+  → Provider Messages(current working set)</pre>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        证据 / prune / tool result 相关合入，见
-        <a href="/history">/history</a>
-        ；完整章节将挂具体 <code>maka:pr</code>。
-      </p>
-    </aside>
-
-    <aside class="stub">
-      <p class="stub__tag">Prototype note</p>
-      <p>
-        关键图视觉系统已验证（#7）。完整叙事、体量 D2 图与双语同船交付仍按验收清单推进——本页不标完成。
+        Turn Evidence / active prune 架构章合入：
+        <a href="/history/pr/769">maka:pr:769</a>。
       </p>
     </aside>
   </Section>
 
+  <Section
+    id="turn"
+    label="§02 · Boundary"
+    title="为什么 Turn 是自然的 Evidence 边界"
+    lede="Step 太细，Session 太宽；Turn 是工程上可操作的中点。"
+  >
+    <p>
+      本轮 model/tool events 共享 turnId；tool call/result、permission 与 artifacts 可归属同一轮；Turn
+      terminal fact 给出完成/失败/中止。下一轮可以把上一轮 Evidence 当作有界工程记忆，而不必展开全部原始输出。
+    </p>
+    <p>
+      Evidence 描述有来源的观察；它不替代 Runtime terminal status，也不宣称「官方 verifier
+      一定通过」。权威结论属于其他层（见 §05）。
+    </p>
+  </Section>
+
+  <Section
+    id="current"
+    label="§02 · Current"
+    title="Active prune 只改 Provider messages"
+    lede="同一 Turn 内、下一步组装之前；失败时宁可牺牲 token 节省，也不删 ledger。"
+  >
+    <p>
+      Current 路径里，ToolRuntime 仍是副作用边界；RuntimeEvent 保存工具交互的 canonical
+      semantics。Active Tool Result Prune 跑在 provider step 之间：只处理当前 Turn 已完成的大结果，把
+      provider-visible messages 换成有界摘要/指针，<strong>不改写</strong>已提交的 Event Log / Artifact。
+    </p>
+    <p>
+      Compact Evidence 等能力已在 Headless heavy-task 等路径出现，但通用 TurnEvidence
+      envelope（补齐 source linkage、全 surface 共用）仍属 Target——下文显式标注，避免把提案写成已落地。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current：active prune + RuntimeEvent/Artifact 事实边界。Target：统一 TurnEvidence
+        envelope 与完整 source chain。教学与图示以不变式为中心，Target 不伪装成已实现。
+      </p>
+    </div>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：章首关键图（证据流水线 SVG）</li>
-      <li>待补：Tool Result → Artifact / Evidence 的体量流程图（≥3）</li>
-      <li>待补：active prune 与 Provider messages 对照动效</li>
-      <li>
-        待补：演进旁注挂真实 <a href="/history">/history</a> PR
-      </li>
+      <li>已有：章首关键图（证据流水线）+ 四层表示叙事</li>
+      <li>已有：演进旁注 <a href="/history/pr/769">maka:pr:769</a></li>
+      <li>待补：≥3 体量流程图（active prune 时序、archive 失败路径、source chain）</li>
+      <li>待补：全文 EN 同船；本页不标 checklist 完成</li>
     </ul>
   </div>
 </ChapterShell>
@@ -72,6 +145,28 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
   .figure-note strong {
     font-weight: 600;
     color: var(--ink);
+  }
+
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
   }
 
   .outline-list {
