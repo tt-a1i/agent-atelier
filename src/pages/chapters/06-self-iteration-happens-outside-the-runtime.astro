@@ -7,6 +7,7 @@ import EvidenceExportFlow from "../../components/diagrams/EvidenceExportFlow.ast
 import ManifestEvaluateFlow from "../../components/diagrams/ManifestEvaluateFlow.astro";
 import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidencePlaneFlow.astro";
 import AuthorityBucketFlow from "../../components/diagrams/AuthorityBucketFlow.astro";
+import ScoreAuthorityForbiddenPatchFlow from "../../components/diagrams/ScoreAuthorityForbiddenPatchFlow.astro";
 import EvalTransitionFlow from "../../components/diagrams/EvalTransitionFlow.astro";
 ---
 
@@ -199,6 +200,33 @@ Target Snapshot</pre>
       <code>analysis_only</code> 等 authority。协议明确禁止 Self-check 把结果声明为 official
       pass/fail——与 §05「Self-check 永远 advisory」完全一致。
     </p>
+    <DiagramFigure
+      caption="图 4b · scoreAuthority() 导出梯子 + staged_patch 禁止面；admission ≠ executor。"
+      alt="两列：scoreAuthority 推导与 forbidden patch 表面。"
+    >
+      <ScoreAuthorityForbiddenPatchFlow />
+    </DiagramFigure>
+    <h3 class="subhead">scoreAuthority 导出梯子（code）</h3>
+    <p>
+      <code>ahe-evidence-export.ts</code> 的 <code>scoreAuthority()</code> 不是口号，是确定性梯子：
+    </p>
+    <ol class="plain-list numbered">
+      <li>
+        score.<code>authority</code> 为 <code>authoritative: true</code> 且
+        <code>source === 'official_harbor_verifier'</code> → <code>official_scorer</code>
+      </li>
+      <li>否则 verifier 同上 → <code>official_verifier</code></li>
+      <li>否则存在 Self-check / heavy-task check 证据 → <code>self_check</code></li>
+      <li>否则 → <code>analysis_only</code></li>
+    </ol>
+    <p>
+      随后 <code>resultStatus</code>：先处理 <code>excluded</code> / <code>infra_failed</code>；仅当
+      authority 为 <code>official_*</code> 才可得到 <code>official_pass</code> /
+      <code>official_fail</code>。Validator（<code>validateMakaAheRunResult</code>）硬约束：official
+      状态<strong>必须</strong>配 official authority——Self-check pass 只能落在
+      <code>self_check_only</code> 等非 official 桶。导出还会警告：非权威 pass 证据出现在 official
+      桶外。
+    </p>
   </Section>
 
   <Section
@@ -225,16 +253,55 @@ Target Snapshot</pre>
       <code>MakaAheChangeManifest</code> 要求声明：改动了哪些已登记 components；哪些 baseline failure
       evidence 支持；root cause；targeted fix；预计修复哪些 task；哪些 task 可能产生风险；validation
       dataset；满足什么条件必须 rollback。Patch 目前只允许
-      <code>applyMode: "staged_patch"</code>。当 <code>changedFiles</code> 存在时，每个 path 必须是
-      repo-relative POSIX、不越出仓库、不指向 <code>.git</code> / dependency / generated
-      <code>dist</code>，且属于已声明可编辑 component 的 <code>sourceRefs</code>。验证器拒绝改写
-      <code>maka-runtime-evidence</code>、未知 component，并要求至少一个 failure case、predicted
-      fix、risk case、validation task 与 rollback criterion。
+      <code>applyMode: "staged_patch"</code>。
     </p>
+    <div class="table-wrap" role="region" aria-label="Forbidden patch 表面" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">拒绝</th>
+            <th scope="col">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">绝对路径 / <code>\</code> / <code>..</code></th>
+            <td>必须是 repo-relative POSIX</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>.git/</code> · <code>node_modules/</code> · <code>dist/</code></th>
+            <td><code>FORBIDDEN_PATCH_PATH_*</code> 前缀与路径片段</td>
+          </tr>
+          <tr>
+            <th scope="row">path ∉ editable component <code>sourceRefs</code></th>
+            <td>未登记可编辑表面</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>applyMode ≠ staged_patch</code></th>
+            <td>只承认 staged admission</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>maka-runtime-evidence</code></th>
+            <td><code>editable: false</code> — evidence plane 不可被 candidate 改写</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p>
-      这仍然只是 admission validation，不是 patch executor。当前 Maka 不会因为 manifest
-      合法就自动应用它，也不会证明 diff 内容本身安全——协议把任意自修改请求缩小为可被下一层审查的候选。
+      验证器还要求至少一个 failure case、predicted fix、risk case、validation task 与 rollback
+      criterion。这仍然只是 admission validation，不是 patch executor——合法 manifest 不会被自动应用，也不证明
+      diff 内容本身安全。
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Evidence export：
+        <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a>；official result 导出：
+        <a href={`${import.meta.env.BASE_URL}history/pr/417`}>maka:pr:417</a>。合同：
+        <code>ahe-evidence-export.ts</code> · <code>ahe-target-protocol.ts</code> · 对应
+        <code>__tests__</code>。
+      </p>
+    </aside>
   </Section>
 
   <Section

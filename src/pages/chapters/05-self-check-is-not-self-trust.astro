@@ -263,33 +263,82 @@ import PlanAuditRiskFlow from "../../components/diagrams/PlanAuditRiskFlow.astro
   <Section
     id="repair"
     label="§05 · Repair"
-    title="Bounded Repair：允许纠错，不允许无限自循环"
-    lede="maxRepairAttempts 固定为 1；repair 是同一 Attempt 内的新 Turn，不是新 Task Attempt。"
+    title="Gate 三态：evidence → repair → official verifier"
+    lede="maxRepairAttempts 默认 1；第三态不是「停环了事」，而是把终审交给 official verifier——Self-check 永不铸造 official_pass。"
   >
     <DiagramFigure
-      caption="图 6 · Gate 失败 → 检查 repair 预算 → 有界 Repair Turn → 再检；预算耗尽则停环。"
-      alt="五步：Gate fails、Budget check、Repair Turn、Re-check、Stop loop。"
+      caption="图 6 · allow_finalize · repair_prompt · allow_official_verifier_after_bounded_attempt（handoff，非自铸权威）。"
+      alt="五步：Gate evaluate、allow_finalize、repair_prompt、Re-check、allow_official。"
     >
       <RepairBudgetFlow />
     </DiagramFigure>
     <p>
-      <code>evaluateHeavyTaskSelfCheckGate()</code> 输出
-      <code>allow</code> / <code>repair</code> / <code>cap reached</code>。Current
-      <code>TaskAgentController</code> 序列：
+      <code>evaluateHeavyTaskSelfCheckGate()</code> 的真实三态（不要教成「allow / repair / stop」）：
     </p>
+    <div class="table-wrap" role="region" aria-label="Self-check gate 三态" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">action</th>
+            <th scope="col">何时</th>
+            <th scope="col">含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>allow_finalize</code></th>
+            <td>Heavy-task 关闭，或 semantic complete + accepted pass 证据</td>
+            <td>可走 finalize；<strong>仍是 advisory</strong>，≠ official pass</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>repair_prompt</code></th>
+            <td>被 blocker 挡住且 <code>repairAttemptsUsed &lt; max</code>（默认 1）</td>
+            <td>同一 Attempt 内新 Turn；prompt 含 checklist / 公开证据约束</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>allow_official_verifier_after_bounded_attempt</code></th>
+            <td>cap 用尽后仍 incomplete</td>
+            <td>
+              <strong>停止自修</strong>，把终审交给 official verifier/scorer——不是把 Self-check 抬成
+              official
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Current <code>TaskAgentController</code> 序列：</p>
     <ol class="plain-list numbered">
       <li>主 Invocation 结束</li>
       <li>记录 machine workspace observation</li>
       <li>evaluate gate，append <code>heavy_task_self_check_gate_recorded</code></li>
-      <li>若 action=repair：同一 Session / workspace 创建新 Turn/AgentRun；prompt 含 blocker、checklist、latest Self-check summary、machine observation</li>
-      <li>repair Turn 后再次 observation 与 gate；此时 repairAttemptsUsed=1，不再创建第三个 Turn</li>
+      <li>
+        若 <code>repair_prompt</code>：同一 Session / workspace 创建新 Turn/AgentRun；prompt 含
+        blocker、checklist、latest Self-check summary、machine observation（禁止探 official verifier
+        材料）
+      </li>
+      <li>
+        repair Turn 后再次 observation 与 gate；<code>repairAttemptsUsed=1</code> 时若仍 blocked →
+        <code>allow_official_verifier_after_bounded_attempt</code>，不再开第三 Turn
+      </li>
     </ol>
     <p>
       Accepted plan / Self-check 成为 Task Event 后投影为
       <code>latestHeavyTaskSelfCheckPlan</code> / <code>latestHeavyTaskSelfCheck</code>，并进入 bounded
-      compact evidence window（后续 Attempt 最多渲染约 5 条 command / 5 条 artifact
-      evidence）。旧 Self-check 不被修改——新 event 只改变 latest 投影。
+      compact evidence window。旧 Self-check 不被修改——新 event 只改变 latest 投影。AHE 侧的
+      <code>scoreAuthority</code> 分桶见
+      <a href={`${import.meta.env.BASE_URL}chapters/06-self-iteration-happens-outside-the-runtime#authority`}
+        >§06 · #authority</a
+      >。
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        Gate 三态引入：
+        <a href={`${import.meta.env.BASE_URL}history/pr/427`}>maka:pr:427</a>。合同以
+        <code>heavy-task-self-check-gate.ts</code> 与
+        <code>task-agent-controller.test.ts</code> 为准。
+      </p>
+    </aside>
   </Section>
 
   <Section

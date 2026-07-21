@@ -6,6 +6,7 @@ import DurableTaskKeystone from "../../components/diagrams/DurableTaskKeystone.a
 import AttemptContinueFlow from "../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
+import BudgetProjectionRecordingFlow from "../../components/diagrams/BudgetProjectionRecordingFlow.astro";
 import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.astro";
 import ParkGrantResumeFlow from "../../components/diagrams/ParkGrantResumeFlow.astro";
 import DurableCheckpointFlow from "../../components/diagrams/DurableCheckpointFlow.astro";
@@ -351,10 +352,60 @@ cancelled → pending       only explicitReopen</pre>
     </ul>
     <p>
       <code>LoopBudgetSnapshot</code> 把 used 与 max 一起交给 decision policy。即使自定义 policy 请求
-      continue/retry，<code>enforceCaps()</code> 也会重新应用硬上限。Attempt 数量可从 Task Events
-      重建，Runtime steps 也写入 feedback；但当前 loop 的 <code>startedAt</code>、累计 counters 与 decision
-      closure 主要由正在运行的 <code>runAutonomousTask()</code> 持有——可审计预算使用，却不能仅凭通用
-      projection 在任意重启点无歧义恢复全部 loop counters（Target：durable budget accounting）。
+      continue/retry，<code>enforceCaps()</code> 也会重新应用硬上限——且若 Attempt 已
+      <code>passed</code>，强制 <code>stop</code>（权威验证优先于「再试一次」）。
+    </p>
+    <DiagramFigure
+      caption="图 4b · 活着的 loop counters · enforceCaps · 写入 Task Events 的 snapshot——可审计 ≠ 可冷启动恢复。"
+      alt="三列：in-memory startedAt/counters、enforceCaps、autonomous_decision_recorded。"
+    >
+      <BudgetProjectionRecordingFlow />
+    </DiagramFigure>
+    <div class="table-wrap" role="region" aria-label="预算：live vs 投影" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">事实</th>
+            <th scope="col">落点</th>
+            <th scope="col">冷启动诚实？</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Attempt 次数</th>
+            <td>Task Events + snapshot.<code>attemptsUsed</code></td>
+            <td>可重建</td>
+          </tr>
+          <tr>
+            <th scope="row">Runtime steps 累计</th>
+            <td>live 累加 <code>resultRecord.steps</code>；亦写入 snapshot</td>
+            <td>历史 snapshot 可审计；live 累加器需小心</td>
+          </tr>
+          <tr>
+            <th scope="row">Wall elapsed</th>
+            <td><code>now - startedAt</code>（进程内）</td>
+            <td><strong>否</strong> — <code>startedAt</code> 非 durable</td>
+          </tr>
+          <tr>
+            <th scope="row">决策 + reason</th>
+            <td><code>autonomous_decision_recorded</code>（内嵌完整 snapshot）</td>
+            <td>可审计</td>
+          </tr>
+          <tr>
+            <th scope="row">预算终态</th>
+            <td>
+              <code>task_run_budget_exhausted</code>；若 intervention 允许扩展则可先
+              <code>needs_approval</code> inbox
+            </td>
+            <td>可审计</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      因此：预算使用<strong>可审计</strong>（每次决策把 snapshot 钉进 Task Event Log），但不能仅凭通用
+      projection 在任意重启点无歧义恢复全部 loop counters（Target：durable budget accounting）。详见
+      <code>docs/research/autonomous-budget-projection-deep-outline.md</code>。
     </p>
   </Section>
 

@@ -1,12 +1,12 @@
 ---
 /**
- * §05 flow — fail → repair Turn under cap → stop when budget exhausted.
+ * §05 protocol — allow_finalize · repair_prompt · allow_official_verifier_after_bounded_attempt.
  */
 ---
 
 <svg
   class="rb-flow"
-  viewBox="0 0 868 220"
+  viewBox="0 0 868 248"
   xmlns="http://www.w3.org/2000/svg"
   role="presentation"
   focusable="false"
@@ -26,7 +26,7 @@
   </defs>
 
   <text class="rb-kicker rb-stage rb-stage--0" x="8" y="20" fill="var(--accent)">
-    FLOW · BOUNDED REPAIR · NO INFINITE SELF-AUTHORITY
+    PROTOCOL · EVIDENCE → REPAIR → OFFICIAL VERIFIER · NEVER SELF-MINT
   </text>
   <line
     class="rb-stage rb-stage--0"
@@ -39,52 +39,56 @@
   ></line>
 
   <g class="rb-connectors rb-stage rb-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
-    <line x1="178" y1="110" x2="206" y2="110" marker-end="url(#rb-arrow)"></line>
-    <line x1="354" y1="110" x2="382" y2="110" marker-end="url(#rb-arrow)"></line>
-    <line x1="530" y1="110" x2="558" y2="110" marker-end="url(#rb-arrow)"></line>
-    <line x1="706" y1="110" x2="734" y2="110" marker-end="url(#rb-arrow)"></line>
+    <line x1="178" y1="118" x2="206" y2="118" marker-end="url(#rb-arrow)"></line>
+    <line x1="354" y1="118" x2="382" y2="118" marker-end="url(#rb-arrow)"></line>
+    <line x1="530" y1="118" x2="558" y2="118" marker-end="url(#rb-arrow)"></line>
+    <line x1="706" y1="118" x2="734" y2="118" marker-end="url(#rb-arrow)"></line>
   </g>
 
   <g class="rb-node rb-stage rb-stage--1" transform="translate(8,58)">
-    <rect width="170" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="170" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
     <rect width="170" height="2" fill="var(--accent)"></rect>
     <text class="rb-node__idx" x="12" y="26" fill="var(--accent)">01</text>
-    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Gate fails</text>
-    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">semantic / hygiene</text>
-    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">or source guard</text>
+    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Gate evaluate</text>
+    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">public evidence</text>
+    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">hygiene · freshness</text>
+    <text class="rb-node__hint" x="12" y="110" fill="var(--mute)">checklist bind</text>
   </g>
 
   <g class="rb-node rb-stage rb-stage--2" transform="translate(206,58)">
-    <rect width="148" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="120" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
     <rect width="148" height="2" fill="var(--accent)" opacity="0.7"></rect>
     <text class="rb-node__idx" x="12" y="26" fill="var(--accent)">02</text>
-    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Budget check</text>
-    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">repair turns left?</text>
-    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">Runtime owns cap</text>
+    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">allow_finalize</text>
+    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">semantic complete</text>
+    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">still advisory</text>
+    <text class="rb-node__hint" x="12" y="110" fill="var(--ink)">≠ official pass</text>
   </g>
 
   <g class="rb-node rb-stage rb-stage--3" transform="translate(382,58)">
-    <rect width="148" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
     <rect width="148" height="2" fill="var(--accent)"></rect>
     <text class="rb-node__idx" x="12" y="26" fill="var(--accent)">03</text>
-    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Repair Turn</text>
-    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">feedback in</text>
-    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">public evidence</text>
+    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">repair_prompt</text>
+    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">same Attempt</text>
+    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">new Turn · cap=1</text>
+    <text class="rb-node__hint" x="12" y="110" fill="var(--mute)">public checklist</text>
   </g>
 
   <g class="rb-node rb-stage rb-stage--4" transform="translate(558,58)">
-    <rect width="148" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
     <rect width="148" height="2" fill="var(--accent)"></rect>
     <text class="rb-node__idx" x="12" y="26" fill="var(--accent)">04</text>
     <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Re-check</text>
-    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">plan still binds</text>
-    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">submit again</text>
+    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">observation again</text>
+    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">gate again</text>
+    <text class="rb-node__hint" x="12" y="110" fill="var(--mute)">used=1</text>
   </g>
 
   <g class="rb-node rb-stage rb-stage--5" transform="translate(734,58)">
     <rect
       width="126"
-      height="104"
+      height="120"
       rx="1"
       fill="var(--soft)"
       stroke="var(--accent)"
@@ -92,13 +96,14 @@
     ></rect>
     <rect width="126" height="2" fill="var(--accent)" opacity="0.55"></rect>
     <text class="rb-node__idx" x="12" y="26" fill="var(--accent)">05</text>
-    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">Stop loop</text>
-    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">cap exhausted</text>
-    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">no self-trust</text>
+    <text class="rb-node__name" x="12" y="50" fill="var(--ink)">allow_official</text>
+    <text class="rb-node__hint" x="12" y="74" fill="var(--mute)">after bounded</text>
+    <text class="rb-node__hint" x="12" y="92" fill="var(--mute)">handoff verifier</text>
+    <text class="rb-node__hint" x="12" y="110" fill="var(--ink)">not self-mint</text>
   </g>
 
-  <text class="rb-foot rb-stage rb-stage--5" x="8" y="198" fill="var(--mute)">
-    Self-check helps repair; exhausted budget ends the loop — it never grants infinite trust.
+  <text class="rb-foot rb-stage rb-stage--5" x="8" y="214" fill="var(--mute)">
+    Cap exhaustion → allow_official_verifier_after_bounded_attempt. Self-check never becomes official_pass.
   </text>
 </svg>
 

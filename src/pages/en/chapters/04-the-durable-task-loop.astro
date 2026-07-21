@@ -7,6 +7,7 @@ import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeyston
 import AttemptContinueFlow from "../../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astro";
+import BudgetProjectionRecordingFlow from "../../../components/diagrams/BudgetProjectionRecordingFlow.astro";
 import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlow.astro";
 import ParkGrantResumeFlow from "../../../components/diagrams/ParkGrantResumeFlow.astro";
 import DurableCheckpointFlow from "../../../components/diagrams/DurableCheckpointFlow.astro";
@@ -371,12 +372,61 @@ cancelled → pending       only explicitReopen</pre>
     </ul>
     <p>
       <code>LoopBudgetSnapshot</code> hands used and max to decision policy. Even if custom policy asks
-      continue/retry, <code>enforceCaps()</code> reapplies hard limits. Attempt counts rebuild from Task
-      Events and Runtime steps are recorded in feedback; yet today’s loop <code>startedAt</code>,
-      cumulative counters, and decision closure mostly live inside the running
-      <code>runAutonomousTask()</code> — budget use is auditable, but a generic projection cannot
-      unambiguously restore every loop counter at an arbitrary restart point (Target: durable budget
-      accounting).
+      continue/retry, <code>enforceCaps()</code> reapplies hard limits — and if the Attempt already
+      <code>passed</code>, forces <code>stop</code> (authoritative verification beats “try again”).
+    </p>
+    <DiagramFigure
+      caption="Fig. 4b · Live loop counters · enforceCaps · snapshots written into Task Events — auditable ≠ cold-start resumable."
+      alt="Three columns: in-memory startedAt/counters, enforceCaps, autonomous_decision_recorded."
+    >
+      <BudgetProjectionRecordingFlow />
+    </DiagramFigure>
+    <div class="table-wrap" role="region" aria-label="Budget: live vs projected" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Fact</th>
+            <th scope="col">Where it lands</th>
+            <th scope="col">Cold-start honest?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Attempt count</th>
+            <td>Task Events + snapshot.<code>attemptsUsed</code></td>
+            <td>Rebuildable</td>
+          </tr>
+          <tr>
+            <th scope="row">Runtime steps summed</th>
+            <td>Live sum of <code>resultRecord.steps</code>; also in snapshot</td>
+            <td>History auditable; live accumulator needs care</td>
+          </tr>
+          <tr>
+            <th scope="row">Wall elapsed</th>
+            <td><code>now - startedAt</code> (in-process)</td>
+            <td><strong>No</strong> — <code>startedAt</code> is not durable</td>
+          </tr>
+          <tr>
+            <th scope="row">Decision + reason</th>
+            <td><code>autonomous_decision_recorded</code> (embeds full snapshot)</td>
+            <td>Auditable</td>
+          </tr>
+          <tr>
+            <th scope="row">Budget terminal</th>
+            <td>
+              <code>task_run_budget_exhausted</code>; may first open a
+              <code>needs_approval</code> inbox when intervention allows extension
+            </td>
+            <td>Auditable</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      So budget use is <strong>auditable</strong> (each decision pins a snapshot into the Task Event
+      Log), but a generic projection still cannot unambiguously restore every loop counter at an
+      arbitrary restart (Target: durable budget accounting). See
+      <code>docs/research/autonomous-budget-projection-deep-outline.md</code>.
     </p>
   </Section>
 

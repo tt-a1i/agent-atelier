@@ -36,37 +36,24 @@ Pass-1 “acceptance of depth done” for **those named invariants** is largely 
 
 ## Remaining holes (honest)
 
-### A. Corpus-empty (atelier silence)
+**Superseding status file:** [`depth-corpus-status.md`](./depth-corpus-status.md) (2026-07-21 evening). Pass-2 list below is historical; do not treat as live empty set.
 
-These are current authority or design-bearing code with **near-zero** atelier teaching:
+### A. Corpus-empty (atelier silence) — largely cleared
 
-- Runtime **sandbox** (Seatbelt / PermissionProfile transform) — outline started  
-- **Computer-use** contract suite (6 live docs + package)  
-- **Session task ledger** lifecycle (distinct from TaskRun)  
-- **Execution evidence spine** as named protocol  
-- **MCP** runtime architecture  
-- **Agent swarm / expert team**  
-- **Skill catalog** policy  
-- **Shell / PTY / workspace executor** — **shipped** §02 `#shell-side-effects` (#68)  
-- **Filesystem worker / path containment** — **shipped** §02 `#filesystem-worker` (#71)  
-- **Runtime-host / gateway**  
-- **Bot / IM onboarding** — **shipped** `/guides/bot-im` (#69)  
-- **Workspace privacy / SECURITY** product contracts — **shipped** `/guides/security-privacy`  
-- Desktop **main composition** ownership map — **shipped** `/guides/desktop-host` (#73)  
+Former empties (sandbox, CU, ledger, evidence spine, MCP, swarm, skills, shell/FS, bots, privacy, desktop-host, …) are **shipped**. Live empties among Cluster 1 fat seams: **none**. Remaining are **lean**, not empty.
 
-### B. Still thin inside six chapters
+### B. Still thin / lean
 
-- §01 recovery: no Phase0 failpoint matrix / Phase1 safe-boundary teaching  
-- §01 stores: JSONL vs SQLite vs artifact authority under-specified vs `packages/storage`  
-- §01 request-shape: usage split present; pricing store / provider-request capture under-taught  
-- §04: TaskRun deep; **session ledger ≠ TaskRun** confusion risk unaddressed  
-- §02 ToolRuntime: sequence present; shell/PTY side-effect stack not taught  
-- History asides: §01–§03 improved to mechanism PRs; §04–§06 still heavier on docs-land PRs  
+- §01 `#stores` / durability — lean vs full storage matrix  
+- §01 `#usage-stores` — dual-store present; capture/scrub thin  
+- §01 `#runtime-host` — lean note  
+- Archive mine-delta remainder (beyond top-3 absorb)  
+- AHE Target controller / runner — honest stub  
 
-### C. Entry / chrome debt (AFK)
+### C. Entry / chrome debt
 
-- `/` preface still advertises **hard-gate checklist Done** and **Hybrid lean §05–§06** — stale vs even-depth + corpus dig  
-- Entry does not point readers at `#request-shape` or “depth pass in progress”  
+- Entry copy updated to point at `depth-corpus-status.md` and refuse Destination-complete claims  
+- Hard-gate Done ≠ research-report depth (still true)
 
 ### D. Out of Destination unless IA expands
 

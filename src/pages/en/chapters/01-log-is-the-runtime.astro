@@ -14,6 +14,7 @@ import PermissionControlFlow from "../../../components/diagrams/PermissionContro
 import ParkRememberVsEscalationFlow from "../../../components/diagrams/ParkRememberVsEscalationFlow.astro";
 import SandboxOwnershipFlow from "../../../components/diagrams/SandboxOwnershipFlow.astro";
 import RecoveryLayersFlow from "../../../components/diagrams/RecoveryLayersFlow.astro";
+import AgentRunVsRuntimeRecoveryFlow from "../../../components/diagrams/AgentRunVsRuntimeRecoveryFlow.astro";
 import T1T2BoundaryFlow from "../../../components/diagrams/T1T2BoundaryFlow.astro";
 import TerminalRace from "../../../components/diagrams/TerminalRace.astro";
 import PrefixVsShape from "../../../components/diagrams/PrefixVsShape.astro";
@@ -861,6 +862,71 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       effect; invent what the model “was about to do” without durable facts.
     </p>
 
+    <h3 id="agent-run-recovery" class="subhead">A′. Two recovery authorities: AgentRun ≠ RuntimeEvent</h3>
+    <p>
+      Startup repair actually runs <strong>two</strong> classifiers. Collapsing them into “warm resume”
+      loses both Session terminal repair and tool-boundary judgment.
+    </p>
+    <DiagramFigure
+      caption="Fig 8b′ · classifyAgentRunRecovery closes non-terminal AgentRuns; resolveRuntimeRecovery alone owns tool-boundary judgment."
+      alt="Two columns: AgentRunRecovery vs RuntimeRecovery with different ledgers and outputs."
+    >
+      <AgentRunVsRuntimeRecoveryFlow />
+    </DiagramFigure>
+    <div class="table-wrap" role="region" aria-label="AgentRunRecovery vs RuntimeRecovery" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">AgentRunRecovery</th>
+            <th scope="col">RuntimeRecovery</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Function</th>
+            <td><code>classifyAgentRunRecovery</code></td>
+            <td><code>resolveRuntimeRecovery</code></td>
+          </tr>
+          <tr>
+            <th scope="row">Input ledger</th>
+            <td><code>AgentRunHeader</code> + ops <code>AgentRunEvent[]</code></td>
+            <td>Canonical <code>RuntimeEvent[]</code> prefix</td>
+          </tr>
+          <tr>
+            <th scope="row">Question</th>
+            <td>How to close a non-terminal Run conservatively?</td>
+            <td>Where is the tool call / dispatch / response boundary?</td>
+          </tr>
+          <tr>
+            <th scope="row">Typical output</th>
+            <td>
+              <code>failed</code> + <code>failureClass: app_restarted</code> + diagnostic (e.g.
+              <code>tool_interrupted</code> · <code>stale_permission_wait</code> ·
+              <code>run_interrupted</code>)
+            </td>
+            <td>
+              <code>completed</code> · <code>indeterminate</code> ·
+              <code>definitely_not_dispatched</code> · <code>corruption</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Does not</th>
+            <td>Judge whether unsettled tool ops may re-run</td>
+            <td>Repair Session / Turn projections alone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Honest <code>SessionManager</code> order: prefer mapping an existing Runtime terminal fact into an
+      AgentRun decision; otherwise run <code>classifyAgentRunRecovery</code>. Then
+      <code>applyAgentRunRecovery</code> commits the terminal Run (may append a recovered terminal
+      RuntimeEvent) and patches Turn state as needed — diagnostics carry <code>recovered: true</code>.
+      This is <strong>not</strong> the Resolver: tool boundaries still answer only to
+      <code>resolveRuntimeRecovery()</code> (see T1/T2 below).
+    </p>
+
     <h3 class="subhead">B. Phase0 failpoint matrix</h3>
     <p>
       The production API is pure: committed <code>RuntimeEvent</code> prefix → ToolOperation projection →
@@ -1093,14 +1159,17 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside · mechanism</p>
       <p>
-        Durable safe-boundary phases (resolver / sink / sqlite T1–T2):
+        AgentRun startup classifier: commit <code>06112db9</code> (Recover sessions from AgentRun
+        ledger) · <code>agent-run-recovery.ts</code>. Durable safe-boundary phases (resolver / sink /
+        sqlite T1–T2):
         <a href={localePath("en", "history/pr/1223")}>maka:pr:1223</a>. Contract = tests:
         <code>recovery-resolver.test.ts</code> (row-by-row),
         <code>tool-runtime-durable-boundary.test.ts</code> (T1 fail → zero impl; order
         t1→impl→t2),
         <code>tool-runtime-sqlite-boundary.test.ts</code>,
         <code>sqlite-runtime-crash.test.ts</code> (SIGKILL). ADR:
-        <code>runtime-recovery-resolver-adr.zh-CN.md</code>.
+        <code>runtime-recovery-resolver-adr.zh-CN.md</code>. Outline:
+        <code>docs/research/agent-run-vs-runtime-recovery-deep-outline.md</code>.
       </p>
     </aside>
 

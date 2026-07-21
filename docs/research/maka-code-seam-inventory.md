@@ -108,17 +108,21 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | — | Semantic compact failedOpen / privacy / savings | §03 `#semantic-gates` | `semantic-compact.ts` | **shipped** · outline `semantic-compact-gates-deep-outline.md` · [#75](https://github.com/tt-a1i/agent-atelier/issues/75) |
 | — | Permission park/remember vs escalation one-shot | §01 `#park-remember` | `permission-engine.ts` · `sandbox-escalation.ts` | **shipped** · outline `permission-park-remember-escalation-deep-outline.md` · [#76](https://github.com/tt-a1i/agent-atelier/issues/76) |
 | 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 / `/guides/sandbox` | `permission-profile.ts` · `sandbox/**` | outline → Task #62 |
-| 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | empty |
-| 8 | Execution evidence spine | cross-cut §02/04/05/06 | `execution-evidence.ts` · `execution-evidence-spine.md` | empty |
-| 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | empty |
-| 10 | Computer-use foundation | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | empty |
-| 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | empty |
+| 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | **shipped** `#ledger` |
+| 8 | Execution evidence spine | cross-cut §02/04/05/06 | `execution-evidence.ts` · `execution-evidence-spine.md` | **shipped** |
+| 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | **shipped** `#mcp` |
+| 10 | Computer-use foundation | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **shipped** companion |
+| 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | **shipped** `#swarm` |
 | 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | shipped §02 `#shell-side-effects` |
 | 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
 | 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |
-| 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | thin→partial |
-| 14 | Skill catalog policy | companion | `skills.ts` · `skill-catalog-policy.md` | empty |
-| 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | thin |
+| 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | **lean→partial** |
+| 14 | Skill catalog policy | companion | `skills.ts` · `skill-catalog-policy.md` | **shipped** `#skills` |
+| 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | **shipped** `#harbor-trust` |
+| — | AgentRunRecovery vs RuntimeRecovery | §01 `#agent-run-recovery` | `agent-run-recovery.ts` | **shipped** |
+| — | Autonomous budget × projection | §04 `#budget` | `autonomous-agent-loop.ts` | **shipped** |
+| — | Heavy-task gate triad | §05 `#repair` | `heavy-task-self-check-gate.ts` | **shipped** |
+| — | AHE scoreAuthority + forbidden patch | §06 | `ahe-evidence-export.ts` · protocol | **shipped** |
 
 ---
 

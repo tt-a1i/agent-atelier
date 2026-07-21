@@ -8,6 +8,7 @@ import EvidenceExportFlow from "../../../components/diagrams/EvidenceExportFlow.
 import ManifestEvaluateFlow from "../../../components/diagrams/ManifestEvaluateFlow.astro";
 import ReadonlyEvidencePlaneFlow from "../../../components/diagrams/ReadonlyEvidencePlaneFlow.astro";
 import AuthorityBucketFlow from "../../../components/diagrams/AuthorityBucketFlow.astro";
+import ScoreAuthorityForbiddenPatchFlow from "../../../components/diagrams/ScoreAuthorityForbiddenPatchFlow.astro";
 import EvalTransitionFlow from "../../../components/diagrams/EvalTransitionFlow.astro";
 ---
 
@@ -213,6 +214,34 @@ Target Snapshot</pre>
       <code>analysis_only</code>. The protocol forbids Self-check from declaring official pass/fail —
       the same conclusion as §05 (“Self-check is forever advisory”).
     </p>
+    <DiagramFigure
+      caption="Fig. 4b · scoreAuthority() export ladder + staged_patch forbidden surface; admission ≠ executor."
+      alt="Two columns: scoreAuthority derivation and forbidden patch surface."
+    >
+      <ScoreAuthorityForbiddenPatchFlow />
+    </DiagramFigure>
+    <h3 class="subhead">scoreAuthority export ladder (code)</h3>
+    <p>
+      <code>scoreAuthority()</code> in <code>ahe-evidence-export.ts</code> is a deterministic ladder,
+      not a slogan:
+    </p>
+    <ol class="plain-list numbered">
+      <li>
+        score.<code>authority</code> is <code>authoritative: true</code> with
+        <code>source === 'official_harbor_verifier'</code> → <code>official_scorer</code>
+      </li>
+      <li>Else the same on verifier → <code>official_verifier</code></li>
+      <li>Else Self-check / heavy-task check evidence present → <code>self_check</code></li>
+      <li>Else → <code>analysis_only</code></li>
+    </ol>
+    <p>
+      Then <code>resultStatus</code>: handle <code>excluded</code> / <code>infra_failed</code> first;
+      <code>official_pass</code> / <code>official_fail</code> only when authority is
+      <code>official_*</code>. Validator (<code>validateMakaAheRunResult</code>) hard-requires official
+      status to carry official authority — a Self-check pass lands in <code>self_check_only</code> (or
+      similar non-official buckets). Export also warns when non-authoritative pass evidence appears
+      outside official buckets.
+    </p>
   </Section>
 
   <Section
@@ -239,18 +268,55 @@ Target Snapshot</pre>
       <code>MakaAheChangeManifest</code> must declare: which registered components changed; which
       baseline failure evidence supports the change; root cause; targeted fix; which tasks are predicted
       to improve; which tasks may regress; validation dataset; and rollback criteria. Patches today
-      allow only <code>applyMode: "staged_patch"</code>. When <code>changedFiles</code> is present, each
-      path must be repo-relative POSIX, stay inside the repo, avoid <code>.git</code> / dependencies /
-      generated <code>dist</code>, and belong to a declared editable component’s
-      <code>sourceRefs</code>. The validator rejects rewriting <code>maka-runtime-evidence</code>,
-      unknown components, and manifests missing at least one failure case, predicted fix, risk case,
-      validation task, and rollback criterion.
+      allow only <code>applyMode: "staged_patch"</code>.
     </p>
+    <div class="table-wrap" role="region" aria-label="Forbidden patch surface" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Rejected</th>
+            <th scope="col">Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Absolute / <code>\</code> / <code>..</code></th>
+            <td>Must be repo-relative POSIX</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>.git/</code> · <code>node_modules/</code> · <code>dist/</code></th>
+            <td><code>FORBIDDEN_PATCH_PATH_*</code> prefixes and path parts</td>
+          </tr>
+          <tr>
+            <th scope="row">path ∉ editable component <code>sourceRefs</code></th>
+            <td>Not an admitted editable surface</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>applyMode ≠ staged_patch</code></th>
+            <td>Only staged admission is accepted</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>maka-runtime-evidence</code></th>
+            <td><code>editable: false</code> — evidence plane cannot be candidate-patched</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p>
-      This is still admission validation, not a patch executor. Maka does not auto-apply a valid
-      manifest, and does not prove the diff itself is safe — the protocol shrinks arbitrary
-      self-modification into a candidate the next layer can review.
+      The validator also requires at least one failure case, predicted fix, risk case, validation task,
+      and rollback criterion. This remains admission validation, not a patch executor — a valid
+      manifest is not auto-applied, and the protocol does not prove the diff itself is safe.
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        Evidence export:
+        <a href={localePath("en", "history/pr/413")}>maka:pr:413</a>; official result export:
+        <a href={localePath("en", "history/pr/417")}>maka:pr:417</a>. Contracts:
+        <code>ahe-evidence-export.ts</code> · <code>ahe-target-protocol.ts</code> · paired
+        <code>__tests__</code>.
+      </p>
+    </aside>
   </Section>
 
   <Section

@@ -1,0 +1,114 @@
+---
+/**
+ * §01 protocol — AgentRunRecovery (ops/header terminal) vs RuntimeRecovery (tool boundary).
+ */
+---
+
+<svg
+  class="arr-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="arr-kicker arr-stage arr-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · TWO RECOVERY AUTHORITIES · DO NOT COLLAPSE
+  </text>
+  <line
+    class="arr-stage arr-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="arr-col arr-stage arr-stage--1" transform="translate(8,52)">
+    <rect width="416" height="176" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="416" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="arr-col__idx" x="14" y="28" fill="var(--accent)">LAYER · AGENT RUN</text>
+    <text class="arr-col__title" x="14" y="54" fill="var(--ink)">classifyAgentRunRecovery</text>
+    <text class="arr-col__line" x="14" y="88" fill="var(--mute)">Input: AgentRunHeader + ops events</text>
+    <text class="arr-col__line" x="14" y="108" fill="var(--mute)">Job: close non-terminal Runs</text>
+    <text class="arr-col__line" x="14" y="128" fill="var(--mute)">Output: failed/completed/cancelled</text>
+    <text class="arr-col__line" x="14" y="152" fill="var(--ink)">≠ tool-boundary judgment</text>
+  </g>
+
+  <g class="arr-col arr-stage arr-stage--2" transform="translate(444,52)">
+    <rect width="416" height="176" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="416" height="2" fill="var(--accent)"></rect>
+    <text class="arr-col__idx" x="14" y="28" fill="var(--accent)">LAYER · RUNTIME EVENT</text>
+    <text class="arr-col__title" x="14" y="54" fill="var(--ink)">resolveRuntimeRecovery</text>
+    <text class="arr-col__line" x="14" y="88" fill="var(--mute)">Input: RuntimeEvent prefix</text>
+    <text class="arr-col__line" x="14" y="108" fill="var(--mute)">Job: tool call/dispatch/response</text>
+    <text class="arr-col__line" x="14" y="128" fill="var(--mute)">Output: completed · indeterminate · corruption</text>
+    <text class="arr-col__line" x="14" y="152" fill="var(--ink)">sole tool-boundary authority</text>
+  </g>
+
+  <text class="arr-foot arr-stage arr-stage--2" x="8" y="254" fill="var(--mute)">
+    SessionManager may prefer a Runtime terminal fact when present; AgentRun classifier fills gaps — it never replaces Resolver.
+  </text>
+</svg>
+
+<style>
+  .arr-flow {
+    font-family: var(--sans);
+  }
+  .arr-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .arr-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .arr-col__title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .arr-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .arr-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .arr-stage {
+      opacity: 0;
+      animation: arr-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .arr-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .arr-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .arr-stage--2 {
+      animation-delay: 0.3s;
+    }
+    @keyframes arr-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arr-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

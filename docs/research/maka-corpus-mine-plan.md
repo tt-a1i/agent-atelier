@@ -70,9 +70,9 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | Request-shape / prefixHash / cache diagnostics | archive cost design + `request-shape.ts` + telemetry | C+G | §01 `#request-shape` | **deep** teaching home; optional `/guides/cost` still fog |
 | Active/stale prune + evidence layers | `turn-evidence-tools-active-prune-draft*`, `active-tool-result-prune.ts`, `tool-runtime.ts` | B+G | §02 | **deep** (`d10f8c6`) |
 | Compaction projection | `llm-compaction-events-log-projection-draft*`, `history-compact*.ts` | B+G | §03 | **deep** (`9969fbc`) |
-| Durable Task Loop | `durable-task-loop-headless-draft*`, headless TaskRun | B+G | §04 | **deep** (`68ac5d4`) + session ledger contrast `#ledger` |
-| Self-check authority | `self-check-bounded-feedback-loop-draft*` | B+G | §05 | **deep** (`fd777d5`) |
-| AHE boundary | `ahe-self-iteration-boundary-draft*`, `ahe-target-protocol.md`, headless export | A+B+G | §06 | **deep** (`3c94e3c`) on boundary; Target controller still honest stub |
+| Durable Task Loop | `durable-task-loop-headless-draft*`, headless TaskRun | B+G | §04 | **deep** (`68ac5d4`) + session ledger contrast `#ledger` + budget×projection |
+| Self-check authority | `self-check-bounded-feedback-loop-draft*` | B+G | §05 | **deep** (`fd777d5`) + gate triad `allow_official_verifier_*` |
+| AHE boundary | `ahe-self-iteration-boundary-draft*`, `ahe-target-protocol.md`, headless export | A+B+G | §06 | **deep** (`3c94e3c`) on boundary + scoreAuthority/forbidden patch; Target controller still honest stub |
 
 ### Cluster 1 — Fat unmined contracts (priority)
 
@@ -81,6 +81,10 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | **Sandbox boundary** | `packages/runtime/src/sandbox/**`, `@maka/core` `permission-profile*.ts`, sandbox tests | A+D+G+E | §01 `#sandbox` | **deep** (home locked #46; shipped #62) |
 | **Computer-use suite** | 6 current CU docs + `packages/computer-use` + `openai-computer-*.ts` + archive CU hardening | A+C+G | Companion `/guides/computer-use` + lean §01 pointer | **outline+shipped** → [`computer-use-six-contracts-deep-outline.md`](./computer-use-six-contracts-deep-outline.md) · live guide |
 | **Recovery Phase 0/1 + tool journal** | `runtime-resume-phase0*`, `phase1*`, `runtime-recovery-resolver-adr*`, `runtime-resume-tool-journal*`, `recovery-resolver.ts`, `runtime-resume.ts` | A+B+G | §01 `#recovery` deepen + §04 crash | **deep** (failpoint matrix + Resolver; #48) |
+| **AgentRunRecovery vs RuntimeRecovery** | `agent-run-recovery.ts`, `session-manager.ts`, `recovery-resolver.ts` | G+E | §01 `#agent-run-recovery` | **deep** → [`agent-run-vs-runtime-recovery-deep-outline.md`](./agent-run-vs-runtime-recovery-deep-outline.md) |
+| **Autonomous budget × projection** | `autonomous-agent-loop.ts` (`enforceCaps`, `autonomous_decision_recorded`) | G+E | §04 `#budget` | **deep** → [`autonomous-budget-projection-deep-outline.md`](./autonomous-budget-projection-deep-outline.md) |
+| **Heavy-task gate → official verifier** | `heavy-task-self-check-gate.ts` | G+E | §05 `#repair` | **deep** → [`heavy-task-self-check-gate-deep-outline.md`](./heavy-task-self-check-gate-deep-outline.md) |
+| **AHE scoreAuthority + forbidden patch** | `ahe-evidence-export.ts`, `ahe-target-protocol.ts` | A+G+E | §06 `#authority` / `#manifest` | **deep** → [`ahe-score-authority-forbidden-patch-deep-outline.md`](./ahe-score-authority-forbidden-patch-deep-outline.md) |
 | **Execution evidence spine** | `execution-evidence-spine.md`, `packages/core` execution-evidence | A+G | §01 `#execution-evidence` + lean §02/§04/§05/§06 | **deep** → [`execution-evidence-deep-outline.md`](./execution-evidence-deep-outline.md); live zh+en |
 | **Session task ledger** (≠ TaskRun) | `session-task-ledger-lifecycle.md`, `task-ledger-store.ts`, `task-ledger-tools.ts` | A+G | §04 `#ledger` | **deep** (contrast section; #49) |
 | **MCP runtime** | `mcp-runtime-architecture-draft.zh-CN.md`, `mcp-tools.ts`, `packages/mcp` | B+G | §01 `#mcp` | **outline+shipped** → [`mcp-runtime-deep-outline.md`](./mcp-runtime-deep-outline.md) |
@@ -171,15 +175,19 @@ A seam is mined enough for Destination only when:
 | [#52](https://github.com/tt-a1i/agent-atelier/issues/52) | Agent swarm + expert team | **closed** — outline + §04 `#swarm` |
 | [#53](https://github.com/tt-a1i/agent-atelier/issues/53) | Skill catalog policy | **closed** — outline + §01 `#skills` |
 | [#54](https://github.com/tt-a1i/agent-atelier/issues/54) | Headless trust / Harbor | **closed** — outline + §04 `#harbor-trust` |
-| [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **outline + lean §01 durability** |
+| [#55](https://github.com/tt-a1i/agent-atelier/issues/55) | Storage ledgers | **closed research** · lean `#stores` remain (see `depth-corpus-status.md`) |
 | [#56](https://github.com/tt-a1i/agent-atelier/issues/56) | Shell/PTY/workspace-executor | **closed** research · [#68](https://github.com/tt-a1i/agent-atelier/issues/68) shipped §02 |
 | [#70](https://github.com/tt-a1i/agent-atelier/issues/70) / [#71](https://github.com/tt-a1i/agent-atelier/issues/71) | Filesystem worker / path containment | **closed** · §02 `#filesystem-worker` |
 | [#72](https://github.com/tt-a1i/agent-atelier/issues/72) / [#73](https://github.com/tt-a1i/agent-atelier/issues/73) | Desktop main composition | **closed** · `/guides/desktop-host` |
-| [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **outline + lean §01 note** |
+| [#57](https://github.com/tt-a1i/agent-atelier/issues/57) | Runtime-host gateway | **closed research** · lean `#runtime-host` remain |
 | [#58](https://github.com/tt-a1i/agent-atelier/issues/58) | Bot onboarding / IM | **closed** research · [#69](https://github.com/tt-a1i/agent-atelier/issues/69) shipped `/guides/bot-im` |
 | [#59](https://github.com/tt-a1i/agent-atelier/issues/59) | Workspace privacy + SECURITY | **closed** research + companion `/guides/security-privacy` shipped |
 | [#60](https://github.com/tt-a1i/agent-atelier/issues/60) | Archive-that-still-teaches sweep | **done** + top-3 absorb → `archive-mine-delta-absorb-2026-07-21.md` |
-| [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **outline + §01 `#usage-stores`** |
+| [#61](https://github.com/tt-a1i/agent-atelier/issues/61) | Usage/cost telemetry beyond request-shape | **closed research** · lean `#usage-stores` remain |
+| [#80](https://github.com/tt-a1i/agent-atelier/issues/80) | AgentRunRecovery vs RuntimeRecovery | **closed** · §01 `#agent-run-recovery` |
+| [#79](https://github.com/tt-a1i/agent-atelier/issues/79) | Autonomous budget × projection | **closed** · §04 `#budget` deepen |
+| [#77](https://github.com/tt-a1i/agent-atelier/issues/77) | Heavy-task gate → official | **closed** · §05 `#repair` triad |
+| [#78](https://github.com/tt-a1i/agent-atelier/issues/78) | AHE scoreAuthority + forbidden patch | **closed** · §06 |
 | [#74](https://github.com/tt-a1i/agent-atelier/issues/74) | ContextBudgetPolicy two-plane DSL | **closed** — §03 `#budget-dsl` |
 | [#75](https://github.com/tt-a1i/agent-atelier/issues/75) | Semantic compact gates | **closed** — §03 `#semantic-gates` |
 | [#76](https://github.com/tt-a1i/agent-atelier/issues/76) | Park/remember vs escalation one-shot | **closed** — §01 `#park-remember` |

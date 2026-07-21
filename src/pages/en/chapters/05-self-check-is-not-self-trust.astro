@@ -272,37 +272,82 @@ import PlanAuditRiskFlow from "../../../components/diagrams/PlanAuditRiskFlow.as
   <Section
     id="repair"
     label="§05 · Repair"
-    title="Bounded repair: allow correction, forbid infinite self-loops"
-    lede="maxRepairAttempts is fixed at 1; repair is a new Turn inside the same Attempt, not a new Task Attempt."
+    title="Gate triad: evidence → repair → official verifier"
+    lede="maxRepairAttempts defaults to 1; the third action is not “stop and shrug” — it hands final judgment to the official verifier. Self-check never mints official_pass."
   >
     <DiagramFigure
-      caption="Fig. 6 · Gate fails → check repair budget → bounded Repair Turn → re-check; stop when the budget is spent."
-      alt="Five steps: Gate fails, Budget check, Repair Turn, Re-check, Stop loop."
+      caption="Fig. 6 · allow_finalize · repair_prompt · allow_official_verifier_after_bounded_attempt (handoff, not self-minted authority)."
+      alt="Five steps: Gate evaluate, allow_finalize, repair_prompt, Re-check, allow_official."
     >
       <RepairBudgetFlow />
     </DiagramFigure>
     <p>
-      <code>evaluateHeavyTaskSelfCheckGate()</code> yields
-      <code>allow</code> / <code>repair</code> / <code>cap reached</code>. Current
-      <code>TaskAgentController</code> sequence:
+      <code>evaluateHeavyTaskSelfCheckGate()</code> has three real actions (do not teach “allow /
+      repair / stop”):
     </p>
+    <div class="table-wrap" role="region" aria-label="Self-check gate triad" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">action</th>
+            <th scope="col">When</th>
+            <th scope="col">Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>allow_finalize</code></th>
+            <td>Heavy-task off, or semantic complete + accepted pass evidence</td>
+            <td>May finalize; <strong>still advisory</strong> — ≠ official pass</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>repair_prompt</code></th>
+            <td>Blocked and <code>repairAttemptsUsed &lt; max</code> (default 1)</td>
+            <td>New Turn inside the same Attempt; prompt carries checklist / public-only constraints</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>allow_official_verifier_after_bounded_attempt</code></th>
+            <td>Still incomplete after the cap</td>
+            <td>
+              <strong>Stop self-repair</strong>; hand final judgment to the official verifier/scorer —
+              never elevate Self-check to official
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Current <code>TaskAgentController</code> sequence:</p>
     <ol class="plain-list numbered">
       <li>Main Invocation ends</li>
       <li>Record machine workspace observation</li>
       <li>Evaluate gate; append <code>heavy_task_self_check_gate_recorded</code></li>
       <li>
-        If action=repair: create a new Turn/AgentRun on the same Session / workspace; prompt includes
-        blocker, checklist, latest Self-check summary, and machine observation
+        If <code>repair_prompt</code>: create a new Turn/AgentRun on the same Session / workspace;
+        prompt includes blocker, checklist, latest Self-check summary, and machine observation
+        (forbids probing official verifier materials)
       </li>
-      <li>After the repair Turn, observe and gate again; repairAttemptsUsed=1 — no third Turn</li>
+      <li>
+        After the repair Turn, observe and gate again; when <code>repairAttemptsUsed=1</code> and still
+        blocked → <code>allow_official_verifier_after_bounded_attempt</code> — no third Turn
+      </li>
     </ol>
     <p>
       Accepted plan / Self-check become Task Events, project to
       <code>latestHeavyTaskSelfCheckPlan</code> / <code>latestHeavyTaskSelfCheck</code>, and enter the
-      bounded compact-evidence window (later Attempts typically render ~5 command and ~5 artifact
-      evidence items). Old Self-checks are not mutated — a new event only changes the latest
-      projection.
+      bounded compact-evidence window. Old Self-checks are not mutated — a new event only changes the
+      latest projection. AHE <code>scoreAuthority</code> bucketing:
+      <a href={localePath("en", "chapters/06-self-iteration-happens-outside-the-runtime") + "#authority"}
+        >§06 · #authority</a
+      >.
     </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        Gate triad introduced in
+        <a href={localePath("en", "history/pr/427")}>maka:pr:427</a>. Contract owned by
+        <code>heavy-task-self-check-gate.ts</code> and <code>task-agent-controller.test.ts</code>.
+      </p>
+    </aside>
   </Section>
 
   <Section

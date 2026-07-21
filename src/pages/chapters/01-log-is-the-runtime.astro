@@ -13,6 +13,7 @@ import PermissionControlFlow from "../../components/diagrams/PermissionControlFl
 import ParkRememberVsEscalationFlow from "../../components/diagrams/ParkRememberVsEscalationFlow.astro";
 import SandboxOwnershipFlow from "../../components/diagrams/SandboxOwnershipFlow.astro";
 import RecoveryLayersFlow from "../../components/diagrams/RecoveryLayersFlow.astro";
+import AgentRunVsRuntimeRecoveryFlow from "../../components/diagrams/AgentRunVsRuntimeRecoveryFlow.astro";
 import T1T2BoundaryFlow from "../../components/diagrams/T1T2BoundaryFlow.astro";
 import TerminalRace from "../../components/diagrams/TerminalRace.astro";
 import PrefixVsShape from "../../components/diagrams/PrefixVsShape.astro";
@@ -792,6 +793,70 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     <p><strong>会</strong>：扫描非终态 Runs 与 ledgers；检测陈旧 model stream / tool 尾巴 / permission 等待 / 损坏 ops；保守提交 failed/cancelled 并修复 Session / Turn 投影。</p>
     <p><strong>不会</strong>：在工具中途重新调用模型；从副作用下一行 warm-resume；在没有 durable 事实时臆造「模型正要做的事」。</p>
 
+    <h3 id="agent-run-recovery" class="subhead">A′. 两套 recovery 权威：AgentRun ≠ RuntimeEvent</h3>
+    <p>
+      启动修理里其实有<strong>两个</strong>分类器。把它们塌成一句「warm resume」会同时弄丢 Session
+      终态修复与工具边界判决。
+    </p>
+    <DiagramFigure
+      caption="图 8b′ · classifyAgentRunRecovery 关闭非终态 AgentRun；resolveRuntimeRecovery 才是工具边界唯一权威。"
+      alt="两列：AgentRunRecovery 与 RuntimeRecovery，输入账本与输出语义不同。"
+    >
+      <AgentRunVsRuntimeRecoveryFlow />
+    </DiagramFigure>
+    <div class="table-wrap" role="region" aria-label="AgentRunRecovery vs RuntimeRecovery" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">AgentRunRecovery</th>
+            <th scope="col">RuntimeRecovery</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">函数</th>
+            <td><code>classifyAgentRunRecovery</code></td>
+            <td><code>resolveRuntimeRecovery</code></td>
+          </tr>
+          <tr>
+            <th scope="row">输入账本</th>
+            <td><code>AgentRunHeader</code> + ops <code>AgentRunEvent[]</code></td>
+            <td>canonical <code>RuntimeEvent[]</code> 前缀</td>
+          </tr>
+          <tr>
+            <th scope="row">问题</th>
+            <td>非终态 Run 如何保守关闭？</td>
+            <td>工具 call / dispatch / response 处于哪一判决？</td>
+          </tr>
+          <tr>
+            <th scope="row">典型输出</th>
+            <td>
+              <code>failed</code> + <code>failureClass: app_restarted</code> + diagnostic（如
+              <code>tool_interrupted</code> · <code>stale_permission_wait</code> ·
+              <code>run_interrupted</code>）
+            </td>
+            <td>
+              <code>completed</code> · <code>indeterminate</code> ·
+              <code>definitely_not_dispatched</code> · <code>corruption</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">不做的事</th>
+            <td>不判定 unsettled tool op 是否可重跑</td>
+            <td>不单独修理 Session / Turn 投影</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <code>SessionManager</code> 的诚实顺序：若已有 Runtime terminal fact，优先映射为 AgentRun
+      决策；否则才跑 <code>classifyAgentRunRecovery</code>。随后
+      <code>applyAgentRunRecovery</code> 提交终态 Run（可补写 recovered terminal RuntimeEvent）并按需修补
+      Turn——诊断里带 <code>recovered: true</code>。这<strong>不是</strong> Resolver：工具边界仍只认
+      <code>resolveRuntimeRecovery()</code>（见下文 T1/T2）。
+    </p>
+
     <h3 class="subhead">B. Phase0 failpoint 矩阵</h3>
     <p>
       生产 API 是纯函数：已提交 <code>RuntimeEvent</code> 前缀 → ToolOperation 投影 →
@@ -1010,14 +1075,17 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注 · 机制</p>
       <p>
-        Durable safe-boundary phases（含 resolver / sink / sqlite T1–T2）：
+        AgentRun 启动恢复分类器：commit <code>06112db9</code>（Recover sessions from AgentRun
+        ledger）· <code>agent-run-recovery.ts</code>。Durable safe-boundary phases（含 resolver /
+        sink / sqlite T1–T2）：
         <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>maka:pr:1223</a>。合同以测试为准：
         <code>recovery-resolver.test.ts</code>（决策表逐行）、
         <code>tool-runtime-durable-boundary.test.ts</code>（T1 失败零 impl；顺序
         t1→impl→t2）、
         <code>tool-runtime-sqlite-boundary.test.ts</code>、
         <code>sqlite-runtime-crash.test.ts</code>（SIGKILL）。ADR：
-        <code>runtime-recovery-resolver-adr.zh-CN.md</code>。
+        <code>runtime-recovery-resolver-adr.zh-CN.md</code>。Outline：
+        <code>docs/research/agent-run-vs-runtime-recovery-deep-outline.md</code>。
       </p>
     </aside>
 

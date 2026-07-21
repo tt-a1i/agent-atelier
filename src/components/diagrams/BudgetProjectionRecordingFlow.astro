@@ -1,0 +1,119 @@
+---
+/**
+ * §04 protocol — live LoopBudgetSnapshot vs what TaskRun projection records.
+ */
+---
+
+<svg
+  class="bp-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="bp-kicker bp-stage bp-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · BUDGET SNAPSHOT · PROJECTED DECISIONS · LIVE COUNTERS
+  </text>
+  <line
+    class="bp-stage bp-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="bp-col bp-stage bp-stage--1" transform="translate(8,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="bp-col__idx" x="14" y="28" fill="var(--accent)">LIVE · LOOP</text>
+    <text class="bp-col__title" x="14" y="54" fill="var(--ink)">In-memory</text>
+    <text class="bp-col__line" x="14" y="90" fill="var(--mute)">startedAt</text>
+    <text class="bp-col__line" x="14" y="110" fill="var(--mute)">runtimeStepsUsed</text>
+    <text class="bp-col__line" x="14" y="130" fill="var(--mute)">decision closure</text>
+    <text class="bp-col__line" x="14" y="154" fill="var(--ink)">not fully durable</text>
+  </g>
+
+  <g class="bp-col bp-stage bp-stage--2" transform="translate(298,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="bp-col__idx" x="14" y="28" fill="var(--accent)">GATE · ENFORCE</text>
+    <text class="bp-col__title" x="14" y="54" fill="var(--ink)">enforceCaps</text>
+    <text class="bp-col__line" x="14" y="90" fill="var(--mute)">policy may continue</text>
+    <text class="bp-col__line" x="14" y="110" fill="var(--mute)">hard caps re-apply</text>
+    <text class="bp-col__line" x="14" y="130" fill="var(--mute)">passed → force stop</text>
+    <text class="bp-col__line" x="14" y="154" fill="var(--ink)">caps dominate policy</text>
+  </g>
+
+  <g class="bp-col bp-stage bp-stage--3" transform="translate(588,52)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="bp-col__idx" x="14" y="28" fill="var(--accent)">PROJECTED · EVENTS</text>
+    <text class="bp-col__title" x="14" y="54" fill="var(--ink)">Task Events</text>
+    <text class="bp-col__line" x="14" y="90" fill="var(--mute)">autonomous_decision_recorded</text>
+    <text class="bp-col__line" x="14" y="110" fill="var(--mute)">embeds LoopBudgetSnapshot</text>
+    <text class="bp-col__line" x="14" y="130" fill="var(--mute)">task_run_budget_exhausted</text>
+    <text class="bp-col__line" x="14" y="154" fill="var(--ink)">auditable ≠ resumable</text>
+  </g>
+</svg>
+
+<style>
+  .bp-flow {
+    font-family: var(--sans);
+  }
+  .bp-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .bp-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .bp-col__title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .bp-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bp-stage {
+      opacity: 0;
+      animation: bp-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .bp-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .bp-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .bp-stage--2 {
+      animation-delay: 0.3s;
+    }
+    .bp-stage--3 {
+      animation-delay: 0.44s;
+    }
+    @keyframes bp-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bp-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
