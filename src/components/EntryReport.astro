@@ -49,7 +49,7 @@ const copy =
         tocLabel: "Six chapters",
         tocTitle: "Chapter index",
         tocLede:
-          "Routes match Maka ARCHITECTURE English titles 1:1. Done = structure hard gate (necessary, not sufficient). Mechanism depth is a separate pass — in progress.",
+          "Routes match Maka ARCHITECTURE English titles 1:1. Done = structure hard gate (necessary, not sufficient). Mechanism depth: corpus dig v2 reached — product Destination still stub-gated.",
         tracksLabel: "Dual track",
         tracksTitle: "Cognitive track and history track",
         tracksLede:
@@ -65,10 +65,10 @@ const copy =
         dualAlt:
           "Two columns: Cognitive track §01–§06 milestones versus History track /history archive with PR-first filters and cross-links.",
         wipNote: allChaptersDone
-          ? "Structure hard gate green for §01–§06. Depth pass in progress — Destination NOT complete. Corpus dig status: docs/research/depth-corpus-status.md · map #34."
+          ? "Structure hard gate green for §01–§06. Depth corpus v2 reached (map #34 closed). Product Destination still NOT complete — AHE Target / Phase3 stubs. Status: docs/research/depth-corpus-status.md."
           : "Acceptance checklist is a hard gate. TOC WIP means unfinished — not a completed curriculum.",
         depthNote:
-          "Doc coverage matrix design-encoding debt cleared (docs/research/maka-doc-coverage-matrix.md). #86 opened /guides/desktop-ui (streaming / ToolTrow / permission slot — not a CSS dump); #87–#89 mined/decided. Destination still NOT complete under #34 (AHE Target controller / Phase3 reconciler stubs).",
+          "Depth corpus v2 reached — every design-encoding matrix row is deep|cite-only|history-only|product-stub (docs/research/maka-doc-coverage-matrix.md · depth-corpus-status.md). Product Destination remains stub-gated (AHE Target controller / Phase3 reconciler) — Current taught honestly, Target not invented.",
         paths: [
           {
             title: "First time in the Runtime",
@@ -80,7 +80,7 @@ const copy =
           },
           {
             title: "Headless, Self-check, or AHE",
-            body: "§01 → §04 → §05 → §06. All six are in the even-depth pass — not Hybrid-lean stubs. Corpus seams beyond these essays are still being mined.",
+            body: "§01 → §04 → §05 → §06. All six are protocol-deep for Current. AHE Target controller remains a product stub — taught as non-claim.",
           },
         ],
       }
@@ -101,7 +101,7 @@ const copy =
         tocLabel: "六章",
         tocTitle: "六章索引",
         tocLede:
-          "路由与 Maka ARCHITECTURE 英文章名 1:1。「完成」= 结构硬闸门（必要但不充分）。机制深度是另一条关卡——进行中。",
+          "路由与 Maka ARCHITECTURE 英文章名 1:1。「完成」= 结构硬闸门（必要但不充分）。机制深度：语料 dig v2 已达成——产品 Destination 仍受 stub 闸门约束。",
         tracksLabel: "双轨",
         tracksTitle: "认知轨与演进轨",
         tracksLede: "里程碑讲结构与协议；完整 commit/PR 谱系在 /history。",
@@ -116,10 +116,10 @@ const copy =
         dualAlt:
           "两列对照：认知轨 §01–§06 里程碑，与演进轨 /history 档案（PR-first、筛选、交叉引用）。",
         wipNote: allChaptersDone
-          ? "结构硬闸门已绿。深度关卡进行中——Destination 未完成。语料状态见 docs/research/depth-corpus-status.md · map #34。"
+          ? "结构硬闸门已绿。深度语料 dig v2 已达成（map #34 已关）。产品 Destination 仍未完成——AHE Target / Phase3 为 stub。状态：docs/research/depth-corpus-status.md。"
           : "验收清单是硬闸门。目录上的 WIP 表示未完成，不是已结业课程。",
         depthNote:
-          "文档覆盖矩阵的 design-encoding 债务已清（docs/research/maka-doc-coverage-matrix.md）。#86 开 /guides/desktop-ui（streaming / ToolTrow / 权限槽位——不是 CSS dump）；#87–#89 已挖入/裁定。Destination 仍未完成（#34）：AHE Target 控制器 / Phase3 reconciler 仍为产品 stub。",
+          "深度语料 dig v2 已达成——design-encoding 矩阵行均为 deep|cite-only|history-only|product-stub（docs/research/maka-doc-coverage-matrix.md · depth-corpus-status.md）。产品 Destination 仍受 stub 闸门约束（AHE Target 控制器 / Phase3 reconciler）——诚实教 Current，不发明 Target。",
         paths: [
           {
             title: "第一次进入 Runtime",
@@ -131,7 +131,7 @@ const copy =
           },
           {
             title: "改 Headless、Self-check 或 AHE",
-            body: "§01 → §04 → §05 → §06。六章都在 even-depth 关卡内——不是 Hybrid lean stubs。章外语料缝仍在挖掘。",
+            body: "§01 → §04 → §05 → §06。六章对 Current 协议已深。AHE Target 控制器仍为产品 stub——按非宣称教。",
           },
         ],
       };
@@ -258,6 +258,14 @@ const requestShapeHref = `${chapterHref("01-log-is-the-runtime", locale)}#reques
       <p class="entry-wip-note">{copy.wipNote}</p>
       <p class="entry-depth-note">
         {copy.depthNote}{" "}
+        <a href="https://github.com/tt-a1i/agent-atelier/blob/main/docs/research/depth-corpus-status.md"
+          >depth-corpus-status.md</a
+        >
+        {" · "}
+        <a href="https://github.com/tt-a1i/agent-atelier/blob/main/docs/research/maka-doc-coverage-matrix.md"
+          >maka-doc-coverage-matrix.md</a
+        >
+        {" · "}
         <a href={requestShapeHref}>§01 · #request-shape</a>
         {" · "}
         <a href={`${chapterHref("01-log-is-the-runtime", locale)}#execution-evidence`}
