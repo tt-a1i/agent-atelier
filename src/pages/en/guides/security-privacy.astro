@@ -114,11 +114,14 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       lede="Keep “mechanism ready” separate from “boundary shipped”."
     >
       <p>
-        Runtime exposes a macOS Seatbelt (and Linux bubblewrap) command transformer, but current
-        product compositions do <strong>not</strong> yet route command execution through it — so
+        Runtime exposes a macOS Seatbelt (and Linux bubblewrap) command transformer —
+        <code>createDefaultSandboxManager()</code> already registers
+        <code>LinuxBubblewrapBackend</code> — but current product compositions do
+        <strong>not</strong> yet route command execution through it, so
         <code>SECURITY.md</code> §2.2 states it is <strong>not</strong> a product boundary today.
-        Externally isolated runtimes may supply their own. See the sandbox README and §01
-        <code>#sandbox</code>.
+        Externally isolated runtimes may supply their own. Mechanism teaching follows §01
+        <code>#sandbox</code> plus <code>default-sandbox-manager.ts</code> /
+        <code>linux-sandbox.ts</code>.
       </p>
     </Section>
 
@@ -223,11 +226,16 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       <ul class="plain-list">
         <li><code>SECURITY.md</code> — trust model + report scope</li>
         <li><code>docs/workspace-privacy-context.md</code> — tiny privacy contract</li>
-        <li><code>packages/runtime/src/sandbox/README.md</code> — platform transform Current</li>
+        <li>
+          <code>packages/runtime/src/sandbox/*.ts</code> — platform transform Current (code wins);
+          sandbox <code>README.md</code> may lag the Linux bubblewrap wiring — do not treat it as
+          sole authority
+        </li>
       </ul>
       <p>
         Threat-model archives (memory/search/voice) are history-only (#60); Current is code + the
-        table above. Outline:
+        table above. Local-memory inject boundary:
+        <a href={localePath(locale, "guides/local-memory")}>/guides/local-memory</a>. Outline:
         <code>docs/research/trust-privacy-security-deep-outline.md</code>.
       </p>
     </Section>

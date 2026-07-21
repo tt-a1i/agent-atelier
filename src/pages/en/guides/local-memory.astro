@@ -1,0 +1,262 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/local-memory");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Local memory whitebox · Agent Atelier"
+  description="Maka Desktop transparent MEMORY.md: two switches, disk permissions, fail-open parse, agent inject boundary — companion report, not a seventh worldview chapter."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">本地记忆白盒</span>
+        <span class="masthead__title-en">Local memory whitebox</span>
+      </h1>
+      <p class="masthead__sub">
+        Current code contract: how a transparent Markdown file becomes an
+        <strong>explicit opt-in</strong> durable prefix — not implicit memory. Orthogonal to
+        §01–§06 — enter from
+        <a href={`${ch01}#request-shape`}>§01 · #request-shape</a> /
+        <a href={`${ch01}#trust`}>#trust</a>, then this page. When docs disagree,
+        <strong>code + contract tests win</strong>.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/local-memory</span>
+        <span>Research+Ship · #85</span>
+        <span>
+          <a href={localePath("zh", "guides/local-memory")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Memory · Scene"
+      title="Transparent file ≠ default inject"
+      lede="User-visible MEMORY.md enters the system prompt only after an explicit agent-read switch."
+    >
+      <p>
+        <code>@maka/core</code> <code>local-memory.ts</code> describes a V0.1 user-visible Markdown
+        contract: no hidden durable memory, embeddings, vector recall, or agent tool that silently
+        writes memory. Desktop <code>LocalMemoryService</code> owns disk + Settings wiring; inject
+        happens in <code>system-prompt-main.ts</code>.
+      </p>
+      <blockquote class="pull">
+        enabled opens the file; agentReadEnabled opens inject — default off.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="two-switches"
+      label="Memory · Switches"
+      title="Two switches: enabled × agentReadEnabled"
+      lede="Normalization fail-closes agent read: only === true turns it on."
+    >
+      <div class="table-wrap" role="region" aria-label="Two-switch defaults" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Switch</th>
+              <th scope="col">Default</th>
+              <th scope="col">Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>enabled</code></th>
+              <td><code>true</code></td>
+              <td>File feature on; off → status=<code>disabled</code></td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agentReadEnabled</code></th>
+              <td><code>false</code></td>
+              <td>Whether active entries inject into durable <code>&lt;local-memory&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>normalizeLocalMemorySettings</code>: malformed input → defaults;
+        <code>agentReadEnabled</code> opens only when strictly <code>true</code> (string
+        <code>"yes"</code> etc. stay false).
+      </p>
+    </Section>
+
+    <Section
+      id="disk"
+      label="Memory · Disk"
+      title="Disk surface: MEMORY.md + PENDING.md"
+      lede="Directory 0700 / files 0600; atomic writes; redact before persist."
+    >
+      <pre class="code-block" aria-label="memory paths">&lt;workspaceRoot&gt;/memory/
+├── MEMORY.md     # user-visible ledger
+└── PENDING.md    # proposals awaiting approval</pre>
+      <ul class="plain-list">
+        <li>
+          <code>LOCAL_MEMORY_MAX_BYTES = 128 × 1024</code> — oversize → parse
+          <code>safeMode</code> / <code>oversize</code>; no active entries injected.
+        </li>
+        <li>
+          Prompt body <code>LOCAL_MEMORY_PROMPT_MAX_CHARS = 12_000</code>; overflow appends
+          truncation marker <code>[本地记忆已按长度截断]</code>.
+        </li>
+        <li>
+          Parse fail-open: heading entries without HTML comments still show; unknown metadata
+          fields ignored.
+        </li>
+        <li>
+          Only <code>active</code> (or default-active) entries enter
+          <code>buildLocalMemoryPromptBody</code>; archived / pending / rejected stay out of the
+          durable prefix.
+        </li>
+        <li><code>redactSecrets</code> before write; backups on save / reset / restore.</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="inject"
+      label="Memory · Inject"
+      title="Inject boundary: durable prefix vs turn tail"
+      lede="Fresh changes ride the turn tail; they must not impersonate system rules."
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <code>buildLocalMemoryPromptFragment</code> — emits <code>&lt;local-memory&gt;</code>
+          only when <code>agentReadEnabled && status === 'ok'</code>, with a banner that it must not
+          override system / permission rules.
+        </li>
+        <li>
+          <code>&lt;memory-update&gt;</code> turn tail — this-turn approve / remember / archive
+          summaries; next turn re-reads MEMORY.md effective state; not promoted to durable
+          instructions.
+        </li>
+        <li>
+          Incognito: <code>incognitoActive</code> → status <code>incognito_blocked</code>, forces
+          <code>agentReadEnabled: false</code>, blocks read/write.
+        </li>
+      </ol>
+      <p>
+        Same causal story as §01 prefix vs turn tail: stuffing freshly approved memory into the
+        durable prefix jitters <code>prefixHash</code>; the contract keeps fresh updates on the
+        tail.
+      </p>
+    </Section>
+
+    <Section
+      id="lifecycle"
+      label="Memory · Lifecycle"
+      title="Entry lifecycle (Current)"
+      lede="Manual write · proposal · approval · archive — no silent auto-memory."
+    >
+      <ul class="plain-list">
+        <li>Manual append → active draft (Settings editor / service API)</li>
+        <li>
+          Chat proposal → <code>PENDING.md</code> → approve / reject (surfaces: settings queue /
+          inline / manual save)
+        </li>
+        <li>Archive / restore; status metadata may write back into comments</li>
+        <li>
+          Parser may read some extended fields (tags / decayTtlMs / unknownField fail-open) —
+          <strong>not</strong> delivery of Dream Mode / vector search; the file header still
+          declares no embeddings / implicit recall.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="failure"
+      label="Memory · Failure"
+      title="Failure modes"
+      lede="Prefer safe_mode / no inject over pretending the agent already read memory."
+    >
+      <ul class="plain-list">
+        <li>Oversize file → <code>safe_mode</code>; prompt body undefined</li>
+        <li><code>agentReadEnabled</code> off or status ≠ ok → no inject</li>
+        <li>Incognito → read/write blocked</li>
+        <li>Empty title / content / oversize draft → mutation rejected</li>
+        <li>Disk read error → status <code>error</code>; never fake empty success memory</li>
+      </ul>
+      <aside class="history-aside">
+        <p class="history-aside__tag">Verification · aside</p>
+        <p>
+          Code: <code>packages/core/src/local-memory.ts</code> ·
+          <code>apps/desktop/src/main/local-memory-service.ts</code> ·
+          <code>system-prompt-main.ts</code>. Tests:
+          <code>local-memory.test.ts</code> · <code>local-memory-service.test.ts</code> ·
+          <code>local-memory-ui-contract.test.ts</code>. Archive two-switch history:
+          <code>docs/research/memory-whitebox-archive-delta.md</code>. Outline:
+          <code>docs/research/local-memory-current-deep-outline.md</code>. Trust surface:
+          <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>.
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    overflow-x: auto;
+    max-width: 48em;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+  }
+</style>

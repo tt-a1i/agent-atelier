@@ -109,10 +109,12 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       lede="机制就绪与边界交付必须分开诚实。"
     >
       <p>
-        Runtime 暴露 macOS Seatbelt（及 Linux bubblewrap 路径）command transformer，但当前产品
+        Runtime 暴露 macOS Seatbelt（及 Linux bubblewrap 路径）command transformer——
+        <code>createDefaultSandboxManager()</code> 已注册 <code>LinuxBubblewrapBackend</code>——但当前产品
         composition <strong>尚未</strong>把命令执行统一路由进 transform——因此
         <code>SECURITY.md</code> §2.2 明确：它<strong>不是</strong>今日产品边界。外部隔离 runtime
-        可自带边界。详见 sandbox README 与 §01 <code>#sandbox</code>。
+        可自带边界。机制教学以 §01 <code>#sandbox</code> 与
+        <code>default-sandbox-manager.ts</code> / <code>linux-sandbox.ts</code> 为准。
       </p>
     </Section>
 
@@ -213,10 +215,14 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       <ul class="plain-list">
         <li><code>SECURITY.md</code> — 信任模型 + 报告范围</li>
         <li><code>docs/workspace-privacy-context.md</code> — 极小隐私合同</li>
-        <li><code>packages/runtime/src/sandbox/README.md</code> — 平台 transform Current</li>
+        <li>
+          <code>packages/runtime/src/sandbox/*.ts</code> — 平台 transform Current（code wins）；sandbox
+          <code>README.md</code> 可能滞后于 Linux bubblewrap 接线，勿单独当权威
+        </li>
       </ul>
       <p>
-        Archive 威胁模型快照（memory/search/voice）属 history-only（#60）；Current 以代码与上表为准。提纲：
+        Archive 威胁模型快照（memory/search/voice）属 history-only（#60）；Current 以代码与上表为准。本地记忆注入边界见
+        <a href={localePath(locale, "guides/local-memory")}>/guides/local-memory</a>。提纲：
         <code>docs/research/trust-privacy-security-deep-outline.md</code>。
       </p>
     </Section>

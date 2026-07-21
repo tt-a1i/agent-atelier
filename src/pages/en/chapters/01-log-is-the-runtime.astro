@@ -1683,14 +1683,13 @@ Host does NOT own: tool-loop API · Permission UI op · full session CRUD · set
       </table>
     </div>
     <aside class="history-aside">
-      <p class="history-aside__tag">Archive delta · memory whitebox</p>
+      <p class="history-aside__tag">Local memory · Current companion</p>
       <p>
-        Archive <code>maka-memory-whitebox-contract.md</code> freezes the two-switch model:
-        <code>enabled</code> (file feature) vs <code>agentReadEnabled</code> (may enter the system
-        prompt; default OFF) — a transparent local file must <strong>not</strong> become implicit
-        durable memory the agent reads by default. Disk format / field names follow Current
-        <code>local-memory</code> code; while TOC has no dedicated memory chapter, the field table
-        lives in <code>docs/research/memory-whitebox-archive-delta.md</code>.
+        The two-switch model (<code>enabled</code> / <code>agentReadEnabled</code> default OFF) and
+        <code>MEMORY.md</code> inject boundary are Current Desktop contracts — not implicit durable
+        memory. Full whitebox (disk perms, safe_mode, prefix vs turn-tail, failure modes):
+        <a href={localePath("en", "guides/local-memory")}>/guides/local-memory</a>. Archive history
+        aside: <code>docs/research/memory-whitebox-archive-delta.md</code>.
       </p>
     </aside>
 

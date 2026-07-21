@@ -16,10 +16,11 @@
 
 ## What atelier does *not* claim
 
-- TOC does **not** open a dedicated memory chapter this pass.
-- V0.2/V0.3 field extensions / Dream Mode / vector search remain open questions in archive — not Destination body.
+- TOC does **not** open a dedicated memory *worldview* chapter — Current teaching home is companion `/guides/local-memory` ([#85](https://github.com/tt-a1i/agent-atelier/issues/85)).
+- Dream Mode / vector search remain non-claims — not Destination body.
 - Do not teach archive disk-format comments as the live schema without grepping Current parsers.
 
 ## Link back
 
+Current outline: [`local-memory-current-deep-outline.md`](./local-memory-current-deep-outline.md).  
 Absorb index: [`archive-mine-delta-absorb-batch2-2026-07-21.md`](./archive-mine-delta-absorb-batch2-2026-07-21.md).

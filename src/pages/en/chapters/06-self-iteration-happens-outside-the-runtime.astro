@@ -154,6 +154,72 @@ Target Snapshot</pre>
       sources and topology → same id; any registered source change → new id. Legacy v1 remains readable
       but is not upgraded or pretended to be content-bound evidence.
     </p>
+    <div class="table-wrap" role="region" aria-label="snapshotId inputs" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Enters <code>makaAheTargetSnapshotId</code></th>
+            <th scope="col">Does not enter id (may still appear on the document)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>protocolVersion: maka.ahe-target.v2</code> · canonical component topology ·
+              <code>sourceManifest.algorithm</code> + <code>digest</code>
+            </td>
+            <td><code>createdAt</code> · <code>sourceLabel</code> · optional <code>git</code> metadata</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The v2 validator also requires <code>sourceManifest.entries</code> to
+      <strong>exactly cover</strong> every component <code>sourceRefs</code> (componentId / path /
+      exportName), and the content hash of those entries to equal <code>sourceManifest.digest</code>;
+      <code>snapshotId</code> must equal the recomputed expectation from topology + manifest digest.
+      A v1 document that carries <code>sourceManifest</code> is rejected — legacy must not be
+      reinterpreted as content-bound.
+    </p>
+    <h3 class="subhead">Current validators vs type-only shapes</h3>
+    <div class="table-wrap" role="region" aria-label="AHE protocol validators" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Export</th>
+            <th scope="col">Current job</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>validateMakaAheTargetSnapshot</code></th>
+            <td>v1\|v2 shape; v2 content-binding</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheChangeManifest</code></th>
+            <td>
+              <code>staged_patch</code> · editable surface · <code>editedSurface</code> matches
+              changed categories · forbidden paths · minimum experiment fields
+            </td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheRunResult</code></th>
+            <td>status × scoreAuthority coupling; optional lineage ref</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheExecutionLineage</code></th>
+            <td>ownership + <code>rawRuntimeEvents</code> enum + gap codes</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>MakaAheChangeEvaluation</code> (type)</th>
+            <td>
+              <strong>No</strong> <code>validateMakaAheChangeEvaluation</code> — shape is pinned;
+              admission remains external / Target
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </Section>
 
   <Section
@@ -332,19 +398,27 @@ Target Snapshot</pre>
       <EvalTransitionFlow />
     </DiagramFigure>
     <p>
-      <code>MakaAheChangeEvaluation</code> distinguishes
+      The <code>MakaAheChangeEvaluation</code> type binds <code>manifestId</code>,
+      <code>baselineSnapshotId</code> / <code>candidateSnapshotId</code>,
+      <code>candidateRunId</code>, and per-task <code>cells[]</code> (each with optional baseline /
+      candidate <code>MakaAheRunResult</code> and a <code>transition</code>). Transition enum:
       <code>fail_to_pass</code>, <code>fail_to_fail</code>, <code>pass_to_pass</code>,
-      <code>pass_to_fail</code>, <code>new_pass</code> / <code>new_fail</code>, and
-      <code>infra_or_excluded</code>, and tracks
+      <code>pass_to_fail</code>, <code>new_pass</code> / <code>new_fail</code>,
+      <code>infra_or_excluded</code>. Aggregate ledgers:
       <code>predictedFixesObserved</code> / <code>predictedFixesMissed</code> /
-      <code>regressions</code>. A controller can then answer: did predicted wins happen? were risk
-      predictions validated? did one target case sacrifice previously passing cases? did the score move
-      only because more cells were excluded?
+      <code>regressions</code> / <code>excludedTaskIds</code> /
+      <code>infraFailedTaskIds</code> / <code>selfCheckOnlyTaskIds</code>. A controller can then
+      answer: did predicted wins happen? did one target case sacrifice previously passing cases? did
+      the score move only because more cells were excluded or marked self-check-only?
     </p>
     <p>
-      Current protocol defines the evaluation data shape, but the same module does not yet ship a full
-      change-evaluation validator, automatic keep/discard controller, or AHE runner — the closed loop
-      remains Target / an external controller.
+      Contract docs name <code>change-manifest.json</code> /
+      <code>change-evaluation.json</code> as protocol files; Current
+      <code>maka eval ahe export</code> writes snapshot / harness / traces / lineage and does
+      <strong>not</strong> run AHE, apply patches, or export
+      <code>validateMakaAheChangeEvaluation</code> from the same module. The closed loop (evaluation
+      admission, keep/discard, iteration WAL, general runner) remains Target / an external
+      controller — a type is not an admission validator.
     </p>
   </Section>
 
@@ -444,14 +518,15 @@ Target Snapshot</pre>
       <li>CLI can export baseline evidence, but does not run AHE or apply patches</li>
     </ul>
     <div class="stub">
-      <p class="stub__tag">Target closed loop still needs</p>
+      <p class="stub__tag">Target closed loop still needs (deliberately not faked)</p>
       <p>
-        Stronger Git-commit or content binding; full hash binding between manifest and actual diff;
-        general candidate workspace / patch executor / sandbox; change-evaluation validator and explicit
-        keep/discard; iteration WAL / resume fingerprint / lineage; dataset partition and leak
-        prevention; cost / round / concurrency / regression budgets; writing candidate decisions back to
-        an evolution ledger — mature self-iteration should have a smaller change surface, stronger
-        evidence binding, and clearer stop conditions.
+        <code>validateMakaAheChangeEvaluation</code> and evaluation-file admission; a general
+        candidate workspace / patch executor / sandbox; explicit keep/discard controller; iteration
+        WAL / resume fingerprint; dataset partition and leak prevention; cost / round / concurrency /
+        regression budgets; writing candidate decisions back to an evolution ledger. v2 already has
+        source-byte content binding — what remains is full execution binding of manifest↔actual diff
+        plus a runner. Mature self-iteration should have a smaller change surface, stronger evidence
+        binding, and clearer stop conditions.
       </p>
     </div>
   </Section>
@@ -482,7 +557,7 @@ Target Snapshot</pre>
       <li>History asides <a href={localePath("en", "history/pr/411")}>maka:pr:411</a> ·
         <a href={localePath("en", "history/pr/413")}>maka:pr:413</a> ·
         <a href={localePath("en", "history/pr/776")}>maka:pr:776</a></li>
-      <li>Current read-only protocol vs Target full controller: written (CN+EN ship together)</li>
+      <li>Current validator matrix + ChangeEvaluation type without validator; Target controller still stub (CN+EN)</li>
     </ul>
   </div>
 </ChapterShell>

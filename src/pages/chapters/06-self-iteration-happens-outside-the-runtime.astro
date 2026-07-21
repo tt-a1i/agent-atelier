@@ -141,6 +141,71 @@ Target Snapshot</pre>
       topology。相同源码与拓扑得到相同 id；任一已登记源码变化则 id 变化。旧 v1 仍可作 legacy
       读取，不会被升级或冒充为 content-bound evidence。
     </p>
+    <div class="table-wrap" role="region" aria-label="snapshotId 输入" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">进入 <code>makaAheTargetSnapshotId</code></th>
+            <th scope="col">不进入 id（仍可出现在文档）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>protocolVersion: maka.ahe-target.v2</code> · 规范化 component topology ·
+              <code>sourceManifest.algorithm</code> + <code>digest</code>
+            </td>
+            <td><code>createdAt</code> · <code>sourceLabel</code> · 可选 <code>git</code> 元数据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      v2 validator 还要求 <code>sourceManifest.entries</code>
+      <strong>精确覆盖</strong>全部 component <code>sourceRefs</code>（componentId / path /
+      exportName），且 entries 的内容哈希等于 <code>sourceManifest.digest</code>；
+      <code>snapshotId</code> 必须等于由 topology + manifest digest 重算的期望值。v1 若携带
+      <code>sourceManifest</code> 会被拒绝——legacy 不可被重新解释为 content-bound。
+    </p>
+    <h3 class="subhead">Current 准入器 vs 仅有类型</h3>
+    <div class="table-wrap" role="region" aria-label="AHE 协议准入器" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">导出函数</th>
+            <th scope="col">Current 作用</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>validateMakaAheTargetSnapshot</code></th>
+            <td>v1\|v2 结构；v2 content-binding</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheChangeManifest</code></th>
+            <td>
+              <code>staged_patch</code> · editable 面 · <code>editedSurface</code> 与 changed
+              category 一致 · 禁止路径 · 最小实验字段
+            </td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheRunResult</code></th>
+            <td>status × scoreAuthority 耦合；可选 lineage ref</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>validateMakaAheExecutionLineage</code></th>
+            <td>ownership + <code>rawRuntimeEvents</code> 枚举 + gap codes</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>MakaAheChangeEvaluation</code>（类型）</th>
+            <td>
+              <strong>无</strong> <code>validateMakaAheChangeEvaluation</code>——形状已钉死，admission
+              仍属外部 / Target
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </Section>
 
   <Section
@@ -317,17 +382,27 @@ Target Snapshot</pre>
       <EvalTransitionFlow />
     </DiagramFigure>
     <p>
-      <code>MakaAheChangeEvaluation</code> 区分
+      <code>MakaAheChangeEvaluation</code> 类型绑定
+      <code>manifestId</code>、<code>baselineSnapshotId</code> /
+      <code>candidateSnapshotId</code>、<code>candidateRunId</code>，以及 per-task
+      <code>cells[]</code>（各含可选 baseline/candidate <code>MakaAheRunResult</code> 与
+      <code>transition</code>）。Transition 枚举：
       <code>fail_to_pass</code>、<code>fail_to_fail</code>、<code>pass_to_pass</code>、
       <code>pass_to_fail</code>、<code>new_pass</code> / <code>new_fail</code>、
-      <code>infra_or_excluded</code>，并跟踪
+      <code>infra_or_excluded</code>。聚合账本字段：
       <code>predictedFixesObserved</code> / <code>predictedFixesMissed</code> /
-      <code>regressions</code>。这样 controller 能回答：预测修复真的发生了吗？风险预测被验证了吗？是否为了一个目标案例牺牲了原本通过的案例？分数变化是否只是因为更多
-      cell 被排除？
+      <code>regressions</code> / <code>excludedTaskIds</code> /
+      <code>infraFailedTaskIds</code> / <code>selfCheckOnlyTaskIds</code>。这样 controller
+      能回答：预测修复真的发生了吗？是否为了一个目标案例牺牲了原本通过的案例？分数变化是否只是因为更多
+      cell 被排除或标成 self-check-only？
     </p>
     <p>
-      Current 协议定义了 evaluation 数据结构，但还没有在同一模块中提供完整的 change-evaluation
-      validator、自动 keep/discard controller 或 AHE runner——完整闭环仍属 Target / 外部 controller。
+      合同文档把 <code>change-manifest.json</code> /
+      <code>change-evaluation.json</code> 列为协议文件；Current
+      <code>maka eval ahe export</code> 写出 snapshot / harness / traces / lineage，<strong>不</strong>运行
+      AHE、不应用 patch、也不在同模块导出 <code>validateMakaAheChangeEvaluation</code>。完整闭环（evaluation
+      admission、keep/discard、iteration WAL、通用 runner）仍属 Target / 外部 controller——有类型 ≠
+      已有准入器。
     </p>
   </Section>
 
@@ -419,13 +494,14 @@ Target Snapshot</pre>
       <li>CLI 可导出 baseline evidence，但不会运行 AHE 或应用 patch</li>
     </ul>
     <div class="stub">
-      <p class="stub__tag">Target 闭环仍需</p>
+      <p class="stub__tag">Target 闭环仍需（有意不伪装）</p>
       <p>
-        强制 Git commit 或更强 content binding；manifest 与实际 diff 的完整 hash binding；通用
-        candidate workspace / patch executor / sandbox；change-evaluation validator 与明确
-        keep/discard；iteration WAL / resume fingerprint / lineage；dataset partition 与防泄漏；cost /
-        round / concurrency / regression budget；把 candidate decision 写回演化 ledger——更成熟的自迭代反而应有更小
-        change surface、更强证据绑定与更明确停止条件。
+        <code>validateMakaAheChangeEvaluation</code> 与 evaluation 文件 admission；通用 candidate
+        workspace / patch executor / sandbox；明确 keep/discard controller；iteration WAL / resume
+        fingerprint；dataset partition 与防泄漏；cost / round / concurrency / regression
+        budget；把 candidate decision 写回演化 ledger。v2 已有 source-byte content binding——仍缺的是
+        manifest↔实际 diff 的完整执行绑定与 runner。更成熟的自迭代反而应有更小 change
+        surface、更强证据绑定与更明确停止条件。
       </p>
     </div>
   </Section>
@@ -456,7 +532,7 @@ Target Snapshot</pre>
       <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/411`}>maka:pr:411</a> ·
         <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a> ·
         <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a></li>
-      <li>Current 只读协议 vs Target 完整控制器：已写清（中英同船）</li>
+      <li>Current 准入器矩阵 + ChangeEvaluation 类型无 validator；Target 控制器仍 stub（中英同船）</li>
     </ul>
   </div>
 </ChapterShell>

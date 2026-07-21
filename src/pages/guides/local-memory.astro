@@ -1,0 +1,253 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/local-memory");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="本地记忆白盒 · Agent Atelier"
+  description="Maka Desktop 透明 MEMORY.md：双开关、磁盘权限、解析 fail-open、agent 注入边界——配套研报，不是第七世界观章。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">本地记忆白盒</span>
+        <span class="masthead__title-en">Local memory whitebox</span>
+      </h1>
+      <p class="masthead__sub">
+        Current 代码合同：透明 Markdown 文件如何成为<strong>显式 opt-in</strong>的 durable
+        prefix，而不是隐式记忆。正交于 §01–§06——从
+        <a href={`${ch01}#request-shape`}>§01 · #request-shape</a> /
+        <a href={`${ch01}#trust`}>#trust</a> 进入后，再读本页。权威冲突时
+        <strong>code + contract tests 胜出</strong>。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/local-memory</span>
+        <span>Research+Ship · #85</span>
+        <span>
+          <a href={localePath("en", "guides/local-memory")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Memory · Scene"
+      title="透明文件 ≠ 默认注入"
+      lede="用户看得见的 MEMORY.md 必须单独打开 agent 可读开关，才进入 system prompt。"
+    >
+      <p>
+        <code>@maka/core</code> 的 <code>local-memory.ts</code> 描述 V0.1 用户可见 Markdown
+        合同：不实现隐藏 durable memory、embedding、向量召回或静默写记忆的 agent tool。Desktop
+        <code>LocalMemoryService</code> 拥有磁盘与 Settings 接线；注入发生在
+        <code>system-prompt-main.ts</code>。
+      </p>
+      <blockquote class="pull">
+        enabled 开文件；agentReadEnabled 开注入——默认关。
+      </blockquote>
+    </Section>
+
+    <Section
+      id="two-switches"
+      label="Memory · Switches"
+      title="双开关：enabled × agentReadEnabled"
+      lede="规范化对 agent 读 fail-closed：只有 === true 才打开。"
+    >
+      <div class="table-wrap" role="region" aria-label="双开关默认" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">开关</th>
+              <th scope="col">默认</th>
+              <th scope="col">含义</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>enabled</code></th>
+              <td><code>true</code></td>
+              <td>文件功能开；关则 status=<code>disabled</code>，不读盘内容进 UI 状态机</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agentReadEnabled</code></th>
+              <td><code>false</code></td>
+              <td>是否把 active 条目注入 durable <code>&lt;local-memory&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>normalizeLocalMemorySettings</code>：畸形输入回默认；
+        <code>agentReadEnabled</code> 仅当严格为 <code>true</code> 时打开（字符串
+        <code>"yes"</code> 等一律 false）。
+      </p>
+    </Section>
+
+    <Section
+      id="disk"
+      label="Memory · Disk"
+      title="磁盘面：MEMORY.md + PENDING.md"
+      lede="目录 0700 / 文件 0600；原子写；红acted 后落盘。"
+    >
+      <pre class="code-block" aria-label="memory 路径">&lt;workspaceRoot&gt;/memory/
+├── MEMORY.md     # 用户可见主账本
+└── PENDING.md    # 待审批 proposal</pre>
+      <ul class="plain-list">
+        <li>
+          <code>LOCAL_MEMORY_MAX_BYTES = 128 × 1024</code> — 超限 → parse
+          <code>safeMode</code> / <code>oversize</code>，不向 prompt 注入 active 条目。
+        </li>
+        <li>
+          Prompt 体 <code>LOCAL_MEMORY_PROMPT_MAX_CHARS = 12_000</code>；超出追加截断标记
+          <code>[本地记忆已按长度截断]</code>。
+        </li>
+        <li>
+          解析 fail-open：无 HTML 注释的 heading 条目仍显示；未知 metadata 字段忽略；不因未知字段崩溃。
+        </li>
+        <li>
+          仅 <code>active</code>（或缺省视为 active）条目进入
+          <code>buildLocalMemoryPromptBody</code>；archived / pending / rejected 不进 durable
+          prefix。
+        </li>
+        <li>写入前 <code>redactSecrets</code>；backup 在 save / reset / restore 路径上可逆。</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="inject"
+      label="Memory · Inject"
+      title="注入边界：durable prefix vs turn tail"
+      lede="新鲜变更走 turn tail；不得伪装成系统规则。"
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <code>buildLocalMemoryPromptFragment</code> — 仅当
+          <code>agentReadEnabled && status === 'ok'</code> 才产出
+          <code>&lt;local-memory&gt;</code>，并声明不得覆盖系统 / 权限规则。
+        </li>
+        <li>
+          <code>&lt;memory-update&gt;</code> turn tail — 本轮 approve / remember / archive
+          等状态变更摘要；下轮按 MEMORY.md 生效状态重读，不提升为 durable 指令。
+        </li>
+        <li>
+          隐身：<code>incognitoActive</code> → status <code>incognito_blocked</code>，强制
+          <code>agentReadEnabled: false</code>，阻断读写。
+        </li>
+      </ol>
+      <p>
+        这与 §01 prefix vs turn tail 同一因果：把易变「刚批准的记忆」塞进 durable prefix 会抖动
+        <code>prefixHash</code>；合同把新鲜更新留在 tail。
+      </p>
+    </Section>
+
+    <Section
+      id="lifecycle"
+      label="Memory · Lifecycle"
+      title="条目生命周期（Current）"
+      lede="手动写入 · proposal · 审批 · 归档——没有静默自动记忆。"
+    >
+      <ul class="plain-list">
+        <li>手动 append → active draft（Settings 编辑器 / 服务 API）</li>
+        <li>chat proposal → <code>PENDING.md</code> → approve / reject（审批面：settings queue / inline / 手动保存）</li>
+        <li>archive / restore；status 元数据可写回注释</li>
+        <li>
+          解析器可读取若干扩展字段（tags / decayTtlMs / unknownField fail-open）——<strong>不等于</strong>已交付
+          Dream Mode / 向量检索；文件头仍声明不实现 embedding / 隐式 recall。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="failure"
+      label="Memory · Failure"
+      title="失败模式"
+      lede="宁可 safe_mode / 不注入，也不假称 agent 已读到记忆。"
+    >
+      <ul class="plain-list">
+        <li>文件超限 → <code>safe_mode</code>；prompt body 返回 undefined</li>
+        <li><code>agentReadEnabled</code> 关或 status 非 ok → 不注入</li>
+        <li>隐身 → 读写阻断</li>
+        <li>空 title / 空 content / oversize draft → mutation 拒绝</li>
+        <li>读盘异常 → status <code>error</code>；不伪装空成功记忆</li>
+      </ul>
+      <aside class="history-aside">
+        <p class="history-aside__tag">验证 · 旁注</p>
+        <p>
+          代码：<code>packages/core/src/local-memory.ts</code> ·
+          <code>apps/desktop/src/main/local-memory-service.ts</code> ·
+          <code>system-prompt-main.ts</code>。测试：
+          <code>local-memory.test.ts</code> · <code>local-memory-service.test.ts</code> ·
+          <code>local-memory-ui-contract.test.ts</code>。Archive 双开关史：
+          <code>docs/research/memory-whitebox-archive-delta.md</code>。提纲：
+          <code>docs/research/local-memory-current-deep-outline.md</code>。信任面另见
+          <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>。
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    overflow-x: auto;
+    max-width: 48em;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+  }
+</style>

@@ -1587,14 +1587,13 @@ Host does NOT own: tool loop API · Permission UI op · full session CRUD · set
       </table>
     </div>
     <aside class="history-aside">
-      <p class="history-aside__tag">Archive delta · memory whitebox</p>
+      <p class="history-aside__tag">Local memory · Current companion</p>
       <p>
-        Archive <code>maka-memory-whitebox-contract.md</code> 冻结双开关模型：
-        <code>enabled</code>（文件功能）与 <code>agentReadEnabled</code>（是否进 system
-        prompt；默认 OFF）——透明本地文件<strong>不得</strong>默认可被 agent 当隐式 durable
-        memory。磁盘格式 / 字段名以 Current <code>local-memory</code> 代码为准；TOC
-        未单开 memory 章时，完整字段表见
-        <code>docs/research/memory-whitebox-archive-delta.md</code>。
+        双开关（<code>enabled</code> / <code>agentReadEnabled</code> 默认 OFF）与
+        <code>MEMORY.md</code> 注入边界属 Current Desktop 合同——不是隐式 durable
+        memory。完整白盒（磁盘权限、safe_mode、prefix vs turn-tail、失败模式）见
+        <a href={`${import.meta.env.BASE_URL}guides/local-memory`}>/guides/local-memory</a>；archive
+        史旁注：<code>docs/research/memory-whitebox-archive-delta.md</code>。
       </p>
     </aside>
 

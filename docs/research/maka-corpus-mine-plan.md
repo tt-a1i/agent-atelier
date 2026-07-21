@@ -72,7 +72,7 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | Compaction projection | `llm-compaction-events-log-projection-draft*`, `history-compact*.ts` | B+G | §03 | **deep** (`9969fbc`) |
 | Durable Task Loop | `durable-task-loop-headless-draft*`, headless TaskRun | B+G | §04 | **deep** (`68ac5d4`) + session ledger contrast `#ledger` + budget×projection |
 | Self-check authority | `self-check-bounded-feedback-loop-draft*` | B+G | §05 | **deep** (`fd777d5`) + gate triad `allow_official_verifier_*` |
-| AHE boundary | `ahe-self-iteration-boundary-draft*`, `ahe-target-protocol.md`, headless export | A+B+G | §06 | **deep** (`3c94e3c`) on boundary + scoreAuthority/forbidden patch; Target controller still honest stub |
+| AHE boundary | `ahe-self-iteration-boundary-draft*`, `ahe-target-protocol.md`, headless export | A+B+G | §06 | **deep** on boundary + scoreAuthority/forbidden patch + protocol validators/identity (#84); Target controller still honest stub |
 
 ### Cluster 1 — Fat unmined contracts (priority)
 
@@ -112,7 +112,7 @@ Status: **empty** = absent/near-absent on live atelier · **thin** = slogan or o
 | `heavy-task-mainline-system-design.md` | Heavy-task chronicle | Cross-check §04/§05 Current |
 | Computer-use archive hardening suite | Incident → policy lessons | **absorbed** → CU `#evidence-hardening` |
 | Threat-model archives (memory/search/voice) | Security posture snapshots | Only if atelier teaches those products |
-| `maka-memory-whitebox-contract.md` | Memory boundary | Companion if memory enters TOC |
+| `maka-memory-whitebox-contract.md` | Memory boundary | **absorbed** → `/guides/local-memory` (#85); archive delta as history aside |
 | Reverse-eng (codex/cursor, qoderwork) | External comparison | History track or aside only |
 
 ### Cluster 3 — Explicitly lower priority for Destination (still inventoried)

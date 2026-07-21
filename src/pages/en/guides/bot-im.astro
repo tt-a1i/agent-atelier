@@ -49,9 +49,12 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     >
       <p>
         Maka Desktop IM supports QR onboarding (DingTalk / Feishu·Lark / WeCom / WeChat) that obtains
-        credentials and enables a channel, or provider-specific manual config as fallback. Onboarding
-        is a <strong>main-process capability</strong>: it does not enter the MCP manager and does
-        not write agent session JSONL. When docs disagree, <strong>code + contract tests win</strong>.
+        credentials and enables a channel, or provider-specific manual config as fallback. Runtime
+        <code>BotRegistry</code> also has Discord / QQ bridges — <strong>manual config only</strong>;
+        they are not in the QR onboarding provider list (<code>BOT_ONBOARDING_PROVIDERS</code> is the
+        four QR providers). Onboarding is a <strong>main-process capability</strong>: it does not
+        enter the MCP manager and does not write agent session JSONL. When docs disagree,
+        <strong>code + contract tests win</strong>.
       </p>
       <blockquote class="pull">
         Onboarding is ephemeral QR/session; the bridge is long-lived. Secrets never cross preload.

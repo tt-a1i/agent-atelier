@@ -48,7 +48,9 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     >
       <p>
         Maka Desktop 的 IM 接入支持：扫码（钉钉 / 飞书·Lark / 企业微信 / 微信）自动取得 credential
-        并启用 channel；或 provider-specific 手动配置作为 fallback。Onboarding 是
+        并启用 channel；或 provider-specific 手动配置作为 fallback。Runtime
+        <code>BotRegistry</code> 另有 Discord / QQ bridge——<strong>仅手动配置</strong>，不在扫码
+        onboarding provider 列表（<code>BOT_ONBOARDING_PROVIDERS</code> 只有四家）。Onboarding 是
         <strong>main-process capability</strong>：不进 MCP manager，不写 agent session
         JSONL。权威冲突时 <strong>code + contract tests 胜出</strong>。
       </p>
