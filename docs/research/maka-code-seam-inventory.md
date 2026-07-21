@@ -67,7 +67,7 @@ For each seam: read primary `.ts`, paired `__tests__`, and cross-check `docs/arc
 | **Tests** | `history-compact-checkpoint.test.ts` · `history-compact-mid-turn-checkpoint.test.ts` |
 | **Docs** | `docs/execution-evidence-spine.md` Phase 2C |
 | **PRs** | **#729** checkpoint V2; **#996** / **#1014** mid_turn + headAnchor |
-| **Depth** | §03 deep on projection story; mid_turn/headAnchor **thin/missing** |
+| **Depth** | **shipped** §03 `#mid-turn` CN+EN · outline `checkpoint-v2-mid-turn-headanchor-deep-outline.md` · [#65](https://github.com/tt-a1i/agent-atelier/issues/65) |
 
 Fail-closed: empty/mixed-session/partial coverage; head anchor not last covered user event of its turn; replace only forward-progress or exact CAS rewrite.
 
@@ -81,7 +81,7 @@ Fail-closed: empty/mixed-session/partial coverage; head anchor not last covered 
 | **Code** | `mid-turn-capacity-compact.ts` (doc-comment is primary authority — **no architecture draft**) |
 | **Tests** | `mid-turn-capacity-compact.test.ts` · `mid-turn-capacity-backend.test.ts` |
 | **PR** | **#996** (title names the invariant); reactive **#1017** |
-| **Depth** | empty/thin |
+| **Depth** | **shipped** §03 `#capacity-shaping` CN+EN · outline `mid-turn-capacity-shaping-deep-outline.md` · [#66](https://github.com/tt-a1i/agent-atelier/issues/66) |
 
 Shaper only selects safe covered prefix + builds mid_turn checkpoint (fail-open). **Pass/terminate** (`context_budget_exhausted`) owned by backend final-request estimate after all shaping hooks — verdict is about the request that actually goes out.
 
@@ -94,7 +94,7 @@ Shaper only selects safe covered prefix + builds mid_turn checkpoint (fail-open)
 | **Home** | §01 `#request-shape` / `#tool-economy` |
 | **Code** | `request-shape.ts` (`canonicalizeToolSet`) · `tool-availability.ts` |
 | **Tests** | `request-shape.test.ts` · tool-availability / catalog derive |
-| **Depth** | partial (cost spine deep; split under-stated) |
+| **Depth** | **shipped** §01 `#tool-economy` deepen CN+EN · outline `provider-tools-vs-active-tools-deep-outline.md` · [#67](https://github.com/tt-a1i/agent-atelier/issues/67) |
 
 Dispatch never depends on advertisement visibility. `toolSchemaHash` over **active/visible** subset so unloaded group schema drift does not false-fire `tool_schema_changed`.
 
@@ -110,7 +110,9 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | empty |
 | 10 | Computer-use foundation | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | empty |
 | 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | empty |
-| 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | research outline exists |
+| 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | shipped §02 `#shell-side-effects` |
+| 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
+| 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |
 | 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | thin→partial |
 | 14 | Skill catalog policy | companion | `skills.ts` · `skill-catalog-policy.md` | empty |
 | 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | thin |
@@ -168,8 +170,8 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | ---: | --- | --- |
 | #1 T1/T2 + RecoveryResolver | [#63](https://github.com/tt-a1i/agent-atelier/issues/63) Task (narrative; completes #48 half) | ship §01 |
 | #2 Three prune lifecycles | [#64](https://github.com/tt-a1i/agent-atelier/issues/64) Task | ship §02 |
-| #3 Checkpoint V2 + headAnchor | [#65](https://github.com/tt-a1i/agent-atelier/issues/65) Research | outline → §03 |
-| #4 Mid-turn shaping ≠ verdict | [#66](https://github.com/tt-a1i/agent-atelier/issues/66) Research | outline → §03 |
-| #5 providerTools ≠ activeTools | [#67](https://github.com/tt-a1i/agent-atelier/issues/67) Research | outline → §01 |
+| #3 Checkpoint V2 + headAnchor | [#65](https://github.com/tt-a1i/agent-atelier/issues/65) | **closed** — outline + §03 `#mid-turn` |
+| #4 Mid-turn shaping ≠ verdict | [#66](https://github.com/tt-a1i/agent-atelier/issues/66) | **closed** — outline + §03 `#capacity-shaping` |
+| #5 providerTools ≠ activeTools | [#67](https://github.com/tt-a1i/agent-atelier/issues/67) | **closed** — outline + §01 `#tool-economy` deepen |
 
 Corpus lane tickets #46–#62 remain the broader frontier — integrate, do not duplicate.

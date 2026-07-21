@@ -1,0 +1,176 @@
+---
+/**
+ * §03 protocol — mid_turn checkpoint: coverage includes headAnchor; replay re-inserts it verbatim.
+ */
+---
+
+<svg
+  class="mtha-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="mtha-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="mtha-kicker mtha-stage mtha-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · MID_TURN · SOURCE DIGEST PREFIX + VERBATIM HEAD ANCHOR
+  </text>
+  <line
+    class="mtha-stage mtha-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Ordered pool -->
+  <g class="mtha-stage mtha-stage--1" transform="translate(8,48)">
+    <rect width="852" height="56" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="3" height="56" fill="var(--accent)"></rect>
+    <text class="mtha-idx" x="16" y="20" fill="var(--accent)">ORDERED POOL · ONE SESSION</text>
+    <text class="mtha-line" x="16" y="42" fill="var(--ink)">
+      […prior turns · headAnchor user · completed steps…] — coverage is a contiguous prefix
+    </text>
+  </g>
+
+  <!-- Three columns -->
+  <g class="mtha-stage mtha-stage--2" transform="translate(8,124)">
+    <rect width="260" height="120" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="260" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="mtha-idx" x="12" y="24" fill="var(--accent)">01 · COVERED PREFIX</text>
+    <text class="mtha-title" x="12" y="50" fill="var(--ink)">Includes headAnchor</text>
+    <text class="mtha-mute" x="12" y="76" fill="var(--mute)">sourceDigest over bytes</text>
+    <text class="mtha-mute" x="12" y="96" fill="var(--mute)">through = last covered</text>
+    <text class="mtha-mute" x="12" y="116" fill="var(--mute)">no partials / one session</text>
+  </g>
+
+  <path
+    class="mtha-stage mtha-stage--2"
+    d="M 280 184 H 308"
+    stroke="var(--accent)"
+    stroke-width="1.25"
+    fill="none"
+    marker-end="url(#mtha-arrow)"
+  ></path>
+
+  <g class="mtha-stage mtha-stage--3" transform="translate(316,124)">
+    <rect width="260" height="120" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="260" height="2" fill="var(--accent)"></rect>
+    <text class="mtha-idx" x="12" y="24" fill="var(--accent)">02 · HEAD ANCHOR</text>
+    <text class="mtha-title" x="12" y="50" fill="var(--ink)">Compacted turn’s user</text>
+    <text class="mtha-mute" x="12" y="76" fill="var(--mute)">= lastCovered.turnId</text>
+    <text class="mtha-mute" x="12" y="96" fill="var(--mute)">role=user · author=user</text>
+    <text class="mtha-mute" x="12" y="116" fill="var(--ink)">≠ any prior-turn user</text>
+  </g>
+
+  <path
+    class="mtha-stage mtha-stage--3"
+    d="M 588 184 H 616"
+    stroke="var(--accent)"
+    stroke-width="1.25"
+    fill="none"
+    marker-end="url(#mtha-arrow)"
+  ></path>
+
+  <g class="mtha-stage mtha-stage--4" transform="translate(624,124)">
+    <rect width="236" height="120" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="236" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="mtha-idx" x="12" y="24" fill="var(--accent)">03 · REPLAY</text>
+    <text class="mtha-title" x="12" y="50" fill="var(--ink)">[block, anchor, tail]</text>
+    <text class="mtha-mute" x="12" y="76" fill="var(--mute)">pre_turn: [block, tail]</text>
+    <text class="mtha-mute" x="12" y="96" fill="var(--mute)">corrupt anchor → miss</text>
+    <text class="mtha-mute" x="12" y="116" fill="var(--mute)">fail-closed match</text>
+  </g>
+
+  <text class="mtha-foot mtha-stage mtha-stage--4" x="8" y="280" fill="var(--mute)">
+    Digest math keeps the contiguous covered prefix; projection re-inserts the head-anchor user verbatim so the current prompt is never silently dropped.
+  </text>
+</svg>
+
+<style>
+  .mtha-flow {
+    font-family: var(--sans);
+  }
+  .mtha-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .mtha-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .mtha-title {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .mtha-line {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .mtha-mute {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .mtha-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .mtha-stage {
+      opacity: 0;
+      animation: mtha-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .mtha-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .mtha-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .mtha-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .mtha-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .mtha-stage--4 {
+      animation-delay: 0.48s;
+    }
+    @keyframes mtha-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mtha-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

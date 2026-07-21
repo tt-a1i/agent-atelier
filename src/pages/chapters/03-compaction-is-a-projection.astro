@@ -9,6 +9,8 @@ import SummarizerAuthority from "../../components/diagrams/SummarizerAuthority.a
 import CompactKindsFlow from "../../components/diagrams/CompactKindsFlow.astro";
 import HighWaterCompactFlow from "../../components/diagrams/HighWaterCompactFlow.astro";
 import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFlow.astro";
+import MidTurnHeadAnchorFlow from "../../components/diagrams/MidTurnHeadAnchorFlow.astro";
+import ShapingVsVerdictFlow from "../../components/diagrams/ShapingVsVerdictFlow.astro";
 ---
 
 <ChapterShell chapterId="03">
@@ -145,7 +147,10 @@ Next model context = Materialize(
   projection
     summary, limitations, estimatedTokens
   lineage
-    previousCheckpointId?</pre>
+    previousCheckpointId?
+  phase?                  # absent | pre_turn | mid_turn（absent ≡ pre_turn）
+  headAnchor?             # mid_turn 必填：{ runtimeEventId, turnId }
+  source?                 # evidence-spine：runtime_event_projection cursors</pre>
 
     <div class="table-wrap" role="region" aria-label="字段组证明什么" tabindex="0">
       <table class="proto-table">
@@ -168,6 +173,11 @@ Next model context = Materialize(
             <td>自然语言准确性</td>
           </tr>
           <tr>
+            <td><code>phase</code> / <code>headAnchor</code></td>
+            <td>折叠是否伸进当前 turn；哪条 user 事件原样回放</td>
+            <td>该 turn 已结束；summary「记住了」这条 prompt</td>
+          </tr>
+          <tr>
             <td><code>lineage</code></td>
             <td>合法 successor / 同 coverage 的 CAS 重写</td>
             <td>更旧 raw 事件已被删除</td>
@@ -183,10 +193,103 @@ Next model context = Materialize(
 
     <p>
       Prefix-match 门（心智模型对应 <code>matchHistoryCompactCheckpointPrefix</code>）：(1) event count
-      足够；(2) 最后一条 <code>runId / turnId / runtimeEventId</code> 匹配；(3) digest 精确相等。任一失败 →
-      <code>coverage_miss</code> / <code>source_hash_mismatch</code> 诊断；<strong>禁止模糊复用</strong>。Checkpoint
-      ID 只命名一个 projection；与 canonical log 的关系由 source coverage 建立。
+      足够；(2) 最后一条 <code>runId / turnId / runtimeEventId</code> 匹配；(3) digest 精确相等；(4) 若
+      <code>phase: mid_turn</code>，headAnchor 必须仍是 <strong>coverage.through 那一 turn 的 user
+      事件</strong>。任一失败 → <code>coverage_miss</code> / <code>source_hash_mismatch</code>
+      诊断；<strong>禁止模糊复用</strong>。Checkpoint ID 只命名一个 projection；与 canonical log 的关系由
+      source coverage 建立。
     </p>
+  </Section>
+
+  <Section
+    id="mid-turn"
+    label="§03 · Mid-turn"
+    title="mid_turn：前缀 digest 伸进当前 turn，headAnchor 原样回放"
+    lede="Coverage 仍是有序前缀；投影把「当前 turn 的 user 消息」从 covered 集合里再插回模型视野。"
+  >
+    <DiagramFigure
+      caption="图 2b · mid_turn：covered prefix（含 headAnchor）→ 校验「compacted turn 的 user」→ 回放 [block, verbatim anchor, tail]。"
+      alt="三列：covered prefix 含 headAnchor；headAnchor 必须是 lastCovered.turn 的 user；replay 为 block+anchor+tail。"
+    >
+      <MidTurnHeadAnchorFlow />
+    </DiagramFigure>
+
+    <p>
+      Turn-boundary（<code>pre_turn</code>，亦为 legacy 缺省）折叠的是「当前 turn 之前」的已完成前缀。长单
+      turn 会在<strong>同一 turn 内</strong>堆出大量已完成步骤——此时 V2 允许
+      <code>phase: mid_turn</code>：coverage 伸进当前 turn 的已完成步骤，但投影不能把当前 prompt 折进有损
+      summary 后就消失。协议做法：coverage <strong>仍然包含</strong> head-anchor user 事件（digest
+      数学要求 contiguous prefix），回放时再把它<strong>原样</strong>插在 synthetic compact block 之后：
+    </p>
+    <pre class="code-block" aria-label="mid_turn 回放形状">pre_turn  → [synthetic compact block, …uncoveredTail]
+mid_turn  → [synthetic compact block, verbatim headAnchor, …uncoveredTail]</pre>
+
+    <h3 class="subhead">headAnchor 的微妙约束</h3>
+    <p>
+      Anchor 必须是 <strong>被折叠 turn 的 user 事件</strong>——即
+      <code>lastCovered.turnId</code> 上、且 <code>role=user</code> / <code>author=user</code> 的那条。仅「在
+      coverage 里、且是某条 user」不够：指向<strong>更早 turn</strong> 的 user 在自洽性上看似合法，回放却会静默丢掉真正的当前
+      prompt——因此 build 与 match 都在此 <strong>fail-closed</strong>。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="mid_turn fail-closed" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">门</th>
+            <th scope="col">拒绝条件（摘）</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Build</td>
+            <td>空 coverage / 跨 session / 含 partial / 空 summary / mid_turn 无 anchor / anchor 非 compacted-turn user</td>
+            <td>抛错——不产生候选</td>
+          </tr>
+          <tr>
+            <td>Match</td>
+            <td>count/through/session/source cursor 不齐；digest 不符；mid_turn anchor 损坏或错 turn</td>
+            <td>
+              <code>coverage_miss</code> / <code>source_hash_mismatch</code>——零覆盖，禁止模糊复用
+            </td>
+          </tr>
+          <tr>
+            <td>Replace</td>
+            <td>非前进 coverage；或同 count 却非显式同 coverage CAS successor；source-bound 被无 source 的 legacy 顶替</td>
+            <td>拒绝替换</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <code>sourceDigest</code> 对 covered 事件做 length-prefixed <code>stableStringify</code> 流式
+      SHA-256（教学记「字节身份」，不必背序列化细节）。Evidence-spine Phase 2C 额外绑定
+      <code>source.kind = runtime_event_projection</code> 与政策版本
+      <code>maka.compactable_runtime_event_projection.v1</code>：Compaction 吃的是 session/model-context
+      投影，不是「某一个 AgentRun 的 append log」。Legacy 无 <code>source</code> 的 V2 仍可读；带 source 的 tip
+      不得躲到无法证明 cursor 语义的 legacy 记录后面。
+    </p>
+    <p>
+      <code>checkpointId</code> 仅在 phase/anchor <strong>有值时</strong>把它们纳入哈希——因此缺省
+      <code>pre_turn</code> 与显式 <code>phase: pre_turn</code> 保持同一 id；同 coverage 的
+      <code>mid_turn</code> 则是不同身份。标本：
+      <code>history-compact-checkpoint.ts</code> ·
+      <code>history-compact-mid-turn-checkpoint.test.ts</code>。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        V2 ledger checkpoint：
+        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a>。mid_turn + headAnchor
+        路径：
+        <a href={`${import.meta.env.BASE_URL}history/pr/996`}>maka:pr:996</a>；协议在 snapshot squash
+        后的 reland：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1014`}>maka:pr:1014</a>。容量 shaping 与最终
+        verdict 的分权见下一节。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -523,10 +626,115 @@ sourceDigest recomputed over full covered prefix</pre>
       </table>
     </div>
     <p>
-      不要把三者都叫做「summary」。Mid-turn / capacity 细节见演进旁注（如
-      <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>）。统一「所有 LLM compact
-      共享同一 durable coverage 合同」对 <code>semanticCompact</code> 仍是 Target 方向，不是 Current。
+      不要把三者都叫做「summary」。Mid-turn capacity 的协议深度见
+      <a href="#mid-turn">#mid-turn</a> 与 <a href="#capacity-shaping">#capacity-shaping</a>。统一「所有
+      LLM compact 共享同一 durable coverage 合同」对 <code>semanticCompact</code> 仍是 Target 方向，不是
+      Current。Reactive overflow compact-and-retry 是相邻机制（
+      <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>），不等于 shaping/verdict
+      分权本身。
     </p>
+  </Section>
+
+  <Section
+    id="capacity-shaping"
+    label="§03 · Capacity"
+    title="Mid-turn capacity：shaping ≠ 最终请求 verdict"
+    lede="Shaper 只选安全前缀并构建 mid_turn checkpoint（fail-open）；pass/terminate 只属于 backend 对真实出站 payload 的最终估计。"
+  >
+    <DiagramFigure
+      caption="图 7b · 左：shaper（skip / fail_open / compacted）；右：backend final-request estimate（continue / context_budget_exhausted）。"
+      alt="两列泳道：mid-turn-capacity-compact 不得发 context_budget_exhausted；backend 在全部 shaping 之后测量 outgoing payload。"
+    >
+      <ShapingVsVerdictFlow />
+    </DiagramFigure>
+
+    <p>
+      模块注释即权威（无上游 architecture draft）：
+      <code>mid-turn-capacity-compact.ts</code> 是<strong>纯测量 + 安全边界引擎</strong>——turn-agnostic、无副作用。它只
+      <strong>SHAPES</strong>：选出最大安全 covered 前缀，构建 checkpoint 与 replacement projection；做不到就
+      fail-open。安全关键的 pass/terminate <strong>不在这里签发</strong>——backend 的 final-request estimate
+      owner 在<strong>每一个</strong> shaping hook（含本次 fold、以及 prune）跑完之后，测量真正要发出去的
+      <code>(messages, tools)</code>，再决定是否 <code>context_budget_exhausted</code>。因此 verdict 永远关于
+      <strong>真实出站请求</strong>，不是关于「折叠前的 raw ledger 再估一遍」。
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="shaping vs verdict" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">层</th>
+            <th scope="col">可以说</th>
+            <th scope="col">禁止说</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shaper（<code>planMidTurnCapacityCompaction</code>）</td>
+            <td><code>skip</code> / <code>fail_open</code> / <code>compacted</code></td>
+            <td><code>context_budget_exhausted</code></td>
+          </tr>
+          <tr>
+            <td>Backend final-request estimate</td>
+            <td>continue / <code>context_budget_exhausted</code></td>
+            <td>用 raw-ledger 重估冒充出站 payload；把未缩小的 fold 当真</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">安全边界（fail-closed cut）</h3>
+    <p>
+      <code>selectMidTurnSafeBoundary</code> 选最大 contiguous <code>coveredCount</code>，满足：
+    </p>
+    <ul class="plain-list">
+      <li>切在 immutable、非 <code>partial</code> 事件上；池内任意 partial 会把 max cut 退到第一个 partial 之前。</li>
+      <li>
+        <strong>永不劈开</strong> tool call/result pair（provider 协议单元）。尚无 response 的 open call：任何越过
+        call 的 cut 都不安全。
+      </li>
+      <li>至少保留 <code>reserveTailEvents</code> 条 verbatim tail（planner 默认 1）。</li>
+      <li>
+        Pin 当前 turn 的 <code>steering: true</code> 文本——injection accumulator 会把 live directive
+        再挂回每个请求；折进 coverage 只会让容量测量与真实出站脱节。
+      </li>
+      <li>
+        Coverage 必须包含 headAnchor 且至少再覆盖一条事件（只折 anchor 无收益——它会被原样回放）。
+      </li>
+    </ul>
+    <p>
+      找不到安全 cut → shaper <code>fail_open</code>（<code>no_safe_completed_span</code>），不是 provider
+      error。窗口仍可能在 backend 最终估计时被显式耗尽。
+    </p>
+
+    <h3 class="subhead">触发测量与「为何 shaper 不做 post-fold verdict」</h3>
+    <p>
+      触发锚定上一请求的真实 <strong>INPUT</strong> tokens（不是 input+output）加上 signed char/4
+      delta；负 delta <strong>计入缩小</strong>（compaction/prune 之后）。Cold start（无可用 input
+      sample）才退回整包 char 估计——且须覆盖含 system prompt 的完整 provider input。Shaper
+      <strong>故意</strong>不在 fold 后对 raw ledger 再做窗口判决：若上一请求本身已是 compacted
+      projection，raw covered span 从未出现在那次请求里，相减会 over-credit。Backend 仅在 materialized
+      replacement <strong>确实缩小</strong>出站 payload 时应用该 shape，再由 final-request owner
+      重测——runaway summary 会被拒绝（<code>failedOpen</code>），而不是带着膨胀摘要继续。
+    </p>
+    <p>
+      标本测试：<code>mid-turn-capacity-compact.test.ts</code>（含「still shapes when estimate exceeds the
+      window — no post-fold window verdict here」）；
+      <code>mid-turn-capacity-backend.test.ts</code>（verdict after prune、load_tools schema
+      growth、INPUT baseline、volatile turn tail、default-on guards）。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        标题即不变量：
+        <a href={`${import.meta.env.BASE_URL}history/pr/996`}>maka:pr:996</a>
+        （mid-turn capacity compaction with a single final-payload verdict owner）。协议 reland：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1014`}>maka:pr:1014</a>。Reactive overflow
+        compact-and-retry（相邻）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>。出站 request shape /
+        tool schema 抖动 →
+        <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#request-shape`}>§01 · request-shape</a>。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -548,7 +756,7 @@ sourceDigest recomputed over full covered prefix</pre>
   <Section
     id="invariants"
     label="§03 · Invariants"
-    title="必须保护的十条不变量"
+    title="必须保护的十二条不变量"
     lede="读完应能默写。追逐 tokens 时不可打破。"
   >
     <ol class="plain-list numbered invariants">
@@ -583,6 +791,13 @@ sourceDigest recomputed over full covered prefix</pre>
       </li>
       <li>
         <strong>Authority preserved</strong> — summary ≠ verifier / terminal 权威升级。
+      </li>
+      <li>
+        <strong>mid_turn headAnchor honesty</strong> — Anchor 必须是 compacted turn 的 user；coverage 含它，回放再插入它；损坏 → fail-closed。
+      </li>
+      <li>
+        <strong>Shaping ≠ verdict</strong> — Mid-turn shaper 只 fail-open；
+        <code>context_budget_exhausted</code> 只由 final-request estimate 对真实出站 payload 签发。
       </li>
     </ol>
   </Section>
@@ -625,7 +840,10 @@ sourceDigest recomputed over full covered prefix</pre>
         V2 ledger checkpoints：
         <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a>
         （replace history compact artifacts with ledger checkpoints）。Coverage 绑定：
-        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>。Deterministic replay /
+        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>。mid_turn + 单
+        final-payload verdict：
+        <a href={`${import.meta.env.BASE_URL}history/pr/996`}>maka:pr:996</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/1014`}>maka:pr:1014</a>。Deterministic replay /
         host persistence 地基（可选深针）：
         <a href={`${import.meta.env.BASE_URL}history/pr/40`}>maka:pr:40</a> /
         <a href={`${import.meta.env.BASE_URL}history/pr/43`}>maka:pr:43</a>。Manual
@@ -642,16 +860,21 @@ sourceDigest recomputed over full covered prefix</pre>
   <div slot="outline">
     <ul class="outline-list">
       <li>
-        协议深度：schema · prior-messages 流水线 · synthetic · fail-open 矩阵 · LLM/Runtime 权威 · 十不变量
+        协议深度：schema · mid_turn/headAnchor · capacity shaping≠verdict · prior-messages · synthetic ·
+        fail-open · 十二不变量
       </li>
       <li>
         机制旁注
         <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a> /
-        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>
+        <a href={`${import.meta.env.BASE_URL}history/pr/996`}>maka:pr:996</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/1014`}>maka:pr:1014</a>
         （docs-land 772 次要）
       </li>
       <li>Cache / request-shape 仅 lean pointer → §01；不在本章展开第七章</li>
-      <li>结构硬闸门仍必要；深度以读者能否复述 rolling fail-open 为准——不宣称「清单绿 = 深度完成」</li>
+      <li>
+        深度以读者能否复述「headAnchor = compacted-turn user」与「shaper 永不发
+        context_budget_exhausted」为准
+      </li>
     </ul>
   </div>
 </ChapterShell>

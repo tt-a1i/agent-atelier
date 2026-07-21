@@ -10,6 +10,8 @@ import SummarizerAuthority from "../../../components/diagrams/SummarizerAuthorit
 import CompactKindsFlow from "../../../components/diagrams/CompactKindsFlow.astro";
 import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactFlow.astro";
 import RollingCheckpointFlow from "../../../components/diagrams/RollingCheckpointFlow.astro";
+import MidTurnHeadAnchorFlow from "../../../components/diagrams/MidTurnHeadAnchorFlow.astro";
+import ShapingVsVerdictFlow from "../../../components/diagrams/ShapingVsVerdictFlow.astro";
 ---
 
 <ChapterShell chapterId="03" locale="en">
@@ -156,7 +158,10 @@ Next model context = Materialize(
   projection
     summary, limitations, estimatedTokens
   lineage
-    previousCheckpointId?</pre>
+    previousCheckpointId?
+  phase?                  # absent | pre_turn | mid_turn (absent ≡ pre_turn)
+  headAnchor?             # required for mid_turn: { runtimeEventId, turnId }
+  source?                 # evidence-spine: runtime_event_projection cursors</pre>
 
     <div class="table-wrap" role="region" aria-label="What field groups prove" tabindex="0">
       <table class="proto-table">
@@ -179,6 +184,11 @@ Next model context = Materialize(
             <td>Natural-language accuracy</td>
           </tr>
           <tr>
+            <td><code>phase</code> / <code>headAnchor</code></td>
+            <td>Whether the fold reached into the active turn; which user event is re-rendered verbatim</td>
+            <td>That the turn is finished; that the summary “remembers” that prompt</td>
+          </tr>
+          <tr>
             <td><code>lineage</code></td>
             <td>Legal successor / same-coverage CAS rewrite</td>
             <td>That older raw events were deleted</td>
@@ -194,11 +204,105 @@ Next model context = Materialize(
 
     <p>
       Prefix-match gate (mental model of <code>matchHistoryCompactCheckpointPrefix</code>): (1) event
-      count sufficient; (2) last <code>runId / turnId / runtimeEventId</code> matches; (3) digest exact.
-      Any miss → <code>coverage_miss</code> / <code>source_hash_mismatch</code> diagnostics;
+      count sufficient; (2) last <code>runId / turnId / runtimeEventId</code> matches; (3) digest exact;
+      (4) if <code>phase: mid_turn</code>, the headAnchor must still be the
+      <strong>user event of <code>coverage.through</code>’s turn</strong>. Any miss →
+      <code>coverage_miss</code> / <code>source_hash_mismatch</code> diagnostics;
       <strong>no fuzzy reuse</strong>. A checkpoint ID only names a projection; source coverage binds it
       to the canonical log.
     </p>
+  </Section>
+
+  <Section
+    id="mid-turn"
+    label="§03 · Mid-turn"
+    title="mid_turn: prefix digest reaches into the active turn; headAnchor replays verbatim"
+    lede="Coverage stays an ordered prefix; the projection re-inserts the current turn’s user message into the model view after the lossy block."
+  >
+    <DiagramFigure
+      caption="Fig. 2b · mid_turn: covered prefix (includes headAnchor) → validate “compacted turn’s user” → replay [block, verbatim anchor, tail]."
+      alt="Three columns: covered prefix includes headAnchor; headAnchor must be lastCovered.turn’s user; replay is block+anchor+tail."
+    >
+      <MidTurnHeadAnchorFlow />
+    </DiagramFigure>
+
+    <p>
+      Turn-boundary compaction (<code>pre_turn</code>, also the legacy default) folds a completed prefix
+      <em>before</em> the current turn. A long single turn can pile completed steps
+      <strong>inside</strong> that turn — V2 then allows <code>phase: mid_turn</code>: coverage reaches into
+      those completed steps, but the projection must not let the current prompt vanish into a lossy
+      summary. Protocol: coverage <strong>still includes</strong> the head-anchor user event (digest math
+      requires a contiguous prefix); replay <strong>re-inserts</strong> it verbatim after the synthetic
+      compact block:
+    </p>
+    <pre class="code-block" aria-label="mid_turn replay shape">pre_turn  → [synthetic compact block, …uncoveredTail]
+mid_turn  → [synthetic compact block, verbatim headAnchor, …uncoveredTail]</pre>
+
+    <h3 class="subhead">The headAnchor subtlety</h3>
+    <p>
+      The anchor must be the <strong>compacted turn’s user event</strong> — on
+      <code>lastCovered.turnId</code>, with <code>role=user</code> / <code>author=user</code>. “Any covered
+      user” is not enough: pointing at a <strong>prior turn’s</strong> user can look self-consistent yet
+      silently drop the real current prompt on replay — so build and match both
+      <strong>fail closed</strong> here.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="mid_turn fail-closed" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Gate</th>
+            <th scope="col">Reject when (excerpt)</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Build</td>
+            <td>Empty coverage / mixed session / any partial / blank summary / mid_turn without anchor / anchor not compacted-turn user</td>
+            <td>Throw — no candidate</td>
+          </tr>
+          <tr>
+            <td>Match</td>
+            <td>Count/through/session/source cursor miss; digest mismatch; mid_turn anchor corrupt or wrong turn</td>
+            <td>
+              <code>coverage_miss</code> / <code>source_hash_mismatch</code> — zero coverage, no fuzzy reuse
+            </td>
+          </tr>
+          <tr>
+            <td>Replace</td>
+            <td>Not forward progress; equal count without explicit same-coverage CAS successor; source-bound tip replaced by sourceless legacy</td>
+            <td>Refuse replace</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <code>sourceDigest</code> is a length-prefixed <code>stableStringify</code> SHA-256 stream over covered
+      events (teach “byte identity”; do not memorize serialization). Evidence-spine Phase 2C additionally
+      binds <code>source.kind = runtime_event_projection</code> and policy
+      <code>maka.compactable_runtime_event_projection.v1</code>: Compaction eats the session/model-context
+      projection, not “one AgentRun’s append log”. Legacy V2 without <code>source</code> stays readable; a
+      source-bound tip must not hide behind a legacy record that cannot prove cursor semantics.
+    </p>
+    <p>
+      <code>checkpointId</code> hashes phase/anchor <strong>only when set</strong> — so absent vs explicit
+      <code>pre_turn</code> keep the same id; a <code>mid_turn</code> over the same coverage is a distinct
+      identity. Specimens: <code>history-compact-checkpoint.ts</code> ·
+      <code>history-compact-mid-turn-checkpoint.test.ts</code>.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        V2 ledger checkpoint:
+        <a href={localePath("en", "history/pr/729")}>maka:pr:729</a>. mid_turn + headAnchor path:
+        <a href={localePath("en", "history/pr/996")}>maka:pr:996</a>; protocol reland after snapshot
+        squash:
+        <a href={localePath("en", "history/pr/1014")}>maka:pr:1014</a>. Capacity shaping vs final verdict
+        is the next section.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -542,11 +646,127 @@ sourceDigest recomputed over full covered prefix</pre>
       </table>
     </div>
     <p>
-      Do not call all three “summary.” Mid-turn / capacity detail lives in evolution asides (e.g.
-      <a href={localePath("en", "history/pr/1017")}>maka:pr:1017</a>). Unifying “all LLM compacts share
-      one durable coverage contract” for <code>semanticCompact</code> remains a Target direction, not
-      Current.
+      Do not call all three “summary.” Mid-turn capacity protocol depth lives in
+      <a href="#mid-turn">#mid-turn</a> and <a href="#capacity-shaping">#capacity-shaping</a>. Unifying
+      “all LLM compacts share one durable coverage contract” for <code>semanticCompact</code> remains a
+      Target direction, not Current. Reactive overflow compact-and-retry is an adjacent mechanism (
+      <a href={localePath("en", "history/pr/1017")}>maka:pr:1017</a>), not the shaping/verdict split
+      itself.
     </p>
+  </Section>
+
+  <Section
+    id="capacity-shaping"
+    label="§03 · Capacity"
+    title="Mid-turn capacity: shaping ≠ final-request verdict"
+    lede="The shaper only selects a safe prefix and builds a mid_turn checkpoint (fail-open); pass/terminate belongs solely to the backend’s final estimate of the real outgoing payload."
+  >
+    <DiagramFigure
+      caption="Fig. 7b · Left: shaper (skip / fail_open / compacted); right: backend final-request estimate (continue / context_budget_exhausted)."
+      alt="Two swimlanes: mid-turn-capacity-compact must not issue context_budget_exhausted; backend measures outgoing payload after all shaping."
+    >
+      <ShapingVsVerdictFlow />
+    </DiagramFigure>
+
+    <p>
+      The module doc-comment is authority (no upstream architecture draft):
+      <code>mid-turn-capacity-compact.ts</code> is a <strong>pure measurement + safe-boundary engine</strong>
+      — turn-agnostic and side-effect free. It only <strong>SHAPES</strong>: select the largest safe
+      covered prefix, build the checkpoint and replacement projection; fail open when it cannot. The
+      safety-critical pass/terminate is <strong>not issued here</strong> — the backend’s final-request
+      estimate owner measures the actual outgoing <code>(messages, tools)</code> after
+      <strong>every</strong> shaping hook (including this fold and prune) and then decides
+      <code>context_budget_exhausted</code>. The verdict is always about the
+      <strong>request that really goes out</strong>, never a second guess over the pre-fold raw ledger.
+    </p>
+
+    <div class="table-wrap" role="region" aria-label="shaping vs verdict" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Layer</th>
+            <th scope="col">May say</th>
+            <th scope="col">Must not say</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shaper (<code>planMidTurnCapacityCompaction</code>)</td>
+            <td><code>skip</code> / <code>fail_open</code> / <code>compacted</code></td>
+            <td><code>context_budget_exhausted</code></td>
+          </tr>
+          <tr>
+            <td>Backend final-request estimate</td>
+            <td>continue / <code>context_budget_exhausted</code></td>
+            <td>Treat a raw-ledger re-estimate as the outgoing payload; accept a non-shrinking fold</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Safe boundary (fail-closed cut)</h3>
+    <p>
+      <code>selectMidTurnSafeBoundary</code> picks the largest contiguous <code>coveredCount</code> such
+      that:
+    </p>
+    <ul class="plain-list">
+      <li>
+        The cut ends on an immutable, non-<code>partial</code> event; any partial in the pool retreats
+        the max cut to before the first partial.
+      </li>
+      <li>
+        It <strong>never straddles</strong> a tool call/result pair (a provider protocol unit). An open
+        call with no response yet: any cut past the call is unsafe.
+      </li>
+      <li>It leaves at least <code>reserveTailEvents</code> as a verbatim tail (planner default 1).</li>
+      <li>
+        It pins current-turn <code>steering: true</code> text — the injection accumulator re-appends live
+        directives on every request of the send; covering them only desynchronizes capacity measurement
+        from the real outgoing payload.
+      </li>
+      <li>
+        Coverage must include the headAnchor and at least one other event (folding only the anchor saves
+        nothing — it is re-rendered verbatim).
+      </li>
+    </ul>
+    <p>
+      No safe cut → shaper <code>fail_open</code> (<code>no_safe_completed_span</code>), not a provider
+      error. The window may still be explicitly exhausted later by the backend’s final estimate.
+    </p>
+
+    <h3 class="subhead">Trigger measurement and why the shaper skips a post-fold verdict</h3>
+    <p>
+      The trigger anchors on the last request’s real <strong>INPUT</strong> tokens (not input+output)
+      plus a signed char/4 delta; a negative delta <strong>credits shrink</strong> after
+      compaction/prune. Cold start (no usable input sample) falls back to a whole-payload char estimate —
+      covering the full provider input including the system prompt. The shaper
+      <strong>deliberately</strong> issues no post-fold window verdict over the raw ledger: if the prior
+      request was itself a compacted projection, the raw covered span was never in that request —
+      subtracting it would over-credit. The backend applies the shape only when the materialized
+      replacement <strong>actually shrinks</strong> the outgoing payload, then the final-request owner
+      re-measures — a runaway summary is refused (<code>failedOpen</code>), not carried forward.
+    </p>
+    <p>
+      Specimen tests: <code>mid-turn-capacity-compact.test.ts</code> (including “still shapes when the
+      estimate exceeds the window — no post-fold window verdict here”);
+      <code>mid-turn-capacity-backend.test.ts</code> (verdict after prune, load_tools schema growth, INPUT
+      baseline, volatile turn tail, default-on guards).
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History aside · mechanism</p>
+      <p>
+        The title names the invariant:
+        <a href={localePath("en", "history/pr/996")}>maka:pr:996</a>
+        (mid-turn capacity compaction with a single final-payload verdict owner). Protocol reland:
+        <a href={localePath("en", "history/pr/1014")}>maka:pr:1014</a>. Reactive overflow
+        compact-and-retry (adjacent):
+        <a href={localePath("en", "history/pr/1017")}>maka:pr:1017</a>. Outgoing request shape / tool
+        schema churn →
+        <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#request-shape"}
+          >§01 · request-shape</a
+        >.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -571,7 +791,7 @@ sourceDigest recomputed over full covered prefix</pre>
   <Section
     id="invariants"
     label="§03 · Invariants"
-    title="Ten invariants that must hold"
+    title="Twelve invariants that must hold"
     lede="You should be able to recite these. Do not break them while chasing tokens."
   >
     <ol class="plain-list numbered invariants">
@@ -613,6 +833,15 @@ sourceDigest recomputed over full covered prefix</pre>
       </li>
       <li>
         <strong>Authority preserved</strong> — Summary ≠ verifier / terminal authority upgrade.
+      </li>
+      <li>
+        <strong>mid_turn headAnchor honesty</strong> — Anchor must be the compacted turn’s user; coverage
+        includes it; replay re-inserts it; corruption → fail-closed.
+      </li>
+      <li>
+        <strong>Shaping ≠ verdict</strong> — The mid-turn shaper only fails open;
+        <code>context_budget_exhausted</code> is issued only by the final-request estimate over the real
+        outgoing payload.
       </li>
     </ol>
   </Section>
@@ -668,7 +897,10 @@ sourceDigest recomputed over full covered prefix</pre>
         V2 ledger checkpoints:
         <a href={localePath("en", "history/pr/729")}>maka:pr:729</a>
         (replace history compact artifacts with ledger checkpoints). Coverage binding:
-        <a href={localePath("en", "history/pr/955")}>maka:pr:955</a>. Deterministic replay / host
+        <a href={localePath("en", "history/pr/955")}>maka:pr:955</a>. mid_turn + single final-payload
+        verdict:
+        <a href={localePath("en", "history/pr/996")}>maka:pr:996</a> /
+        <a href={localePath("en", "history/pr/1014")}>maka:pr:1014</a>. Deterministic replay / host
         persistence foundation (optional deeper pins):
         <a href={localePath("en", "history/pr/40")}>maka:pr:40</a> /
         <a href={localePath("en", "history/pr/43")}>maka:pr:43</a>. Manual <code>/compact</code>:
@@ -684,19 +916,20 @@ sourceDigest recomputed over full covered prefix</pre>
   <div slot="outline">
     <ul class="outline-list">
       <li>
-        Protocol depth: schema · prior-messages pipeline · synthetic · fail-open matrix · LLM/Runtime
-        authority · ten invariants
+        Protocol depth: schema · mid_turn/headAnchor · capacity shaping≠verdict · prior-messages ·
+        synthetic · fail-open · twelve invariants
       </li>
       <li>
         Mechanism asides
         <a href={localePath("en", "history/pr/729")}>maka:pr:729</a> /
-        <a href={localePath("en", "history/pr/955")}>maka:pr:955</a>
+        <a href={localePath("en", "history/pr/996")}>maka:pr:996</a> /
+        <a href={localePath("en", "history/pr/1014")}>maka:pr:1014</a>
         (docs-land 772 secondary)
       </li>
       <li>Cache / request-shape is a lean pointer → §01; no fake seventh chapter here</li>
       <li>
-        Structure hard gates still matter; depth = can the reader recite rolling fail-open — do not claim
-        “checklist green = depth done”
+        Depth = can the reader recite “headAnchor = compacted-turn user” and “shaper never issues
+        context_budget_exhausted”
       </li>
     </ul>
   </div>

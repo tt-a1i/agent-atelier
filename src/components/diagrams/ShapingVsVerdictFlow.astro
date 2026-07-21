@@ -1,0 +1,154 @@
+---
+/**
+ * §03 protocol — mid-turn capacity shaper fail-open vs backend final-request verdict.
+ */
+---
+
+<svg
+  class="svv-flow"
+  viewBox="0 0 868 292"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="svv-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="svv-kicker svv-stage svv-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · SHAPING ≠ VERDICT · SINGLE FINAL-PAYLOAD OWNER
+  </text>
+  <line
+    class="svv-stage svv-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Shaper lane -->
+  <g class="svv-stage svv-stage--1" transform="translate(8,48)">
+    <rect width="420" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="420" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="svv-idx" x="14" y="26" fill="var(--accent)">SHAPER · mid-turn-capacity-compact</text>
+    <text class="svv-title" x="14" y="54" fill="var(--ink)">Select safe prefix · build mid_turn</text>
+    <text class="svv-mute" x="14" y="82" fill="var(--mute)">skip · fail_open · compacted</text>
+    <text class="svv-mute" x="14" y="104" fill="var(--mute)">never straddles tool pair</text>
+    <text class="svv-mute" x="14" y="126" fill="var(--mute)">pin steering · no partials</text>
+    <text class="svv-line" x="14" y="154" fill="var(--ink)">MUST NOT issue context_budget_exhausted</text>
+  </g>
+
+  <path
+    class="svv-stage svv-stage--2"
+    d="M 440 132 H 468"
+    stroke="var(--accent)"
+    stroke-width="1.25"
+    fill="none"
+    marker-end="url(#svv-arrow)"
+  ></path>
+  <text class="svv-mute svv-stage svv-stage--2" x="430" y="118" fill="var(--accent)">after all hooks</text>
+
+  <!-- Verdict lane -->
+  <g class="svv-stage svv-stage--3" transform="translate(476,48)">
+    <rect width="384" height="168" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="384" height="2" fill="var(--accent)"></rect>
+    <text class="svv-idx" x="14" y="26" fill="var(--accent)">VERDICT · backend final request</text>
+    <text class="svv-title" x="14" y="54" fill="var(--ink)">Measure outgoing payload</text>
+    <text class="svv-mute" x="14" y="82" fill="var(--mute)">messages + tools that go out</text>
+    <text class="svv-mute" x="14" y="104" fill="var(--mute)">after prune + shaping</text>
+    <text class="svv-mute" x="14" y="126" fill="var(--mute)">refuse non-shrinking fold</text>
+    <text class="svv-line" x="14" y="154" fill="var(--ink)">continue OR context_budget_exhausted</text>
+  </g>
+
+  <text class="svv-foot svv-stage svv-stage--4" x="8" y="256" fill="var(--mute)">
+    Fail-open under the window keeps the raw projection + diagnostic. Only the final-request estimate owner may terminate — and only about the request that really leaves.
+  </text>
+  <text class="svv-foot svv-stage svv-stage--4" x="8" y="280" fill="var(--mute)">
+    Trigger uses last INPUT tokens + signed char delta (credits shrink). Post-fold raw-ledger re-estimate is not the verdict.
+  </text>
+</svg>
+
+<style>
+  .svv-flow {
+    font-family: var(--sans);
+  }
+  .svv-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .svv-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .svv-title {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .svv-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .svv-mute {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .svv-foot {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .svv-stage {
+      opacity: 0;
+      animation: svv-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .svv-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .svv-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .svv-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .svv-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .svv-stage--4 {
+      animation-delay: 0.5s;
+    }
+    @keyframes svv-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .svv-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
