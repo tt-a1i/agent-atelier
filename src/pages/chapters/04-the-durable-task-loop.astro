@@ -6,13 +6,15 @@ import DurableTaskKeystone from "../../components/diagrams/DurableTaskKeystone.a
 import AttemptContinueFlow from "../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
+import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.astro";
 ---
 
 <ChapterShell chapterId="04">
   <div slot="thesis">
     <p>
       交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。Headless 的 Durable Task Loop
-      把「一次聊天」升级为「可续跑的任务」。关键句：
+      把「一次聊天」升级为「可续跑的任务」——不重写 §01–§03 的 Runtime，而是在外面加一层 durable
+      envelope。关键句：
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -30,10 +32,15 @@ import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
       与 active backend 都已消失。
     </p>
     <p>
-      Turn 表达一轮问答，Run 表达一次具体执行，RuntimeEvent ledger 能回放模型与工具经历。长程任务还要回答：稳定目标
+      Turn 表达一轮问答，Run 表达一次具体执行，RuntimeEvent ledger 能回放模型与工具经历——这是
+      §01–§03 已经立住的事实层。长程任务还要回答另一组问题：稳定目标
       ID、尝试次数、剩余预算、有效 progress、是在运行还是等待批准、下次继承什么、workspace
       是否仍是离开时的那个、谁有权接管下一步。
     </p>
+    <blockquote class="pull">
+      Headless 真正解决的是：如何把跨 Attempt、跨暂停、甚至跨进程的开放式目标，收成一段可投影的 Task
+      Event 历史——而不是假装一次 Invocation 可以永生。
+    </blockquote>
   </Section>
 
   <Section
@@ -62,6 +69,10 @@ Long task progress
   = sequence of bounded Attempts
   + durable Task Events between them
   + explicitly selected continuation state</pre>
+    <p>
+      Projection 不是另一份可独立修改的 Task truth。CLI inspect、resume planning、prompt replay 与
+      export 都应从 Task Events 派生——与 §01「状态是日志的函数」、§03「checkpoint 是 projection」同一纪律，只是消费者换成了长程任务控制面。
+    </p>
   </Section>
 
   <Section
@@ -76,6 +87,11 @@ Long task progress
       lease、continue/retry/stop/abort，以及生效的 task policy。普通交互式对话不该被迫携带这些控制字段；不同
       Attempt 当前也可创建不同 Session / AgentRun。引用方向：Task Events 保存
       <code>sessionId</code> / <code>agentRunId</code>，而不是让 Session header 成为 TaskRun 真相。
+    </p>
+    <p>
+      若把 Task 控制字段硬塞进 Session，交互式聊天会被迫携带无人值守语义；若反过来用 Session
+      header 当 Task 真相，park / budget / multi-Attempt 就会在重启后无法诚实重建。两层身份必须分开，再用
+      refs 交叉引用。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
@@ -143,16 +159,75 @@ Long task progress
       Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。
       <code>AutonomousAgentLoop</code> 每次 <code>runTaskOnce()</code> 创建新
       Attempt——不是从旧 RuntimeRunner 的 instruction pointer 恢复，也不会复活已退出的 tool process。三层预算（如
-      <code>maxAttempts</code> / <code>maxRuntimeSteps</code> 等）给无人值守循环可证明的边界：没有「继续直到完成」的无限许可。
+      <code>maxAttempts</code> / <code>maxRuntimeSteps</code> 等）给无人值守循环可证明的边界：没有「继续直到完成」的无限许可。即使自定义
+      policy 请求 continue，硬上限仍由 <code>enforceCaps()</code> 再应用一次。
     </p>
+  </Section>
+
+  <Section
+    id="continue"
+    label="§04 · Continuation"
+    title="「继续」至少有三条路径，不要混成一个 resume"
+    lede="Autonomous continue、parked CLI resume、冷启动重载 ledger——语义不同，事件必须显式。"
+  >
+    <DiagramFigure
+      caption="图 5 · 三条续跑：autonomous continue/retry · parked needs_approval · cold start 重载 ledger；统一 resume 协议仍是 Target。"
+      alt="四列：Autonomous continue、Parked resume、Cold start reload、Target unified resume gap。"
+    >
+      <ColdStartResumeFlow />
+    </DiagramFigure>
+    <ol class="plain-list numbered">
+      <li>
+        <strong>Autonomous continue / retry</strong> — 再次调用
+        <code>runTaskOnce()</code>；Heavy-task 状态可从 Task Events 投影进新 instruction；可选把旧 Attempt 的
+        RuntimeEvents 拼进下一次 Runtime context。仍是新 Attempt，不是 instruction-level resume。
+      </li>
+      <li>
+        <strong>Parked permission 的 CLI resume</strong> — intervention 为
+        <code>park</code> 时形成 Inbox / <code>needs_approval</code>；当前
+        <code>task resume</code> 主要服务此路径：先 resolve inbox，再开新 Attempt，并把 grant 写入 Task
+        Event Log。
+      </li>
+      <li>
+        <strong>Cold start</strong> — 进程重启后从 JSONL 重载并
+        <code>projectTaskRun()</code>；attempts / steps 计数不得因新进程清零。能恢复的是控制面真相，不是 live
+        tool handle 或自动 scheduler 接管。
+      </li>
+    </ol>
+    <p>
+      Explicit continuation 必须留下 Task Event，不能只靠进程内隐式循环计数。把三条路径说成同一个「resume」按钮，会在 park
+      与 crash 之间偷换语义，也会把 Target 的统一接管协议伪装成 Current。
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§04 · Failure"
+    title="宁可停在可解释边界，也不要假装还能续跑"
+    lede="Fail closed on budgets and ownership; do not invent a live world from a ledger alone."
+  >
+    <ul class="plain-list">
+      <li>Budget / hard cap 触顶 → 停止无人值守循环；不得用「再试一次」绕过 <code>enforceCaps()</code>。</li>
+      <li>Permission fail-closed 或 park → 没有 grant 不得继续副作用；parked resume 必须写 grant facts。</li>
+      <li>进程重启后缺少 workspace / executor ownership 证据 → 只恢复控制面投影，不宣称已安全接管 live world。</li>
+      <li>旧 Attempt 的 RuntimeEvents 可选 replay 进 context，但不得假装 tool process 仍在运行。</li>
+      <li>自定义 policy 请求 continue，而硬上限已耗尽 → 以 cap 为准，不以叙述为准。</li>
+    </ul>
+    <div class="stub">
+      <p class="stub__tag">Hybrid 教学深度</p>
+      <p>
+        本章按 Hybrid 决策加厚：作为 Runtime→长程任务的关键桥，叙事与续跑图接近 §01–§03 密度。§05–§06
+        保持 lean、清单完整；更细的演进细节走 <code>/history</code> 旁注。
+      </p>
+    </div>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + durable boundary + Attempt continue + 预算三层流</li>
+      <li>关键图 + durable boundary + Attempt continue + 预算三层 + 三条续跑/冷启动流</li>
       <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a></li>
       <li>Current ledger vs Target 跨进程接管缺口已显式标注</li>
-      <li>验收清单硬闸门已过（中英同船）</li>
+      <li>Hybrid：§04 加厚；§05–§06 lean；验收清单硬闸门已过（中英同船）</li>
     </ul>
   </div>
 </ChapterShell>
@@ -174,6 +249,9 @@ Long task progress
     padding-left: 1.2rem;
     max-width: 40em;
   }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
   .plain-list li {
     margin-bottom: 0.45rem;
   }
@@ -184,5 +262,14 @@ Long task progress
   }
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
   }
 </style>

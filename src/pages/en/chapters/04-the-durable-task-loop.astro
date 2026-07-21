@@ -7,6 +7,7 @@ import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeyston
 import AttemptContinueFlow from "../../../components/diagrams/AttemptContinueFlow.astro";
 import DurableBoundaryFlow from "../../../components/diagrams/DurableBoundaryFlow.astro";
 import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astro";
+import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlow.astro";
 ---
 
 <ChapterShell chapterId="04" locale="en">
@@ -14,7 +15,8 @@ import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astr
     <p>
       Work that does not fit an interactive Turn needs its own task identity and progress that can
       survive process boundaries. Headless Durable Task Loop upgrades “one chat” into “a task that can
-      continue.” Key line:
+      continue” — without rewriting the §01–§03 Runtime; it wraps execution in a durable envelope. Key
+      line:
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -34,10 +36,16 @@ import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astr
     </p>
     <p>
       Turn expresses one Q&amp;A; Run expresses one concrete execution; the RuntimeEvent ledger can
-      replay model and tool experience. A long task still must answer: stable goal id, attempt count,
-      remaining budget, effective progress, running vs waiting for approval, what to inherit next,
-      whether the workspace is still the one left behind, and who may take the next step.
+      replay model and tool experience — the fact layer already locked in §01–§03. A long task still
+      must answer another set of questions: stable goal id, attempt count, remaining budget, effective
+      progress, running vs waiting for approval, what to inherit next, whether the workspace is still
+      the one left behind, and who may take the next step.
     </p>
+    <blockquote class="pull">
+      Headless’s real problem is how to turn an open goal across Attempts, parks, and even process
+      restarts into a projectable Task Event history — not how to pretend one Invocation can live
+      forever.
+    </blockquote>
   </Section>
 
   <Section
@@ -66,6 +74,12 @@ Long task progress
   = sequence of bounded Attempts
   + durable Task Events between them
   + explicitly selected continuation state</pre>
+    <p>
+      A projection is not a second Task truth that can be edited on its own. CLI inspect, resume
+      planning, prompt replay, and export should all derive from Task Events — the same discipline as
+      §01 (“state is a function of the log”) and §03 (“a checkpoint is a projection”), with the long-task
+      control plane as the consumer.
+    </p>
   </Section>
 
   <Section
@@ -82,6 +96,11 @@ Long task progress
       be forced to carry these control fields; different Attempts may currently create different
       Sessions / AgentRuns. Reference direction: Task Events store <code>sessionId</code> /
       <code>agentRunId</code>; the Session header is not the TaskRun truth.
+    </p>
+    <p>
+      Stuff Task control fields into Session and interactive chat inherits unattended semantics; treat
+      the Session header as Task truth and park / budget / multi-Attempt cannot honestly rebuild after
+      restart. Keep the two identities separate and cross-link with refs.
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside</p>
@@ -153,18 +172,94 @@ Long task progress
       each <code>runTaskOnce()</code> — it does not resume from an old RuntimeRunner instruction
       pointer, nor revive an exited tool process. Layered budgets (e.g. <code>maxAttempts</code> /
       <code>maxRuntimeSteps</code>) give unattended loops a provable boundary: there is no infinite
-      license to “continue until done.”
+      license to “continue until done.” Even if a custom policy asks to continue,
+      <code>enforceCaps()</code> reapplies the hard limits.
     </p>
+  </Section>
+
+  <Section
+    id="continue"
+    label="§04 · Continuation"
+    title="“Continue” is at least three paths — not one resume"
+    lede="Autonomous continue, parked CLI resume, and cold-start ledger reload — different semantics, explicit events."
+  >
+    <DiagramFigure
+      caption="Fig. 5 · Three continuations: autonomous continue/retry · parked needs_approval · cold-start ledger reload; unified resume stays Target."
+      alt="Four columns: Autonomous continue, Parked resume, Cold start reload, Target unified resume gap."
+    >
+      <ColdStartResumeFlow />
+    </DiagramFigure>
+    <ol class="plain-list numbered">
+      <li>
+        <strong>Autonomous continue / retry</strong> — call <code>runTaskOnce()</code> again;
+        heavy-task state can project from Task Events into a new instruction; optionally splice prior
+        Attempt RuntimeEvents into the next Runtime context. Still a new Attempt — not
+        instruction-level resume.
+      </li>
+      <li>
+        <strong>Parked permission CLI resume</strong> — when intervention is <code>park</code>, an
+        Inbox / <code>needs_approval</code> forms; current <code>task resume</code> mainly serves this
+        path: resolve inbox, open a new Attempt, append grant facts to the Task Event Log.
+      </li>
+      <li>
+        <strong>Cold start</strong> — after process restart, reload JSONL and
+        <code>projectTaskRun()</code>; attempt / step counts must not reset because a new process
+        started. What recovers is control-plane truth — not live tool handles or automatic scheduler
+        takeover.
+      </li>
+    </ol>
+    <p>
+      Explicit continuation must leave Task Events; an in-process loop counter alone is not enough.
+      Collapsing the three into one “resume” button smuggles semantics between park and crash, and
+      dresses Target’s unified takeover protocol as Current.
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§04 · Failure"
+    title="Stop on an explainable boundary — do not pretend you can still continue"
+    lede="Fail closed on budgets and ownership; do not invent a live world from a ledger alone."
+  >
+    <ul class="plain-list">
+      <li>
+        Budget / hard cap hit → stop the unattended loop; do not bypass
+        <code>enforceCaps()</code> with “one more try.”
+      </li>
+      <li>
+        Permission fail-closed or park → no side effects without a grant; parked resume must record
+        grant facts.
+      </li>
+      <li>
+        After restart, missing workspace / executor ownership evidence → restore control-plane
+        projection only; do not claim safe live-world takeover.
+      </li>
+      <li>
+        Prior Attempt RuntimeEvents may optionally replay into context, but must not pretend the tool
+        process is still running.
+      </li>
+      <li>
+        Custom policy asks to continue while hard caps are exhausted → caps win over narrative.
+      </li>
+    </ul>
+    <div class="stub">
+      <p class="stub__tag">Hybrid teaching depth</p>
+      <p>
+        This chapter is thickened under the Hybrid decision: as the Runtime→durable-task bridge, its
+        narrative and continuation figure approach §01–§03 density. §05–§06 stay lean and
+        checklist-complete; finer evolution detail lives in <code>/history</code> asides.
+      </p>
+    </div>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>Keystone + durable boundary + Attempt continue + budget layers</li>
+      <li>Keystone + durable boundary + Attempt continue + budgets + three continuations / cold start</li>
       <li>
         Aside: <a href={`${localePath("en", "history/pr/773")}`}>maka:pr:773</a>
       </li>
       <li>Current ledger vs Target cross-process takeover gaps labeled</li>
-      <li>Acceptance checklist hard gate met (zh+en same ship)</li>
+      <li>Hybrid: §04 fuller; §05–§06 lean; checklist hard gate met (zh+en same ship)</li>
     </ul>
   </div>
 </ChapterShell>
@@ -186,6 +281,9 @@ Long task progress
     padding-left: 1.2rem;
     max-width: 40em;
   }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
   .plain-list li {
     margin-bottom: 0.45rem;
   }
@@ -196,5 +294,14 @@ Long task progress
   }
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
   }
 </style>

@@ -1,0 +1,174 @@
+---
+/**
+ * §04 flow — three continuation paths; cold start reloads ledger, not an immortal Invocation.
+ */
+---
+
+<svg
+  class="csr-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="csr-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="csr-kicker csr-stage csr-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · THREE CONTINUATIONS · COLD START RELOADS LEDGER
+  </text>
+  <line
+    class="csr-stage csr-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="csr-node csr-stage csr-stage--1" transform="translate(8,52)">
+    <rect width="200" height="128" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="csr-node__idx" x="12" y="26" fill="var(--accent)">01 · AUTONOMOUS</text>
+    <text class="csr-node__name" x="12" y="52" fill="var(--ink)">continue / retry</text>
+    <text class="csr-node__hint" x="12" y="78" fill="var(--mute)">runTaskOnce again</text>
+    <text class="csr-node__hint" x="12" y="98" fill="var(--mute)">project → new Attempt</text>
+    <text class="csr-node__hint" x="12" y="118" fill="var(--mute)">optional Runtime replay</text>
+  </g>
+
+  <g class="csr-node csr-stage csr-stage--2" transform="translate(228,52)">
+    <rect width="200" height="128" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="csr-node__idx" x="12" y="26" fill="var(--accent)">02 · PARKED</text>
+    <text class="csr-node__name" x="12" y="52" fill="var(--ink)">needs_approval</text>
+    <text class="csr-node__hint" x="12" y="78" fill="var(--mute)">Inbox · grant facts</text>
+    <text class="csr-node__hint" x="12" y="98" fill="var(--mute)">CLI task resume</text>
+    <text class="csr-node__hint" x="12" y="118" fill="var(--mute)">then new Attempt</text>
+  </g>
+
+  <g class="csr-node csr-stage csr-stage--3" transform="translate(448,52)">
+    <rect width="200" height="128" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="csr-node__idx" x="12" y="26" fill="var(--accent)">03 · COLD START</text>
+    <text class="csr-node__name" x="12" y="52" fill="var(--ink)">reload TaskEvents</text>
+    <text class="csr-node__hint" x="12" y="78" fill="var(--mute)">projectTaskRun()</text>
+    <text class="csr-node__hint" x="12" y="98" fill="var(--mute)">budgets stay counted</text>
+    <text class="csr-node__hint" x="12" y="118" fill="var(--mute)">≠ revive live handles</text>
+  </g>
+
+  <g class="csr-node csr-stage csr-stage--4" transform="translate(668,52)">
+    <rect
+      width="192"
+      height="128"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="192" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="csr-node__idx" x="12" y="26" fill="var(--accent)">TARGET GAP</text>
+    <text class="csr-node__name" x="12" y="52" fill="var(--ink)">unified resume</text>
+    <text class="csr-node__hint" x="12" y="78" fill="var(--mute)">workspace bytes</text>
+    <text class="csr-node__hint" x="12" y="98" fill="var(--mute)">scheduler ownership</text>
+    <text class="csr-node__hint" x="12" y="118" fill="var(--mute)">not Current</text>
+  </g>
+
+  <g
+    class="csr-connectors csr-stage csr-stage--1"
+    stroke="var(--accent)"
+    stroke-width="1.25"
+    fill="none"
+  >
+    <line x1="208" y1="116" x2="228" y2="116" marker-end="url(#csr-arrow)"></line>
+    <line x1="428" y1="116" x2="448" y2="116" marker-end="url(#csr-arrow)"></line>
+    <line x1="648" y1="116" x2="668" y2="116" marker-end="url(#csr-arrow)"></line>
+  </g>
+
+  <text class="csr-foot csr-stage csr-stage--4" x="8" y="218" fill="var(--mute)">
+    Do not collapse the three into one “resume.” Cold start restores control-plane truth from the
+    ledger; live world recovery remains Target.
+  </text>
+  <text class="csr-foot csr-stage csr-stage--4" x="8" y="242" fill="var(--mute)">
+    Explicit continuation leaves Task Events — never an in-process implicit loop counter alone.
+  </text>
+</svg>
+
+<style>
+  .csr-flow {
+    font-family: var(--sans);
+  }
+  .csr-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .csr-node__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .csr-node__name {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .csr-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .csr-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .csr-stage {
+      opacity: 0;
+      animation: csr-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .csr-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .csr-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .csr-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .csr-stage--3 {
+      animation-delay: 0.42s;
+    }
+    .csr-stage--4 {
+      animation-delay: 0.56s;
+    }
+    @keyframes csr-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .csr-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
