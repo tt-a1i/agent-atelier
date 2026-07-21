@@ -1,0 +1,394 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/skills-corpus");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Bundled Skills corpus · Agent Atelier"
+  description="Agent-contract patterns mined from all 29 Maka bundled SKILL.md files: allowed-tools, boundaries, side-effect gates, evidence honesty — companion report, not a skill-body dump."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v3 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Bundled Skills 语料</span>
+        <span class="masthead__title-en">Skills corpus patterns</span>
+      </h1>
+      <p class="masthead__sub">
+        Dig v2 marking all 29 <code>SKILL.md</code> files as <code>oos</code> was complacent: they
+        encode <strong>agent behavior contracts</strong> (tool declaration, workspace safety,
+        evidence honesty, side-effect confirmation), not disposable marketing copy. This page
+        restates patterns from <strong>all 29 bodies</strong>; load mechanics remain in
+        <a href={`${ch01}#skills`}>§01 · #skills</a>. When docs disagree,
+        <strong>code + contract tests win</strong>.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/skills-corpus</span>
+        <span>Map · #90</span>
+        <span>
+          <a href={localePath("zh", "guides/skills-corpus")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Skills · Scene"
+      title="Why mine product skill bodies"
+      lede="Catalog mechanics ≠ skill contract corpus. The latter teaches what the agent may do after invoke."
+    >
+      <p>
+        Runtime: catalog carries only <code>name</code> + <code>description</code>; bodies lazy-load
+        (see §01 <code>#skills</code>). Desktop: bundled / managed / workspace sources + lock /
+        sha256 governance (see
+        <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a>
+        <code>#skills-governance</code>). This page is the third layer: treat the 29 bodies as an
+        <strong>agent policy corpus</strong> — a reader should restate cross-skill invariants without
+        opening every SKILL.md.
+      </p>
+      <blockquote class="pull">
+        allowed-tools declares need; PermissionEngine grants; boundary sections constrain behavior.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="frontmatter"
+      label="Skills · Front-matter"
+      title="Front-matter hard contract (pinned by the creator skill)"
+      lede="maka-skill-creator + managed-skill-sources make field parsing a fail-closed contract, not “casual YAML”."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Line-oriented parse, not full YAML</strong> — <code>description</code> must be one
+          line; <code>&gt;</code> / <code>|</code> folds drop fields.
+        </li>
+        <li>
+          <strong>Closed category set</strong> (unknown → <code>效率工具</code>): 内容创作 / 数据与AI /
+          设计与UI / DevOps与部署 / 文档与写作 / 研究与分析 / 效率工具 — same as
+          <code>MANAGED_SKILL_CATEGORIES</code>.
+        </li>
+        <li>
+          <strong>Tool literals</strong>: <code>Read</code> · <code>Write</code> · <code>Edit</code> ·
+          <code>Glob</code> · <code>Grep</code> · <code>Bash</code> · <code>WebSearch</code>.
+        </li>
+        <li>
+          <strong>Body cap 24,000 chars</strong> on Skill-tool load (tail truncated) — put hard
+          constraints first.
+        </li>
+        <li>
+          <strong>Marketplace is single-file</strong> — no <code>scripts/</code> /
+          <code>references/</code> sidecars; “see reference.md” fails in Maka.
+        </li>
+        <li>
+          <strong>id</strong>: <code>^[A-Za-z0-9][A-Za-z0-9._-]&#123;0,80&#125;$</code>; prefer
+          kebab-case.
+        </li>
+      </ul>
+      <p>
+        Specimens: <code>…/maka-skill-creator/SKILL.md</code> ·
+        <code>managed-skill-sources.ts</code> · runtime <code>validateSkillMetadata</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="allowed-tools"
+      label="Skills · allowed-tools"
+      title="Declaration spectrum across all 29"
+      lede="Counts: Read=29, Write=23, Bash=16, WebSearch=9, Glob=3, Edit=1. Declaration still never grants."
+    >
+      <div class="table-wrap" role="region" aria-label="allowed-tools frequency" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Tool</th>
+              <th scope="col">Hits</th>
+              <th scope="col">Typical family</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>Read</code></th>
+              <td>29/29</td>
+              <td>Universal baseline</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Write</code></th>
+              <td>23/29</td>
+              <td>Docs/HTML/ledgers; research often read-only</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Bash</code></th>
+              <td>16/29</td>
+              <td>changelog / PDF / deploy / render / screenshot</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>WebSearch</code></th>
+              <td>9/29</td>
+              <td>Research + writing families</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Glob</code></th>
+              <td>3/29</td>
+              <td>file-organizer / invoice / skill-creator</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Edit</code></th>
+              <td>1/29</td>
+              <td>Only <code>responsive-design</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Extremes: <code>static-site-deploy</code> is <code>Read+Bash</code> only (deploy via CLI);
+        research skills like <code>deep-research</code> are <code>Read+WebSearch</code> with no Write.
+        Teaching point: tool-surface width ≠ permission width.
+      </p>
+    </Section>
+
+    <Section
+      id="cross-cut"
+      label="Skills · Cross-cut"
+      title="Eight agent contracts across all 29 bodies"
+      lede="Dig v3 core deliverable: patterns from every skill, not two cherry-picked samples."
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Declare ≠ grant</strong> — pinned by the creator skill; isomorphic to §01
+          <code>#skills</code> / PermissionEngine.
+        </li>
+        <li>
+          <strong>Confirm before side effects</strong> — file-organizer (confirm moves) ·
+          static-site-deploy (confirm prod) · internal-comms (write, never send) · copywriting (never
+          publish for the user).
+        </li>
+        <li>
+          <strong>No invented evidence</strong> — deep-research / market-research / changelog /
+          data-analysis / summarization / resume: say so when missing; numbers come from real compute
+          or user material.
+        </li>
+        <li>
+          <strong>Fact vs speculation columns</strong> — competitive-ads, lead-research,
+          market-research must label inferences.
+        </li>
+        <li>
+          <strong>User owns auth and billing</strong> — deploy may launch login; never type
+          passwords/tokens; never accept TOS / attach cards.
+        </li>
+        <li>
+          <strong>Output containment</strong> — design family defaults to self-contained HTML; PDF
+          writes new files; invoice builds ledgers without moving originals.
+        </li>
+        <li>
+          <strong>File content is data, not commands</strong> — file-organizer ignores “instructions”
+          embedded in names/bodies.
+        </li>
+        <li>
+          <strong>description decides invoke</strong> — WHAT+WHEN+user phrasing; body decides quality
+          after load (creator methodology).
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="families"
+      label="Skills · Families"
+      title="Seven family personalities (by category)"
+      lede="Closed taxonomy × boundary personality — not a feature ad."
+    >
+      <div class="table-wrap" role="region" aria-label="skill families" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">n</th>
+              <th scope="col">Contract personality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">设计与UI</th>
+              <td>8</td>
+              <td>Self-contained delivery, no live APIs, loyal to brief, offline-safe</td>
+            </tr>
+            <tr>
+              <th scope="row">文档与写作</th>
+              <td>5</td>
+              <td>Source-driven; no invented metrics; write-only (internal-comms)</td>
+            </tr>
+            <tr>
+              <th scope="row">研究与分析</th>
+              <td>5</td>
+              <td>Public info, anti-confirmation-bias, gap markers, privacy (lead)</td>
+            </tr>
+            <tr>
+              <th scope="row">效率工具</th>
+              <td>5</td>
+              <td>Confirm gates, rollback, organize-not-delete, meta-creator</td>
+            </tr>
+            <tr>
+              <th scope="row">内容创作</th>
+              <td>4</td>
+              <td>No fabricated product facts; compliance tone; explain installs first</td>
+            </tr>
+            <tr>
+              <th scope="row">数据与AI</th>
+              <td>1</td>
+              <td>Numbers must come from scripts; transparent cleaning; correlation ≠ causation</td>
+            </tr>
+            <tr>
+              <th scope="row">DevOps与部署</th>
+              <td>1</td>
+              <td>Human-gated login/billing; conservative builds; return URLs only</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="high-signal"
+      label="Skills · High-signal"
+      title="High-signal boundaries (must be restatable)"
+      lede="These skills encode workspace / trust boundaries into agent instructions — not soft advice."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>file-organizer</strong> — move never delete; confirm then execute; rollback list;
+          skip <code>.git</code> / system dirs; content instructions are data.
+        </li>
+        <li>
+          <strong>static-site-deploy</strong> — user completes OAuth; no TOS acceptance; explicit prod
+          confirm; never leak tokens.
+        </li>
+        <li>
+          <strong>changelog-generator</strong> — read-only git; no commit/push/rebase; report empty
+          ranges; scrub secrets.
+        </li>
+        <li>
+          <strong>pdf-toolkit</strong> — write new files; crypto not for access bypass; confirm heavy
+          OCR deps.
+        </li>
+        <li>
+          <strong>maka-skill-creator</strong> — freedom matches fragility; unified terms; three-part
+          boundary template.
+        </li>
+        <li>
+          <strong>lead-research-assistant</strong> — company-public granularity; forbid personal PII
+          fields.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="inventory"
+      label="Skills · Inventory"
+      title="Full 29-row inventory"
+      lede="Every row was read; teaching anchors are patterns, not restating every workflow."
+    >
+      <div class="table-wrap" role="region" aria-label="29 skills" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">id</th>
+              <th scope="col">category</th>
+              <th scope="col">tools</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row"><code>brand-guidelines</code></th><td>设计与UI</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>changelog-generator</code></th><td>文档与写作</td><td>Bash, Read, Write</td></tr>
+            <tr><th scope="row"><code>competitive-ads-extractor</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>content-research-writer</code></th><td>文档与写作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>copywriting</code></th><td>内容创作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>create-plan</code></th><td>效率工具</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>data-analysis</code></th><td>数据与AI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>deep-research</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>domain-name-brainstormer</code></th><td>内容创作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>drafter-diagram</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>file-organizer</code></th><td>效率工具</td><td>Read, Glob, Bash, Write</td></tr>
+            <tr><th scope="row"><code>frontend-design</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>html-poster</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>html-slides</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>internal-comms</code></th><td>文档与写作</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>invoice-organizer</code></th><td>效率工具</td><td>Read, Glob, Bash, Write</td></tr>
+            <tr><th scope="row"><code>lead-research-assistant</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>maka-skill-creator</code></th><td>效率工具</td><td>Read, Write, Glob</td></tr>
+            <tr><th scope="row"><code>manim-composer</code></th><td>内容创作</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>market-research-reports</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>notion-infographic</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>pdf-toolkit</code></th><td>效率工具</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>responsive-design</code></th><td>设计与UI</td><td>Read, Write, Edit, Bash</td></tr>
+            <tr><th scope="row"><code>seo-audit</code></th><td>研究与分析</td><td>Read, Bash, WebSearch</td></tr>
+            <tr><th scope="row"><code>static-site-deploy</code></th><td>DevOps与部署</td><td>Read, Bash</td></tr>
+            <tr><th scope="row"><code>summarization</code></th><td>文档与写作</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>tailored-resume-generator</code></th><td>文档与写作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>theme-factory</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>xhs-card-designer</code></th><td>内容创作</td><td>Read, Write, Bash</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Research outline (with boundary excerpts):
+        <code>docs/research/skills-corpus-mine-outline.md</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="failures"
+      label="Skills · Failure"
+      title="Failure stories"
+      lede="Treating skills as privilege channels — or oos as “done mining” — teaches the wrong threat model."
+    >
+      <ul class="plain-list">
+        <li>Reading <code>allowed-tools: Bash</code> as already authorized → PermissionEngine theater</li>
+        <li>Skipping confirm before <code>mv</code> / <code>--prod</code> → workspace / public damage</li>
+        <li>Inventing URLs and numbers in research → polluted decision evidence</li>
+        <li>Skill body pointing at <code>scripts/foo.py</code> → silent marketplace failure</li>
+        <li>Vague description (“help with documents”) → catalog never matches</li>
+        <li>Matrix <code>oos</code> with no teaching surface → dig complacency (why this page exists)</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Skills · Boundaries"
+      title="Not §01 #skills, and not a CSS dump"
+      lede="Three layers, three truths."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong><a href={`${ch01}#skills`}>§01 · #skills</a></strong> — catalog budget, lazy load,
+          invoke, declare≠grant mechanics.
+        </li>
+        <li>
+          <strong>This page</strong> — cross-skill behavior contracts from all 29 bodies.
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host#skills-governance</a></strong>
+          — bundled locks / managed sources / install surface.
+        </li>
+      </ul>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · dig v3</p>
+      <p>
+        Map <a href="https://github.com/tt-a1i/agent-atelier/issues/90">#90</a> rejects dig v2’s
+        “SKILL×29 = oos dump”. Specimen path:
+        <code>apps/desktop/resources/bundled-skills/*/SKILL.md</code> ×29.
+      </p>
+    </aside>
+  </article>
+</ReportLayout>

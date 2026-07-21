@@ -117,7 +117,7 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
 | 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |
 | 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | **deep** (#81) |
-| 14 | Skill catalog policy | companion | `skills.ts` · `skill-catalog-policy.md` | **shipped** `#skills` |
+| 14 | Skill catalog policy + bundled corpus | §01 `#skills` + `/guides/skills-corpus` | runtime `skills.ts` · desktop `skills.ts` / `managed-skill-sources.ts` · SKILL×29 | **deep** dig v3/#90 — mechanism + cross-body contracts |
 | 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | **shipped** `#harbor-trust` |
 | — | Usage / cost telemetry dual-store | §01 `#usage-stores` | `telemetry/*` · `usage-stats-store.ts` · capture | **deep** (#81) |
 | — | Runtime-host four-op gateway | §01 `#runtime-host` | `HOST_OPERATION_SPECS` · dependency-boundary | **deep** (#81) |

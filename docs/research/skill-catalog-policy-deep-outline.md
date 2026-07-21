@@ -14,7 +14,7 @@
    - `packages/runtime/src/skill-invocation.ts` — explicit `/skill:` / chip composition contract  
    - Desktop: `managed-skill-sources.ts`, `bundled-skill-catalog.generated.ts` — governance **outside** runtime authority  
 3. **Tests-as-spec:** `skills.test.ts`, `skill-invocation.test.ts`, desktop skills/bundled-catalog tests  
-4. **Product surface (F — optional):** `apps/desktop/resources/bundled-skills/*/SKILL.md` ×29 — **do not** mine bodies for Destination  
+4. **Product surface (F — dig v3):** `apps/desktop/resources/bundled-skills/*/SKILL.md` ×29 — agent-contract patterns mined at `/guides/skills-corpus` (map #90); mechanism still this outline + §01 `#skills`
 5. **Archive:** `ui-skills-deep-read-2026-06-2{3,4}.md` — UI chronicle only if needed
 
 ## Goal (reader can teach)
@@ -32,7 +32,7 @@
 
 ## Non-goals
 
-- Teaching contents of 29 bundled skills  
+- Dumping each skill’s full workflow essay into §01 (that lives at `/guides/skills-corpus`)  
 - Office seeding / marketplace UX deep dive  
 - Claiming skills bypass PermissionEngine
 

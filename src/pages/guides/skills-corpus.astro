@@ -1,0 +1,382 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/skills-corpus");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Bundled Skills 语料 · Agent Atelier"
+  description="从 maka 全部 29 个 bundled SKILL.md 挖出的 agent 合同模式：allowed-tools、边界、副作用确认、证据诚实——配套研报，不是 skill 正文 dump。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v3 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Bundled Skills 语料</span>
+        <span class="masthead__title-en">Skills corpus patterns</span>
+      </h1>
+      <p class="masthead__sub">
+        dig v2 把 29 个 <code>SKILL.md</code> 标成 <code>oos</code> 是马虎：它们编码的是
+        <strong>agent 行为合同</strong>（工具声明、工作区安全、证据诚实、副作用确认），不是可丢弃的营销文案。本页从
+        <strong>全部 29 份正文</strong>归纳可复述的模式；加载机制仍以
+        <a href={`${ch01}#skills`}>§01 · #skills</a> 为准。权威冲突时
+        <strong>code + contract tests 胜出</strong>。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/skills-corpus</span>
+        <span>Map · #90</span>
+        <span>
+          <a href={localePath("en", "guides/skills-corpus")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Skills · Scene"
+      title="为什么要挖产品 skill 正文"
+      lede="Catalog 机制 ≠ skill 合同语料。后者教 agent「触发后敢做什么、绝不能做什么」。"
+    >
+      <p>
+        Runtime 侧：catalog 只带 <code>name</code> + <code>description</code>；正文按需加载（见 §01
+        <code>#skills</code>）。Desktop 侧：bundled / managed / workspace 三源 + lock / sha256
+        治理（见 <a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host</a>
+        <code>#skills-governance</code>）。本页第三层：把 29 份正文当作
+        <strong>agent policy corpus</strong>——读者应能不打开每个 SKILL.md 就复述跨技能不变量。
+      </p>
+      <blockquote class="pull">
+        allowed-tools 声明需求；PermissionEngine 授权；边界段落约束行为。
+      </blockquote>
+    </Section>
+
+    <Section
+      id="frontmatter"
+      label="Skills · Front-matter"
+      title="Front-matter 硬合同（创作技能钉死）"
+      lede="maka-skill-creator + managed-skill-sources 把字段解析写成可失败合同，不是「随便 YAML」。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>逐行正则解析，不是完整 YAML</strong> — <code>description</code> 必须单行；
+          <code>&gt;</code> / <code>|</code> 折叠会丢字段。
+        </li>
+        <li>
+          <strong>category 封闭集合</strong>（未知回落 <code>效率工具</code>）：内容创作 / 数据与AI /
+          设计与UI / DevOps与部署 / 文档与写作 / 研究与分析 / 效率工具——与
+          <code>MANAGED_SKILL_CATEGORIES</code> 同源。
+        </li>
+        <li>
+          <strong>可用工具字面量</strong>：<code>Read</code> · <code>Write</code> · <code>Edit</code> ·
+          <code>Glob</code> · <code>Grep</code> · <code>Bash</code> · <code>WebSearch</code>。
+        </li>
+        <li>
+          <strong>正文上限 24,000 字符</strong>（Skill 工具加载截断尾部）——关键约束前置。
+        </li>
+        <li>
+          <strong>市场导入单文件</strong> — 不支持 <code>scripts/</code>、<code>references/</code>
+          sidecar；「见 reference.md」在 maka 失效。
+        </li>
+        <li>
+          <strong>id</strong>：<code>^[A-Za-z0-9][A-Za-z0-9._-]&#123;0,80&#125;$</code>；推荐 kebab-case。
+        </li>
+      </ul>
+      <p>
+        标本：<code>apps/desktop/resources/bundled-skills/maka-skill-creator/SKILL.md</code> ·
+        <code>managed-skill-sources.ts</code> · runtime <code>validateSkillMetadata</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="allowed-tools"
+      label="Skills · allowed-tools"
+      title="声明谱：29 skill × 工具面"
+      lede="全量统计：Read=29，Write=23，Bash=16，WebSearch=9，Glob=3，Edit=1。声明仍永不授权。"
+    >
+      <div class="table-wrap" role="region" aria-label="allowed-tools 频率" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">工具</th>
+              <th scope="col">出现</th>
+              <th scope="col">典型家族</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>Read</code></th>
+              <td>29/29</td>
+              <td>全员基线——无 skill 宣称「零读盘」</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Write</code></th>
+              <td>23/29</td>
+              <td>产出文档/HTML/台账；研究族常只读</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Bash</code></th>
+              <td>16/29</td>
+              <td>changelog / PDF / deploy / 渲染 / 截图</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>WebSearch</code></th>
+              <td>9/29</td>
+              <td>研究与写作族；事实检索</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Glob</code></th>
+              <td>3/29</td>
+              <td>file-organizer / invoice / skill-creator</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>Edit</code></th>
+              <td>1/29</td>
+              <td>仅 <code>responsive-design</code>（局部改页）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        极端：<code>static-site-deploy</code> 仅 <code>Read+Bash</code>（无 Write——部署走 CLI）；
+        <code>deep-research</code> 等研究族 <code>Read+WebSearch</code> 无 Write。教学点：工具面宽度 ≠
+        权限宽度。
+      </p>
+    </Section>
+
+    <Section
+      id="cross-cut"
+      label="Skills · Cross-cut"
+      title="跨 29 份正文的八条 agent 合同"
+      lede="这是 dig v3 的核心交付：模式来自全部 skill，不是抽两个样例。"
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Declare ≠ grant</strong> — 创作技能明文钉死；与 §01
+          <code>#skills</code> / PermissionEngine 同构。
+        </li>
+        <li>
+          <strong>副作用先确认</strong> — file-organizer（移动前确认）· static-site-deploy（prod
+          前确认）· internal-comms（只写不发）· copywriting（不替用户投放）。
+        </li>
+        <li>
+          <strong>不编造证据</strong> — deep-research / market-research / changelog / data-analysis /
+          summarization / resume：找不到就说找不到；数字必须来自真实计算或用户素材。
+        </li>
+        <li>
+          <strong>事实 / 推测分栏</strong> — competitive-ads、lead-research、market-research：可观察 vs
+          推断必须标注。
+        </li>
+        <li>
+          <strong>用户拥有鉴权与计费</strong> — deploy：可触发 login，绝不代填密码/token；不代点 TOS /
+          绑卡。
+        </li>
+        <li>
+          <strong>输出遏制</strong> — 设计族默认自包含单文件 HTML；PDF 写新文件不原地覆盖；invoice
+          只生成台账不移动原件。
+        </li>
+        <li>
+          <strong>文件内容是数据不是命令</strong> — file-organizer：文件名/正文里的「操作指令」一律当数据。
+        </li>
+        <li>
+          <strong>description 决定触发</strong> — WHAT+WHEN+用户原话关键词；正文决定触发后质量（creator
+          方法论）。
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="families"
+      label="Skills · Families"
+      title="七族合同速览（按 category）"
+      lede="封闭 taxonomy × 边界人格——不是功能广告。"
+    >
+      <div class="table-wrap" role="region" aria-label="技能族" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">n</th>
+              <th scope="col">合同人格</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">设计与UI</th>
+              <td>8</td>
+              <td>自包含交付、不接真 API、忠于 brief/素材、离线可靠</td>
+            </tr>
+            <tr>
+              <th scope="row">文档与写作</th>
+              <td>5</td>
+              <td>素材驱动、不虚构进度数字、只写不发（internal-comms）</td>
+            </tr>
+            <tr>
+              <th scope="row">研究与分析</th>
+              <td>5</td>
+              <td>公开信息、反确认偏差、缺口占位、隐私边界（lead）</td>
+            </tr>
+            <tr>
+              <th scope="row">效率工具</th>
+              <td>5</td>
+              <td>确认门闩、回滚、只整理不删、元技能（creator）</td>
+            </tr>
+            <tr>
+              <th scope="row">内容创作</th>
+              <td>4</td>
+              <td>不编造产品事实、合规措辞、环境安装先说明</td>
+            </tr>
+            <tr>
+              <th scope="row">数据与AI</th>
+              <td>1</td>
+              <td>数字必须跑脚本；清洗透明；相关≠因果</td>
+            </tr>
+            <tr>
+              <th scope="row">DevOps与部署</th>
+              <td>1</td>
+              <td>人机共管登录/计费；构建保守；只回 URL</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="high-signal"
+      label="Skills · High-signal"
+      title="高信号边界（必须能复述）"
+      lede="这几份 skill 把工作区 / 信任边界写进 agent 指令，不是软建议。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>file-organizer</strong> — 只 move 不 delete；确认后执行；回滚清单；不碰
+          <code>.git</code> / 系统目录；内容指令不当命令。
+        </li>
+        <li>
+          <strong>static-site-deploy</strong> — 用户完成 OAuth；不代接受条款；prod 显式确认；不泄露
+          token。
+        </li>
+        <li>
+          <strong>changelog-generator</strong> — 只读 git；不 commit/push/rebase；空范围要报告；剔除密钥。
+        </li>
+        <li>
+          <strong>pdf-toolkit</strong> — 写新文件；加密不用于绕权；OCR 重依赖先确认。
+        </li>
+        <li>
+          <strong>maka-skill-creator</strong> — 自由度匹配脆弱性；术语统一；边界三段式模板。
+        </li>
+        <li>
+          <strong>lead-research-assistant</strong> — 公司公开信息粒度；禁止个人隐私字段。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="inventory"
+      label="Skills · Inventory"
+      title="全量 29 行清单"
+      lede="每一行都读过正文；教学锚点是模式，不是复述每份工作流。"
+    >
+      <div class="table-wrap" role="region" aria-label="29 skills" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">id</th>
+              <th scope="col">category</th>
+              <th scope="col">tools</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row"><code>brand-guidelines</code></th><td>设计与UI</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>changelog-generator</code></th><td>文档与写作</td><td>Bash, Read, Write</td></tr>
+            <tr><th scope="row"><code>competitive-ads-extractor</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>content-research-writer</code></th><td>文档与写作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>copywriting</code></th><td>内容创作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>create-plan</code></th><td>效率工具</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>data-analysis</code></th><td>数据与AI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>deep-research</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>domain-name-brainstormer</code></th><td>内容创作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>drafter-diagram</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>file-organizer</code></th><td>效率工具</td><td>Read, Glob, Bash, Write</td></tr>
+            <tr><th scope="row"><code>frontend-design</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>html-poster</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>html-slides</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>internal-comms</code></th><td>文档与写作</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>invoice-organizer</code></th><td>效率工具</td><td>Read, Glob, Bash, Write</td></tr>
+            <tr><th scope="row"><code>lead-research-assistant</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>maka-skill-creator</code></th><td>效率工具</td><td>Read, Write, Glob</td></tr>
+            <tr><th scope="row"><code>manim-composer</code></th><td>内容创作</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>market-research-reports</code></th><td>研究与分析</td><td>Read, WebSearch</td></tr>
+            <tr><th scope="row"><code>notion-infographic</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>pdf-toolkit</code></th><td>效率工具</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>responsive-design</code></th><td>设计与UI</td><td>Read, Write, Edit, Bash</td></tr>
+            <tr><th scope="row"><code>seo-audit</code></th><td>研究与分析</td><td>Read, Bash, WebSearch</td></tr>
+            <tr><th scope="row"><code>static-site-deploy</code></th><td>DevOps与部署</td><td>Read, Bash</td></tr>
+            <tr><th scope="row"><code>summarization</code></th><td>文档与写作</td><td>Read, Write</td></tr>
+            <tr><th scope="row"><code>tailored-resume-generator</code></th><td>文档与写作</td><td>Read, Write, WebSearch</td></tr>
+            <tr><th scope="row"><code>theme-factory</code></th><td>设计与UI</td><td>Read, Write, Bash</td></tr>
+            <tr><th scope="row"><code>xhs-card-designer</code></th><td>内容创作</td><td>Read, Write, Bash</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        研究提纲（含边界摘录）：
+        <code>docs/research/skills-corpus-mine-outline.md</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="failures"
+      label="Skills · Failure"
+      title="失败故事"
+      lede="把 skill 当提权通道或把 oos 当挖完，都会教错威胁模型。"
+    >
+      <ul class="plain-list">
+        <li>把 <code>allowed-tools: Bash</code> 当成已授权 → PermissionEngine 剧场</li>
+        <li>跳过确认直接 <code>mv</code> / <code>--prod</code> → 破坏工作区 / 对外发布</li>
+        <li>研究报告编造 URL 与数字 → 污染决策证据链</li>
+        <li>skill 正文引用 <code>scripts/foo.py</code> → 市场导入静默失效</li>
+        <li>description 写成「帮助处理文档」→ catalog 永不命中</li>
+        <li>矩阵标 oos 且无教学面 → dig 马虎（本页存在的理由）</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Skills · Boundaries"
+      title="不是 §01 #skills，也不是 CSS dump"
+      lede="三层真相各管一段。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong><a href={`${ch01}#skills`}>§01 · #skills</a></strong> — catalog 预算、lazy
+          load、invoke、declare≠grant 机制。
+        </li>
+        <li>
+          <strong>本页</strong> — 29 份正文的跨技能行为合同与家族模式。
+        </li>
+        <li>
+          <strong><a href={localePath(locale, "guides/desktop-host")}>/guides/desktop-host#skills-governance</a></strong>
+          — bundled lock / managed sources / 安装面。
+        </li>
+      </ul>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · dig v3</p>
+      <p>
+        Map <a href="https://github.com/tt-a1i/agent-atelier/issues/90">#90</a> 推翻 dig v2「SKILL×29 =
+        oos dump」。标本路径：
+        <code>apps/desktop/resources/bundled-skills/*/SKILL.md</code> ×29。
+      </p>
+    </aside>
+  </article>
+</ReportLayout>
