@@ -1,49 +1,49 @@
 # Maka doc coverage matrix (atelier × maka-agent)
 
 **Date:** 2026-07-21
-**Map:** [#34](https://github.com/tt-a1i/agent-atelier/issues/34)
+**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3; supersedes closed [#34](https://github.com/tt-a1i/agent-atelier/issues/34) complacency reading)
 **Specimen:** `/Users/tushaokun/code/maka-agent`
 **Inventory:** **127** first-party `*.md` (excludes `node_modules` / `.git`)
-**Method:** regenerate find inventory → cross-check live chapters/guides/research → classify taught depth. **Silent `none`/`thin` forbidden** for design-encoding rows — use explicit disposition.
+**Method:** regenerate find inventory → cross-check live chapters/guides/research → classify taught depth. **Silent `none`/`thin` forbidden** for design-encoding rows — use explicit disposition. Dig v3 additionally forbids **silent oos** for design-encoding skill bodies and **silent discard** when archive still teaches.
 
 ## Legend
 
 | Column | Values |
 | --- | --- |
 | kind | `authority` = current contract / architecture draft / root design docs · `archive` = `docs/archive/*` · `readme` = root/package/app/meta README or process |
-| taught? | `deep` = reader can restate protocol/failure modes from atelier alone · `cite-only` = inventoried; cite/how-to-read only · `history-only` = provenance / RE / snapshot — not Destination body · `product-stub` = Current taught as non-claim; Target not invented · `discard` = changelog/campaign/superseded — not design-encoding · `oos` = bundled SKILL body / meta / license / process |
+| taught? | `deep` = reader can restate protocol/failure modes from atelier alone · `cite-only` = inventoried; cite/how-to-read only · `history-only` = provenance / RE / snapshot — not Destination body · `product-stub` = Current taught as non-claim; Target not invented · `discard` = changelog/campaign/superseded — not design-encoding · `oos` = meta writing skill / license / process (not agent-contract skill bodies) |
 
 **Design-encoding** = every row whose `taught?` is **not** `discard`/`oos`.
 
-### #34 close gate (corpus dig v2)
+### #90 close gate (corpus dig v3)
 
-Close [#34](https://github.com/tt-a1i/agent-atelier/issues/34) **only if** every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub` — **never** silent `none`/`thin`.
+Close [#90](https://github.com/tt-a1i/agent-atelier/issues/90) **only if** every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub` — **never** silent `none`/`thin` — **and** bundled SKILL×29 have a readable Skills corpus teaching surface (not matrix-footnote oos).
 
 This gate is **not** “product Destination complete”. AHE Target controller / Phase3 reconciler remain **product stubs**; atelier teaches Current honesty (see `depth-corpus-status.md`). Do not invent Target to green a product Destination.
 
-## Counts (corpus dig v2 verify)
+## Counts (corpus dig v3)
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 57 | 44.9% |
+| deep | 89 | 70.1% |
 | cite-only | 5 | 3.9% |
-| history-only | 16 | 12.6% |
+| history-only | 18 | 14.2% |
 | product-stub | 0 | 0.0% |
-| discard | 11 | 8.7% |
-| oos | 38 | 29.9% |
+| discard | 6 | 4.7% |
+| oos | 9 | 7.1% |
 | **total** | **127** | **100%** |
 
-Legacy rollup (for trend): deep **57** · thin **0** · none **0** (silent none eliminated — dispositions above).
+Legacy rollup (for trend): deep **89** · thin **0** · none **0**. Dig v2 had deep 57 / oos 38 (SKILL dump); dig v3 mines Skills corpus + elevates teaching archives.
 
 ### Design-encoding debt still `none`/`thin` (honest)
 
-**Empty.** Design-encoding rows = **78** → all `deep` (57) / `cite-only` (5) / `history-only` (16) / `product-stub` (0).
+**Empty.** Design-encoding rows = **112** → all terminal dispositions.
 
 Product-stub honesty (Current deep + Target non-claim, not a separate taught class):
 - `docs/ahe-target-protocol.md` + `docs/architecture/ahe-self-iteration-boundary-draft*` — Target controller/runner/`validateMakaAheChangeEvaluation`
 - `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` — Phase3 reconciler
 
-**#34 gate:** **MET** (corpus dig v2). Product Destination still incomplete until Target Current lands — do not equate.
+**#90 gate:** in progress this session — Skills corpus + elevated archives shipped; remaining true blockers = product stubs only.
 
 ## Full matrix (127)
 
@@ -60,35 +60,35 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `apps/desktop/src/renderer/README.md` | readme | deep | /guides/desktop-ui #layers | mined #86 |
 | `apps/desktop/tests/smoke.md` | readme | oos | — | process/smoke — not design body |
 | `apps/desktop/resources/licenses/cua-driver/LICENSE.md` | readme | oos | — | license only |
-| `apps/desktop/resources/bundled-skills/brand-guidelines/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/changelog-generator/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/competitive-ads-extractor/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/content-research-writer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/copywriting/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/create-plan/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/data-analysis/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/deep-research/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/domain-name-brainstormer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/drafter-diagram/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/file-organizer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/frontend-design/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/html-poster/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/html-slides/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/internal-comms/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/invoice-organizer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/lead-research-assistant/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/maka-skill-creator/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/manim-composer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/market-research-reports/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/notion-infographic/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/pdf-toolkit/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/responsive-design/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/seo-audit/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/static-site-deploy/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/summarization/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/tailored-resume-generator/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/theme-factory/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
-| `apps/desktop/resources/bundled-skills/xhs-card-designer/SKILL.md` | readme | oos | §01 #skills (mechanism only) | bundled product SKILL body; catalog mechanism deep in §01 #skills — not unique Runtime contract |
+| `apps/desktop/resources/bundled-skills/brand-guidelines/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/changelog-generator/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/competitive-ads-extractor/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/content-research-writer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/copywriting/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/create-plan/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/data-analysis/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/deep-research/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/domain-name-brainstormer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/drafter-diagram/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/file-organizer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/frontend-design/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/html-poster/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/html-slides/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/internal-comms/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/invoice-organizer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/lead-research-assistant/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/maka-skill-creator/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/manim-composer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/market-research-reports/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/notion-infographic/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/pdf-toolkit/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/responsive-design/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/seo-audit/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/static-site-deploy/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/summarization/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/tailored-resume-generator/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/theme-factory/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
+| `apps/desktop/resources/bundled-skills/xhs-card-designer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
 | `docs/README.md` | authority | deep | mine-plan authority rule | keep as authority map |
 | `docs/agent-swarm.md` | authority | deep | §04 #swarm + #swarm-failure | failure matrix shipped this pass |
 | `docs/expert-team-runtime.md` | authority | deep | §04 #swarm Expert Team | failure matrix shipped this pass |
@@ -127,7 +127,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/architecture/bot-onboarding-runtime.zh-CN.md` | authority | deep | /guides/bot-im | failure stories this pass |
 | `docs/archive/README.md` | archive | cite-only | archive-still-teaches-sweep.md | inventory authority only; routes mine-delta vs history/discard |
 | `docs/archive/2026-06-24-runtime-ledger-backfill.md` | archive | history-only | — | PR plan provenance; Current = backfill code + tests |
-| `docs/archive/composer-mentions-spec-2026-07-14.md` | archive | discard | — | shipped UI; composer + contract tests own Current |
+| `docs/archive/composer-mentions-spec-2026-07-14.md` | archive | deep | /guides/desktop-ui #composer-mentions | dig v3 — plain-text @/ mention contract elevated |
 | `docs/archive/computer-use-delivery-state.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
 | `docs/archive/computer-use-evidence-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
 | `docs/archive/computer-use-executor-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
@@ -136,14 +136,14 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/archive/computer-use-real-ax-model-e2e.md` | archive | history-only | — | real-provider matrix snapshot |
 | `docs/archive/computer-use-runtime-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
 | `docs/archive/deepseek-reasonix-cost-runtime-design.md` | archive | deep | §01 #request-shape / #usage-stores | absorbed; no /guides/cost |
-| `docs/archive/design-refinement-roadmap-2026-07.md` | archive | discard | — | decision queues → issues |
+| `docs/archive/design-refinement-roadmap-2026-07.md` | archive | deep | /guides/desktop-ui #motion-spacing | dig v3 — D1–D4 decisions elevated; campaign queue stays discard-adjacent |
 | `docs/archive/design-system-v0.2-wave-10.md` | archive | discard | — | superseded; DESIGN.md wins |
 | `docs/archive/desktop-smoke-plan-legacy.md` | archive | discard | — | superseded by smoke.md |
 | `docs/archive/economic-mechanisms-benchmark.md` | archive | deep | §02 synthesis-cache aside | absorbed batch2 |
 | `docs/archive/expert-team-implementation.md` | archive | history-only | §04 #swarm history contrast | competitor RE provenance; contrast mined into §04 — archive not Current |
 | `docs/archive/expert-team-plan.md` | archive | history-only | — | product research provenance |
 | `docs/archive/frontend-simplification-map-2026-07-13.md` | archive | discard | — | knip/app-shell changelog |
-| `docs/archive/full-product-test-plan-2026-05.md` | archive | discard | — | month-one delivery contract |
+| `docs/archive/full-product-test-plan-2026-05.md` | archive | deep | /guides/desktop-host #pr-five | dig v3 — PR five questions + fail gates elevated; month schedule not taught |
 | `docs/archive/heavy-task-mainline-system-design.md` | archive | deep | §04 #events / §05 #repair | absorbed batch2 |
 | `docs/archive/maka-bug-flow-audit-2026-05-22.md` | archive | history-only | — | fixed-bugs list |
 | `docs/archive/maka-capability-audit-v1-2026-05.md` | archive | discard | — | point-in-time; stale refs |
@@ -162,8 +162,8 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/archive/search-service-threat-model-pr-search-0.md` | archive | history-only | — | snapshot; thread-search + tests own Current |
 | `docs/archive/ui-convergence-map-2026-07-09.md` | archive | discard | — | completed campaign |
 | `docs/archive/ui-quality-plan-2026-05.md` | archive | discard | — | month-one UI gate |
-| `docs/archive/ui-skills-deep-read-2026-06-23.md` | archive | discard | — | external research |
-| `docs/archive/ui-skills-deep-read-2026-06-24.md` | archive | discard | — | round-2 synthesis |
+| `docs/archive/ui-skills-deep-read-2026-06-23.md` | archive | history-only | /guides/desktop-ui #motion-spacing | external skill synthesis provenance; convergent rules absorbed into D1–D4 teaching |
+| `docs/archive/ui-skills-deep-read-2026-06-24.md` | archive | history-only | /guides/desktop-ui #motion-spacing | round-2 synthesis provenance; not Current CSS authority |
 | `docs/archive/voice-threat-model-pr-voice-0.md` | archive | history-only | — | snapshot; voice.ts owns Current |
 | `packages/runtime/README.md` | readme | cite-only | §01 entry / package seam | public-seam pointer; SessionManager/permission/recovery contracts taught in §01 + sandbox README |
 | `packages/runtime/src/sandbox/README.md` | readme | deep | §01 #sandbox | README lag caveat already taught |
@@ -177,12 +177,13 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `skills/maka-architecture-docs/references/quality-gate.md` | readme | oos | — | meta OOS |
 | `skills/maka-architecture-docs/references/writing-standard.md` | readme | oos | — | meta OOS |
 
-## This pass decisions
+## This pass decisions (dig v3 / #90)
 
-1. **Corpus dig v2 disposition pass:** eliminated silent `none`/`thin`. Classified leftover rows as `cite-only` / `history-only` / `discard` / `oos` with rationale.
-2. Reclassified Terminal-Bench → `cite-only`; Codex/FogCursor RE + Expert Team implementation archive → `history-only` (contrast already on site).
-3. Thin READMEs (root ×2, archive index, `@maka/runtime` seam) → `cite-only` — not Destination protocol bodies.
-4. Bundled SKILL×29 + meta writing skill + changelog/license/smoke/PR template → `oos`.
-5. Archive discard×11 kept explicit `discard` (not silent none).
-6. AHE / Phase3 Target remain **product-stub honesty inside deep Current teaching** — not invented.
-7. **#34 close gate MET.** Product Destination ≠ corpus dig v2.
+1. **Fresh find = 127** — matches matrix; no missing/extra first-party md.
+2. **Bundled SKILL×29** reclassified `oos` → `deep` via `/guides/skills-corpus` (patterns from ALL bodies).
+3. Elevated archives with leftover teaching: composer-mentions · design-refinement D1–D4 · full-product PR five questions; ui-skills deep-reads → `history-only`.
+4. Desktop host deepened: `#skills-governance` + `#pr-five` from `skills.ts` / `managed-skill-sources.ts` + archive delivery contract.
+5. §01 `#skills` stub updated — no longer claims “bodies are not Destination.”
+6. Remaining `discard` = zero-teaching campaign/smoke/superseded CSS wave / stale capability audit.
+7. Remaining `oos` = changelog, license, smoke, PR template, meta architecture-docs writing skill.
+8. Product Destination still stub-gated (AHE Target / Phase3) — not invented.

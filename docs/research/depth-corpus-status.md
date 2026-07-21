@@ -1,93 +1,90 @@
 # Corpus depth status (honest)
 
 **Date:** 2026-07-21  
-**Map:** [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
-**Against:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) · [`maka-code-seam-inventory.md`](./maka-code-seam-inventory.md) · [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md)  
+**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3) · closed precursor [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
+**Against:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) · [`maka-code-seam-inventory.md`](./maka-code-seam-inventory.md) · [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md) · [`skills-corpus-mine-outline.md`](./skills-corpus-mine-outline.md)  
 **Live:** https://tt-a1i.github.io/agent-atelier/
 
 ## Verdict
 
-**Corpus dig v2 reached. #34 close gate MET.**
+**Corpus dig v3 in flight — user rejected dig v2 complacency.**
 
-Product **Destination is still NOT complete** while AHE Target controller / Phase 3 reconciler remain product stubs — atelier teaches Current honesty and does **not** invent Target. Do not equate matrix-green / #34-closed with “product Destination done.”
+Dig v2 closed #34 with a design-encoding gate that still parked **SKILL×29 as `oos`** and several archives as `discard` without a teaching surface. Dig v3 treats that as shallow under a literal reading of「每一个文档 / 所有代码 / 设计」.
 
-## Destination gate vs #34 close gate
+Product **Destination is still NOT complete** while AHE Target controller / Phase 3 reconciler remain product stubs — atelier teaches Current honesty and does **not** invent Target.
+
+## Destination gate vs #90 close gate
 
 | Gate | Question | Criteria | Result |
 | --- | --- | --- | --- |
-| **#34 / corpus dig v2** | Can the map close? | Every **design-encoding** matrix row is `deep` \| `cite-only` \| `history-only` \| `product-stub` — **never** silent `none`/`thin`. Excludes bundled SKILL dumps (unless unique contracts), pure changelogs, discard archives, meta process (`oos`/`discard`). | **MET** |
-| **Product Destination** | Is Maka’s Target surface Current? | AHE controller / runner / `validateMakaAheChangeEvaluation` + tool-journal Phase3 reconciler exist as product Current (not invented on atelier). | **NOT MET** — product stubs |
+| **#90 / corpus dig v3** | Can the map close? | Every design-encoding matrix row is `deep` \| `cite-only` \| `history-only` \| `product-stub`; bundled SKILL×29 have a readable Skills corpus teaching surface; elevated archives that still teach; Top-15+ seams protocol-deep. | **In progress** — Skills corpus + elevations shipped this session |
+| **Product Destination** | Is Maka’s Target surface Current? | AHE controller / runner / `validateMakaAheChangeEvaluation` + tool-journal Phase3 reconciler exist as product Current. | **NOT MET** — product stubs |
 
-Close [#34](https://github.com/tt-a1i/agent-atelier/issues/34) when the **corpus dig v2** row is MET. Keep entry chrome honest that product Destination remains stub-gated.
+## What was still shallow under dig v2 (literal)
 
-## Method (corpus dig v2)
+1. **Bundled SKILL.md ×29** — classified `oos` with only §01 mechanism pointer; bodies encode unique agent contracts (confirm gates, evidence honesty, auth/billing ownership, workspace safety).
+2. **Archive discard with leftover teaching** — composer mentions, D1–D4 design decisions, PR five questions were matrix footnotes, not site teaching.
+3. **Desktop host** — composition layers present; skills governance (`managed-skill-sources` / bundled locks) and release-gate five questions under-taught.
+4. **§01 `#skills` stub** — explicitly told readers not to treat skill bodies as Destination (complacency language).
 
-1. Regenerated live inventory: **127** first-party `*.md` (matches matrix).  
-2. Verified all `deep` `#fragment` anchors resolve on site (0 missing).  
-3. Eliminated silent `none`/`thin`: every leftover row got explicit `cite-only` / `history-only` / `discard` / `oos` with rationale.  
-4. Prior mines kept: Cluster-3 `/guides/desktop-ui` (#86), CU physical-input-guard (#87), FogCursor contrast (#88), Terminal-Bench cite-only (#89), expert-team contrast.  
-5. AHE / Phase3 taught as **Current + Target non-claim** — product-stub honesty, not fake completion.
+## What dig v3 mined this session
 
-Depth classes (same as mine-plan):
-
-| Class | Meaning |
+| Deliverable | Anchor |
 | --- | --- |
-| **deep** | Reader can restate protocol / failure modes from atelier alone |
-| **cite-only** | Inventoried; how-to-read / pointer only |
-| **history-only** | Provenance / RE / snapshot — not Destination body |
-| **product-stub** | Current taught as non-claim; Target not invented |
-| **discard** / **oos** | Not design-encoding |
+| Skills corpus companion (CN+EN) | `/guides/skills-corpus` — patterns from **all 29** bodies |
+| Research outline | `docs/research/skills-corpus-mine-outline.md` |
+| Desktop skills governance | `/guides/desktop-host#skills-governance` |
+| PR five questions elevation | `/guides/desktop-host#pr-five` |
+| Composer mentions | `/guides/desktop-ui#composer-mentions` |
+| Motion/spacing D1–D4 | `/guides/desktop-ui#motion-spacing` |
+| §01 `#skills` stub rewrite | points at Skills corpus + host governance |
+| Matrix honesty | deep **89** · cite-only **5** · history-only **18** · discard **6** · oos **9** |
 
 ## Doc coverage snapshot (127)
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 57 | 44.9% |
+| deep | 89 | 70.1% |
 | cite-only | 5 | 3.9% |
-| history-only | 16 | 12.6% |
+| history-only | 18 | 14.2% |
 | product-stub | 0 | 0% |
-| discard | 11 | 8.7% |
-| oos | 38 | 29.9% |
+| discard | 6 | 4.7% |
+| oos | 9 | 7.1% |
 
-Legacy rollup: deep **57** · thin **0** · none **0**.
+Legacy rollup: deep **89** · thin **0** · none **0**.
 
-Design-encoding rows (**78**): all terminal. Silent none forbidden.
+Remaining `oos`: changelog, license, smoke, PR template, meta `skills/maka-architecture-docs/**` (writing process — not agent runtime contracts).
 
-Product-stub honesty lives inside deep Current rows (AHE Target + Phase3) — not a separate taught class inventing protocol.
+Remaining `discard`: superseded CSS wave / smoke legacy / knip campaign / stale capability audit / ui-convergence / ui-quality month-one — **zero leftover teaching** after DESIGN.md + desktop-ui absorption.
 
-## Cluster scores (mine-plan buckets)
+## Code seams (Top 15+ spot-check)
 
-### Cluster 0 — Six architecture chapters
-
-| Seam | Status |
+| Seam family | Dig v3 note |
 | --- | --- |
-| §01–§05 named invariants | **deep** |
-| §06 AHE boundary + validators/identity | **deep** on Current; Target controller / runner / change-evaluation = **product-stub** |
+| T1/T2 + RecoveryResolver | protocol-deep in §01 |
+| Three prune lifecycles | protocol-deep in §02 |
+| Checkpoint / mid-turn / capacity | protocol-deep in §03 |
+| providerTools≠activeTools / park-remember / sandbox | protocol-deep in §01 |
+| Skill catalog policy | §01 `#skills` + **new** corpus companion |
+| Desktop main composition | deepened `#skills-governance` / `#pr-five` |
+| CU / swarm / MCP / Harbor / memory | companions remain; no silent slogan found this pass |
+| CLI bootstrap | taught via §01 runtime-host / headless contrast — not a missing package essay |
 
-### Cluster 1 — Fat contracts / code seams
-
-All named fat seams **deep** for Current teaching claims (sandbox, CU, recovery, journal Phase2 honesty, MCP, swarm, skills, Harbor, storage, usage, runtime-host, desktop, bot/IM, privacy, memory, …). Target leftovers = product stubs only.
-
-### Cluster 2 — Archive that still teaches
-
-Mine-delta queue absorbed (top-3 + batch-2 + #87). Remaining archive rows are explicit `history-only` / `discard` / archive-index `cite-only`.
-
-### Cluster 3 — UI track (#86)
-
-`/guides/desktop-ui` **deep** (agent UX contracts). Bundled SKILL×29 = `oos`.
-
-## Remaining (product Destination honesty — not #34 blockers)
+## Remaining true blockers (product only)
 
 1. **AHE Target controller / runner / change-evaluation validator** — product stub; do not invent.  
 2. **Tool journal Phase 3 reconciler** — Target; taught as non-claim.  
-3. Entry chrome: **corpus dig v2 reached**; product Destination still stub-gated.
+
+No silent doc/code teaching gap is claimed as “done” while those stubs exist for **product Destination** — but they are **not** dig v3 matrix blockers once Current honesty is on site.
 
 ## Ticket frontier
 
-- Map **#34**: close gate **MET** → close with corpus dig v2 resolution.  
-- Closed children: [#86](https://github.com/tt-a1i/agent-atelier/issues/86) · [#87](https://github.com/tt-a1i/agent-atelier/issues/87) · [#88](https://github.com/tt-a1i/agent-atelier/issues/88) · [#89](https://github.com/tt-a1i/agent-atelier/issues/89) (+ prior through #85).
+- Map **#90**: dig v3 — Skills corpus + archive elevations in progress/shipping.  
+- Closed precursor: [#34](https://github.com/tt-a1i/agent-atelier/issues/34) (dig v2).  
+- Prior children through [#89](https://github.com/tt-a1i/agent-atelier/issues/89) remain historical.
 
-## What “done” means (two levels)
+## What “done” means (three levels)
 
-1. **Corpus dig v2 / #34** — matrix design-encoding rows all `deep|cite-only|history-only|product-stub` — **done**.  
-2. **Product Destination** — Target stubs become product Current — **open**, owned by maka-agent product, not atelier invention.
+1. **Corpus dig v2 / #34** — silent none eliminated — **closed; user rejected as complacent**.  
+2. **Corpus dig v3 / #90** — every doc taught or dispositioned with teaching surface; SKILL×29 corpus; seams protocol-deep — **shipping**.  
+3. **Product Destination** — Target stubs become product Current — **open**, owned by maka-agent product.
