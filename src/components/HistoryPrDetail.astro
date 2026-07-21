@@ -1,0 +1,215 @@
+---
+import ReportLayout from "../layouts/ReportLayout.astro";
+import { chapterNavItems } from "../lib/chapters";
+import { localePath, type Locale } from "../lib/i18n";
+import {
+  getCommitBySha,
+  getPr,
+  githubCommitUrl,
+  loadMeta,
+  prAreaChips,
+} from "../lib/maka-history";
+
+interface Props {
+  locale?: Locale;
+  n: number;
+}
+
+const { locale = "zh", n } = Astro.props;
+const pr = getPr(n);
+if (!pr) {
+  throw new Error(`PR #${n} missing from snapshot (stale getStaticPaths?)`);
+}
+
+const meta = loadMeta();
+const memberCommits = pr.commitShas
+  .map((sha) => getCommitBySha(sha))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c));
+const chips = prAreaChips(pr, 8);
+const nav = chapterNavItems(locale);
+const historyHref = localePath(locale, "history");
+const dateLocale = locale === "en" ? "en-US" : "zh-CN";
+
+function fmtDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(dateLocale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+const copy =
+  locale === "en"
+    ? {
+        sub: `Archive detail (no embedded diff). Patches live on GitHub. Archive pin ${meta.source.sourceShort}.`,
+        commitsLabel: "Member commits",
+        commitsTitle: "Commits in this PR",
+        commitsLede:
+          memberCommits.length > 0
+            ? `${memberCommits.length} linked via subject (#N) and merge commit.`
+            : "No linked commits in this pin (PR still opens on GitHub).",
+        back: "← Back to /history",
+        openPr: `Open PR #${pr.number} on GitHub`,
+        navAria: "Archive navigation",
+      }
+    : {
+        sub: `档案详情（无内嵌 diff）。补丁请到 GitHub 查看。Archive pin ${meta.source.sourceShort}.`,
+        commitsLabel: "Member commits",
+        commitsTitle: "纳入本 PR 的提交",
+        commitsLede:
+          memberCommits.length > 0
+            ? `共 ${memberCommits.length} 条（由 subject (#N) 与 merge commit 关联）。`
+            : "快照中尚无关联 commit（仍可从 GitHub 打开 PR）。",
+        back: "← 返回 /history",
+        openPr: `在 GitHub 打开 PR #${pr.number}`,
+        navAria: "档案导航",
+      };
+---
+
+<ReportLayout
+  title={`PR #${pr.number} · ${pr.title} · Agent Atelier`}
+  description={`Maka PR #${pr.number}: ${pr.title}`}
+  nav={nav}
+  locale={locale}
+  activeHref={historyHref}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">History · PR · maka:pr:{pr.number}</p>
+      <h1>
+        <span class="pr-num">#{pr.number}</span>
+        {pr.title}
+      </h1>
+      <p class="masthead__sub">{copy.sub}</p>
+      <div class="masthead__meta">
+        <span>{pr.author}</span>
+        <span>merged · {fmtDate(pr.mergedAt)}</span>
+        <span>{pr.baseRef} ← {pr.headRef}</span>
+        {
+          chips.length > 0 && (
+            <span class="meta-chips">
+              {chips.map((c) => (
+                <span class="chip">{c}</span>
+              ))}
+            </span>
+          )
+        }
+      </div>
+    </header>
+
+    <section class="section" aria-labelledby="commits-heading">
+      <p class="section__label">{copy.commitsLabel}</p>
+      <h2 id="commits-heading">{copy.commitsTitle}</h2>
+      <p class="section__lede">{copy.commitsLede}</p>
+      {
+        memberCommits.length > 0 && (
+          <ul class="commit-list">
+            {memberCommits.map((c) => (
+              <li>
+                <a href={localePath(locale, `history/c/${c.short}`)}>
+                  <code>{c.short}</code>
+                  <span>{c.subject}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </section>
+
+    <nav class="detail-nav" aria-label={copy.navAria}>
+      <a href={historyHref}>{copy.back}</a>
+      <span class="detail-nav__sep">·</span>
+      <a href={pr.url} rel="noopener noreferrer">{copy.openPr}</a>
+      {
+        pr.mergeCommitSha ? (
+          <span>
+            <span class="detail-nav__sep"> · </span>
+            <a href={githubCommitUrl(pr.mergeCommitSha)} rel="noopener noreferrer">
+              merge commit
+            </a>
+          </span>
+        ) : null
+      }
+    </nav>
+  </article>
+</ReportLayout>
+
+<style>
+  .pr-num {
+    color: var(--accent);
+    margin-right: 0.35rem;
+  }
+
+  .meta-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .chip {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--hair);
+    background: var(--softer);
+  }
+
+  .commit-list {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+
+  .commit-list li {
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .commit-list li:first-child {
+    border-top: 1px solid var(--hair);
+  }
+
+  .commit-list a {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.7rem 0;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .commit-list a:hover span {
+    color: var(--accent);
+  }
+
+  .commit-list code {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  .commit-list span {
+    font-family: var(--serif);
+    font-size: 1rem;
+  }
+
+  .detail-nav {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.35rem;
+    align-items: baseline;
+  }
+
+  .detail-nav__sep {
+    color: var(--mute);
+  }
+</style>

@@ -1,0 +1,204 @@
+---
+import ReportLayout from "../layouts/ReportLayout.astro";
+import { chapterNavItems } from "../lib/chapters";
+import { localePath, type Locale } from "../lib/i18n";
+import {
+  getCommitByShort,
+  githubCommitUrl,
+  loadMeta,
+} from "../lib/maka-history";
+
+interface Props {
+  locale?: Locale;
+  short: string;
+}
+
+const { locale = "zh", short } = Astro.props;
+const commit = getCommitByShort(short);
+if (!commit) {
+  throw new Error(`Commit ${short} missing from snapshot (stale getStaticPaths?)`);
+}
+
+const meta = loadMeta();
+const nav = chapterNavItems(locale);
+const historyHref = localePath(locale, "history");
+const dateLocale = locale === "en" ? "en-US" : "zh-CN";
+
+function fmtDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(dateLocale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+const copy =
+  locale === "en"
+    ? {
+        sub: `Archive detail (no embedded diff). Archive pin ${meta.source.sourceShort}.`,
+        prLabel: "Associated PRs",
+        prTitle: "Linked PRs",
+        areaLabel: "Areas",
+        areaTitle: "Path prefixes touched",
+        bodyLabel: "Message body",
+        bodyTitle: "Body",
+        back: "← Back to /history",
+        openGh: `Open ${commit.short} on GitHub`,
+        navAria: "Archive navigation",
+      }
+    : {
+        sub: `档案详情（无内嵌 diff）。Archive pin ${meta.source.sourceShort}.`,
+        prLabel: "Associated PRs",
+        prTitle: "关联 PR",
+        areaLabel: "Areas",
+        areaTitle: "触及路径前缀",
+        bodyLabel: "Message body",
+        bodyTitle: "说明",
+        back: "← 返回 /history",
+        openGh: `在 GitHub 打开 ${commit.short}`,
+        navAria: "档案导航",
+      };
+---
+
+<ReportLayout
+  title={`${commit.short} · ${commit.subject} · Agent Atelier`}
+  description={`Maka commit ${commit.short}: ${commit.subject}`}
+  nav={nav}
+  locale={locale}
+  activeHref={historyHref}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">History · Commit · maka:commit:{commit.sha}</p>
+      <h1>
+        <code class="sha">{commit.short}</code>
+        {commit.subject}
+      </h1>
+      <p class="masthead__sub">{copy.sub}</p>
+      <div class="masthead__meta">
+        <span>{commit.author.name}</span>
+        <span>{fmtDate(commit.committer.date)}</span>
+        <span>
+          {commit.stats.files} files · +{commit.stats.additions} / −{commit.stats.deletions}
+        </span>
+      </div>
+    </header>
+
+    {
+      commit.prNumbers.length > 0 && (
+        <section class="section" aria-labelledby="pr-heading">
+          <p class="section__label">{copy.prLabel}</p>
+          <h2 id="pr-heading">{copy.prTitle}</h2>
+          <ul class="pr-list">
+            {commit.prNumbers.map((num) => (
+              <li>
+                <a href={localePath(locale, `history/pr/${num}`)}>#{num}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      commit.pathPrefixes.length > 0 && (
+        <section class="section" aria-labelledby="area-heading">
+          <p class="section__label">{copy.areaLabel}</p>
+          <h2 id="area-heading">{copy.areaTitle}</h2>
+          <p class="chips">
+            {commit.pathPrefixes.map((p) => (
+              <span class="chip">{p}</span>
+            ))}
+          </p>
+        </section>
+      )
+    }
+
+    {
+      commit.body && (
+        <section class="section" aria-labelledby="body-heading">
+          <p class="section__label">{copy.bodyLabel}</p>
+          <h2 id="body-heading">{copy.bodyTitle}</h2>
+          <pre class="body">{commit.body}</pre>
+        </section>
+      )
+    }
+
+    <nav class="detail-nav" aria-label={copy.navAria}>
+      <a href={historyHref}>{copy.back}</a>
+      <span class="detail-nav__sep">·</span>
+      <a href={githubCommitUrl(commit.sha)} rel="noopener noreferrer">
+        {copy.openGh}
+      </a>
+    </nav>
+  </article>
+</ReportLayout>
+
+<style>
+  .sha {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    color: var(--accent);
+    margin-right: 0.4rem;
+  }
+
+  .detail-nav {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.35rem;
+    align-items: baseline;
+  }
+
+  .detail-nav__sep {
+    color: var(--mute);
+  }
+
+  .pr-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    font-family: var(--mono);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1rem 0 0;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid var(--hair);
+    background: var(--softer);
+    color: var(--mute);
+  }
+
+  .body {
+    margin: 1rem 0 0;
+    padding: 1rem 1.1rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+</style>

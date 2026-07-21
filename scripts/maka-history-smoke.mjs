@@ -33,6 +33,11 @@ assert.ok(index.shaToPrs[sha]?.includes(1298))
 const short = Object.entries(index.shortToSha).find(([, s]) => s === sha)?.[0]
 assert.ok(short, 'shortToSha reverse lookup')
 
+const commits = commitLines.map((l) => JSON.parse(l))
+const orphan = commits.filter((c) => !c.prNumbers?.length)
+assert.ok(orphan.length > 0, 'orphan/unlinked commits exist for trailing bucket')
+assert.ok(pr1298.commitShas?.length >= 0, 'PR rows expose member commitShas for nesting')
+
 console.log(
-  `ok: pin ${meta.source.sourceShort} · ${meta.counts.commits} commits · ${meta.counts.prs} PRs · #1298 → ${short}`,
+  `ok: pin ${meta.source.sourceShort} · ${meta.counts.commits} commits · ${meta.counts.prs} PRs · #1298 → ${short} · orphans ${orphan.length}`,
 )

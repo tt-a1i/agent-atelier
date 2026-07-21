@@ -1,0 +1,14 @@
+---
+import HistoryPrDetail from "../../../../components/HistoryPrDetail.astro";
+import { loadPrs } from "../../../../lib/maka-history";
+
+export function getStaticPaths() {
+  return loadPrs().map((pr) => ({
+    params: { n: String(pr.number) },
+  }));
+}
+
+const n = Number(Astro.params.n);
+---
+
+<HistoryPrDetail locale="en" n={n} />

@@ -1,10 +1,11 @@
 ---
 import ReportLayout from "../layouts/ReportLayout.astro";
 import { chapterNavItems } from "../lib/chapters";
-import { localePath, withBase, type Locale } from "../lib/i18n";
+import { localePath, type Locale } from "../lib/i18n";
 import {
   HISTORY_PAGE_SIZE,
   buildHistoryCommitIndex,
+  buildHistoryPrIndex,
   hasMakaHistorySnapshot,
   listCommitAreas,
   listCommitAuthors,
@@ -13,7 +14,6 @@ import {
   loadCommits,
   loadMeta,
   loadPrs,
-  prAreaChips,
 } from "../lib/maka-history";
 
 interface Props {
@@ -33,15 +33,7 @@ const areasPr = ready ? listPrAreas(allPrs) : [];
 const authorsCommit = ready ? listCommitAuthors(allCommits) : [];
 const areasCommit = ready ? listCommitAreas(allCommits) : [];
 const commitIndex = ready ? buildHistoryCommitIndex() : { commits: [], firstParent: [] };
-
-/** Compact rows for client-side filter/pagination (static-hosting safe). */
-const prIndex = allPrs.map((pr) => ({
-  n: pr.number,
-  t: pr.title,
-  a: pr.author,
-  m: pr.mergedAt,
-  areas: prAreaChips(pr, 12),
-}));
+const prIndex = ready ? buildHistoryPrIndex() : [];
 
 const dateLocale = locale === "en" ? "en-US" : "zh-CN";
 
@@ -51,12 +43,13 @@ const copy =
         title: "History · Maka lineage · Agent Atelier",
         description: "Merged PR timeline for maka-agent (pinned snapshot, PR-first).",
         h1: "Maka lineage",
-        sub: "Browse development by merged PR; member commits nest on detail pages. Cognitive chapters stay milestone-shaped — this track is the full archive.",
-        wip: "Modes: PR-first (default), first-parent, full DAG. Filters run client-side against the pin. Nested member commits on this index and an orphan-commit bucket remain open polish.",
+        sub: "Browse development by merged PR; expand a row for nested member commits. Unlinked commits sit in a trailing bucket (PR-first) and carry an unlinked mark in first-parent / full DAG.",
+        wip: "Modes: PR-first (default), first-parent, full DAG. Filters run client-side against the pin. Nested member commits and the unlinked-commit bucket are live.",
         empty: "No data/maka-history/ snapshot found. Run npm run history:ingest first.",
         prev: "← Prev",
         next: "Next →",
         pager: "Pagination",
+        orphanPager: "Unlinked commits pagination",
         filters: "Filters",
         mode: "Mode",
         modePr: "PR-first",
@@ -81,17 +74,24 @@ const copy =
         loading: "Loading timeline…",
         merge: "merge",
         parents: "parents",
+        members: "member commits",
+        unlinked: "unlinked",
+        orphanTitle: "Unlinked commits",
+        orphanLede: "Commits in the pin with no merged PR association — collapsed by default, never dropped.",
+        orphanEmpty: "No unlinked commits match these filters.",
+        orphanShowing: "Unlinked",
       }
     : {
         title: "History · Maka 演进轨 · Agent Atelier",
         description: "Maka 仓库合并 PR 时间线（pinned snapshot，PR-first）。",
         h1: "Maka 演进史",
-        sub: "默认按已合并 PR 浏览发展链路；成员 commit 嵌套在详情页。认知轨章节保持里程碑叙事，这里提供完整可追溯档案。",
-        wip: "模式：PR-first（默认）/ first-parent / full DAG。筛选在客户端对 pin 运行。列表内嵌套成员 commit、无 PR orphan 桶仍待打磨。",
+        sub: "默认按已合并 PR 浏览；展开行可见嵌套成员 commit。无 PR 关联的提交落在末尾「未关联提交」桶（PR-first），并在 first-parent / full DAG 中带 unlinked 标记。",
+        wip: "模式：PR-first（默认）/ first-parent / full DAG。筛选在客户端对 pin 运行。列表内嵌套成员 commit 与未关联提交桶已上线。",
         empty: "尚未找到 data/maka-history/ 快照。请先运行 npm run history:ingest。",
         prev: "← 上一页",
         next: "下一页 →",
         pager: "分页",
+        orphanPager: "未关联提交分页",
         filters: "筛选",
         mode: "模式",
         modePr: "PR-first",
@@ -116,6 +116,12 @@ const copy =
         loading: "正在载入时间线…",
         merge: "merge",
         parents: "parents",
+        members: "条成员 commit",
+        unlinked: "unlinked",
+        orphanTitle: "未关联提交",
+        orphanLede: "快照中无已合并 PR 关联的 commit — 默认折叠，不会静默丢弃。",
+        orphanEmpty: "没有匹配当前筛选的未关联提交。",
+        orphanShowing: "未关联",
       };
 ---
 
@@ -158,7 +164,7 @@ const copy =
         <div
           id="history-app"
           data-base={base}
-          data-detail-base={withBase("history")}
+          data-detail-base={base}
           data-page-size={String(HISTORY_PAGE_SIZE)}
           data-date-locale={dateLocale}
           data-i18n={JSON.stringify({
@@ -172,6 +178,13 @@ const copy =
             next: copy.next,
             merge: copy.merge,
             parents: copy.parents,
+            members: copy.members,
+            unlinked: copy.unlinked,
+            orphanTitle: copy.orphanTitle,
+            orphanLede: copy.orphanLede,
+            orphanEmpty: copy.orphanEmpty,
+            orphanShowing: copy.orphanShowing,
+            orphanPager: copy.orphanPager,
           })}
         >
           <script
@@ -247,6 +260,7 @@ const copy =
           <p class="history-count" id="history-count">{copy.loading}</p>
           <div id="history-list-root"></div>
           <nav class="history-pager" id="history-pager" aria-label={copy.pager}></nav>
+          <div id="history-orphan-root"></div>
         </div>
       )
     }
@@ -254,7 +268,14 @@ const copy =
 </ReportLayout>
 
 <script>
-  type PrRow = { n: number; t: string; a: string; m: string; areas: string[] };
+  type PrRow = {
+    n: number;
+    t: string;
+    a: string;
+    m: string;
+    areas: string[];
+    cs: { s: string; sub: string }[];
+  };
   type CommitRow = {
     s: string;
     sub: string;
@@ -263,6 +284,7 @@ const copy =
     areas: string[];
     m: boolean;
     p: string[];
+    o: boolean;
   };
   type Mode = "pr" | "fp" | "dag";
 
@@ -297,7 +319,10 @@ const copy =
         const t = Date.parse(pr.m);
         if (!Number.isFinite(t) || t < start) return false;
       }
-      if (q && !`${pr.t} #${pr.n} ${pr.a}`.toLowerCase().includes(q)) return false;
+      if (q) {
+        const memberHay = pr.cs.map((c) => `${c.s} ${c.sub}`).join(" ");
+        if (!`${pr.t} #${pr.n} ${pr.a} ${memberHay}`.toLowerCase().includes(q)) return false;
+      }
       return true;
     });
   }
@@ -364,6 +389,117 @@ const copy =
     }
   }
 
+  function commitRowHtml(
+    c: CommitRow,
+    detailBase: string,
+    dateLocale: string,
+    i18n: Record<string, string>,
+    mode: Mode,
+  ): string {
+    const chips = c.areas
+      .slice(0, 3)
+      .map((x) => `<span class="chip">${escapeHtml(x)}</span>`)
+      .join("");
+    const merge = c.m
+      ? `<span class="chip chip--merge">${i18n.merge || "merge"}</span>`
+      : "";
+    const unlinked = c.o
+      ? `<span class="chip chip--orphan">${i18n.unlinked || "unlinked"}</span>`
+      : "";
+    const parents =
+      mode === "dag" && c.p.length
+        ? `<span>${i18n.parents || "parents"} ${c.p
+            .map((p) => escapeHtml(p))
+            .join(" · ")}</span>`
+        : "";
+    return `<li class="history-row">
+      <a class="history-row__link" href="${detailBase}/c/${escapeHtml(c.s)}">
+        <span class="history-row__num">${escapeHtml(c.s)}</span>
+        <span class="history-row__title">${escapeHtml(c.sub)}</span>
+      </a>
+      <div class="history-row__meta">
+        <span>${escapeHtml(c.a)}</span>
+        <span>${fmtDate(c.d, dateLocale)}</span>
+        ${merge}
+        ${unlinked}
+        ${parents}
+        ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
+      </div>
+    </li>`;
+  }
+
+  function paintPager(
+    el: HTMLElement | null,
+    sp: URLSearchParams,
+    base: string,
+    page: number,
+    totalPages: number,
+    i18n: Record<string, string>,
+    pageKey = "page",
+  ) {
+    if (!el) return;
+    const hrefFor = (p: number) => {
+      const next = new URLSearchParams(sp);
+      if (p <= 1) next.delete(pageKey);
+      else next.set(pageKey, String(p));
+      const s = next.toString();
+      return s ? `${base}?${s}` : base;
+    };
+    const prev =
+      page > 1
+        ? `<a href="${hrefFor(page - 1)}">${i18n.prev || ""}</a>`
+        : `<span class="history-pager__disabled">${i18n.prev || ""}</span>`;
+    const next =
+      page < totalPages
+        ? `<a href="${hrefFor(page + 1)}">${i18n.next || ""}</a>`
+        : `<span class="history-pager__disabled">${i18n.next || ""}</span>`;
+    el.innerHTML = `${prev}<span class="history-pager__status">${page} / ${totalPages}</span>${next}`;
+  }
+
+  function renderOrphanBucket(
+    orphans: CommitRow[],
+    sp: URLSearchParams,
+    base: string,
+    detailBase: string,
+    pageSize: number,
+    dateLocale: string,
+    i18n: Record<string, string>,
+  ) {
+    const root = document.getElementById("history-orphan-root");
+    if (!root) return;
+
+    const totalPages = Math.max(1, Math.ceil(orphans.length / pageSize) || 1);
+    let page = Number(sp.get("opage") || "1");
+    if (!Number.isFinite(page) || page < 1) page = 1;
+    page = Math.min(page, totalPages);
+    const start = (page - 1) * pageSize;
+    const slice = orphans.slice(start, start + pageSize);
+    const open = sp.get("orphan") === "1" || Boolean(sp.get("opage"));
+
+    const list =
+      orphans.length === 0
+        ? `<p class="history-empty history-orphan__empty">${i18n.orphanEmpty || ""}</p>`
+        : `<ol class="history-list history-orphan__list" start="${start + 1}">${slice
+            .map((c) => commitRowHtml(c, detailBase, dateLocale, i18n, "pr"))
+            .join("")}</ol>
+          <nav class="history-pager history-orphan__pager" id="history-orphan-pager" aria-label="${escapeHtml(i18n.orphanPager || "")}"></nav>`;
+
+    root.innerHTML = `<details class="history-orphan" ${open ? "open" : ""}>
+      <summary class="history-orphan__summary">
+        <span class="history-orphan__title">${escapeHtml(i18n.orphanTitle || "")}</span>
+        <span class="history-orphan__count">${orphans.length}</span>
+      </summary>
+      <p class="history-orphan__lede">${escapeHtml(i18n.orphanLede || "")}</p>
+      <p class="history-count">${i18n.orphanShowing || ""} <strong>${orphans.length}</strong></p>
+      ${list}
+    </details>`;
+
+    const pager = document.getElementById("history-orphan-pager");
+    if (orphans.length > 0) {
+      paintPager(pager, sp, base, page, totalPages, i18n, "opage");
+    }
+  }
+
   function render() {
     const app = document.getElementById("history-app");
     const prRaw = document.getElementById("history-pr-index");
@@ -371,7 +507,7 @@ const copy =
     if (!app || !prRaw || !cRaw) return;
 
     const base = app.dataset.base || "/history";
-    const detailBase = app.dataset.detailBase || "/history";
+    const detailBase = app.dataset.detailBase || base;
     const pageSize = Number(app.dataset.pageSize || "50");
     const dateLocale = app.dataset.dateLocale || "zh-CN";
     const i18n = JSON.parse(app.dataset.i18n || "{}") as Record<string, string>;
@@ -406,6 +542,7 @@ const copy =
     let totalBase = 0;
     let filteredLen = 0;
     let listHtml = "";
+    const orphanRoot = document.getElementById("history-orphan-root");
 
     if (mode === "pr") {
       const filtered = filterPrs(prs, sp);
@@ -427,6 +564,24 @@ const copy =
                   .slice(0, 3)
                   .map((c) => `<span class="chip">${escapeHtml(c)}</span>`)
                   .join("");
+                const nest =
+                  pr.cs.length > 0
+                    ? `<details class="history-nest">
+                        <summary class="history-nest__summary">${pr.cs.length} ${i18n.members || ""}</summary>
+                        <ul class="history-nest__list">
+                          ${pr.cs
+                            .map(
+                              (c) => `<li>
+                            <a href="${detailBase}/c/${escapeHtml(c.s)}">
+                              <code>${escapeHtml(c.s)}</code>
+                              <span>${escapeHtml(c.sub)}</span>
+                            </a>
+                          </li>`,
+                            )
+                            .join("")}
+                        </ul>
+                      </details>`
+                    : "";
                 return `<li class="history-row">
               <a class="history-row__link" href="${detailBase}/pr/${pr.n}">
                 <span class="history-row__num">#${pr.n}</span>
@@ -437,14 +592,22 @@ const copy =
                 <span>${fmtDate(pr.m, dateLocale)}</span>
                 ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
               </div>
+              ${nest}
             </li>`;
               })
               .join("")}</ol>`;
-      paintPager(sp, base, page, totalPages, i18n);
+      paintPager(document.getElementById("history-pager"), sp, base, page, totalPages, i18n);
+
+      const orphans = filterCommits(
+        commitPack.commits.filter((c) => c.o),
+        sp,
+      ).sort((a, b) => Date.parse(b.d) - Date.parse(a.d));
+      renderOrphanBucket(orphans, sp, base, detailBase, pageSize, dateLocale, i18n);
     } else {
+      if (orphanRoot) orphanRoot.innerHTML = "";
       const ordered: CommitRow[] =
         mode === "fp"
-          ? commitPack.firstParent.map((s) => byShort.get(s)).filter(Boolean) as CommitRow[]
+          ? (commitPack.firstParent.map((s) => byShort.get(s)).filter(Boolean) as CommitRow[])
           : [...commitPack.commits].sort((a, b) => Date.parse(b.d) - Date.parse(a.d));
       const filtered = filterCommits(ordered, sp);
       totalBase = ordered.length;
@@ -460,36 +623,9 @@ const copy =
         slice.length === 0
           ? `<p class="history-empty">${i18n.none || ""}</p>`
           : `<ol class="history-list" start="${start + 1}">${slice
-              .map((c) => {
-                const chips = c.areas
-                  .slice(0, 3)
-                  .map((x) => `<span class="chip">${escapeHtml(x)}</span>`)
-                  .join("");
-                const merge = c.m
-                  ? `<span class="chip chip--merge">${i18n.merge || "merge"}</span>`
-                  : "";
-                const parents =
-                  mode === "dag" && c.p.length
-                    ? `<span>${i18n.parents || "parents"} ${c.p
-                        .map((p) => escapeHtml(p))
-                        .join(" · ")}</span>`
-                    : "";
-                return `<li class="history-row">
-              <a class="history-row__link" href="${detailBase}/c/${escapeHtml(c.s)}">
-                <span class="history-row__num">${escapeHtml(c.s)}</span>
-                <span class="history-row__title">${escapeHtml(c.sub)}</span>
-              </a>
-              <div class="history-row__meta">
-                <span>${escapeHtml(c.a)}</span>
-                <span>${fmtDate(c.d, dateLocale)}</span>
-                ${merge}
-                ${parents}
-                ${chips ? `<span class="history-row__chips">${chips}</span>` : ""}
-              </div>
-            </li>`;
-              })
+              .map((c) => commitRowHtml(c, detailBase, dateLocale, i18n, mode))
               .join("")}</ol>`;
-      paintPager(sp, base, page, totalPages, i18n);
+      paintPager(document.getElementById("history-pager"), sp, base, page, totalPages, i18n);
     }
 
     const active =
@@ -505,33 +641,6 @@ const copy =
 
     const root = document.getElementById("history-list-root");
     if (root) root.innerHTML = listHtml;
-  }
-
-  function paintPager(
-    sp: URLSearchParams,
-    base: string,
-    page: number,
-    totalPages: number,
-    i18n: Record<string, string>,
-  ) {
-    const pager = document.getElementById("history-pager");
-    if (!pager) return;
-    const hrefFor = (p: number) => {
-      const next = new URLSearchParams(sp);
-      if (p <= 1) next.delete("page");
-      else next.set("page", String(p));
-      const s = next.toString();
-      return s ? `${base}?${s}` : base;
-    };
-    const prev =
-      page > 1
-        ? `<a href="${hrefFor(page - 1)}">${i18n.prev || ""}</a>`
-        : `<span class="history-pager__disabled">${i18n.prev || ""}</span>`;
-    const next =
-      page < totalPages
-        ? `<a href="${hrefFor(page + 1)}">${i18n.next || ""}</a>`
-        : `<span class="history-pager__disabled">${i18n.next || ""}</span>`;
-    pager.innerHTML = `${prev}<span class="history-pager__status">${page} / ${totalPages}</span>${next}`;
   }
 
   function collectParams(form: HTMLFormElement): URLSearchParams {
@@ -565,20 +674,48 @@ const copy =
       el.addEventListener("change", () => {
         const next = collectParams(form);
         next.delete("page");
+        next.delete("opage");
+        next.delete("orphan");
         const url = next.toString() ? `${base}?${next}` : base;
         history.pushState({}, "", url);
         render();
       });
     });
 
-    document.getElementById("history-pager")?.addEventListener("click", (e) => {
+    const onPagerClick = (e: Event) => {
       const a = (e.target as HTMLElement).closest("a");
       if (!a || !a.getAttribute("href")?.startsWith(base)) return;
       e.preventDefault();
       history.pushState({}, "", a.href);
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    document.getElementById("history-pager")?.addEventListener("click", onPagerClick);
+    document.getElementById("history-orphan-root")?.addEventListener("click", (e) => {
+      const a = (e.target as HTMLElement).closest("a");
+      if (a && a.getAttribute("href")?.startsWith(base) && a.closest(".history-pager")) {
+        e.preventDefault();
+        const url = new URL(a.href, window.location.origin);
+        url.searchParams.set("orphan", "1");
+        history.pushState({}, "", `${url.pathname}${url.search}`);
+        render();
+        return;
+      }
     });
+    document.getElementById("history-orphan-root")?.addEventListener("toggle", (e) => {
+      const details = e.target as HTMLDetailsElement;
+      if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("history-orphan")) {
+        return;
+      }
+      const next = qs();
+      if (details.open) next.set("orphan", "1");
+      else {
+        next.delete("orphan");
+        next.delete("opage");
+      }
+      const url = next.toString() ? `${base}?${next}` : base;
+      history.replaceState({}, "", url);
+    }, true);
 
     window.addEventListener("popstate", render);
     render();
@@ -797,6 +934,124 @@ const copy =
     color: var(--accent);
   }
 
+  :global(.chip--orphan) {
+    border-color: color-mix(in srgb, var(--mute) 55%, var(--hair));
+    color: var(--mute);
+  }
+
+  :global(.history-nest) {
+    margin: 0.55rem 0 0;
+    padding-left: calc(0.78rem * 0.6 + 0.75rem + 2ch);
+  }
+
+  :global(.history-nest__summary) {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--mute);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  :global(.history-nest__summary::-webkit-details-marker) {
+    display: none;
+  }
+
+  :global(.history-nest__summary::before) {
+    content: "▸ ";
+    color: var(--accent);
+  }
+
+  :global(.history-nest[open] > .history-nest__summary::before) {
+    content: "▾ ";
+  }
+
+  :global(.history-nest__list) {
+    list-style: none;
+    margin: 0.45rem 0 0;
+    padding: 0;
+  }
+
+  :global(.history-nest__list li) {
+    border-top: 1px solid var(--hair);
+  }
+
+  :global(.history-nest__list a) {
+    display: flex;
+    gap: 0.65rem;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  :global(.history-nest__list a:hover span) {
+    color: var(--accent);
+  }
+
+  :global(.history-nest__list code) {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+  }
+
+  :global(.history-nest__list span) {
+    font-family: var(--serif);
+    font-size: 0.92rem;
+    color: var(--mute);
+  }
+
+  :global(.history-orphan) {
+    margin: 2.25rem 0 0;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--hair);
+  }
+
+  :global(.history-orphan__summary) {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  :global(.history-orphan__summary::-webkit-details-marker) {
+    display: none;
+  }
+
+  :global(.history-orphan__summary::before) {
+    content: "▸";
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  :global(.history-orphan[open] > .history-orphan__summary::before) {
+    content: "▾";
+  }
+
+  :global(.history-orphan__title) {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+  }
+
+  :global(.history-orphan__count) {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--mute);
+  }
+
+  :global(.history-orphan__lede) {
+    margin: 0.65rem 0 0;
+    max-width: 42em;
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    color: var(--mute);
+  }
+
+  :global(.history-orphan__empty) {
+    margin-top: 1rem;
+  }
+
   .history-pager {
     display: flex;
     align-items: center;
@@ -817,5 +1072,9 @@ const copy =
 
   :global(.history-pager__disabled) {
     color: color-mix(in srgb, var(--mute) 45%, var(--bg));
+  }
+
+  :global(.history-orphan__pager) {
+    margin-top: 1.25rem;
   }
 </style>

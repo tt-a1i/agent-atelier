@@ -238,6 +238,17 @@ export function historyFilterQuery(filters: HistoryPrFilters, page?: number): st
   return s ? `?${s}` : "";
 }
 
+/** Compact PR row for client-side PR-first index (static-hosting safe). */
+export type HistoryPrRow = {
+  n: number;
+  t: string;
+  a: string;
+  m: string;
+  areas: string[];
+  /** Nested member commits: short + subject. */
+  cs: { s: string; sub: string }[];
+};
+
 /** Compact commit row for client-side advanced modes (static-hosting safe). */
 export type HistoryCommitRow = {
   s: string;
@@ -249,10 +260,26 @@ export type HistoryCommitRow = {
   m: boolean;
   /** Parent short shas (≤2) for DAG chrome. */
   p: string[];
+  /** True when commit has no associated merged PR in the pin. */
+  o: boolean;
 };
 
 function shortByShaMap(): Map<string, string> {
   return new Map(loadCommits().map((x) => [x.sha, x.short]));
+}
+
+export function buildHistoryPrIndex(): HistoryPrRow[] {
+  return loadPrs().map((pr) => ({
+    n: pr.number,
+    t: pr.title,
+    a: pr.author,
+    m: pr.mergedAt,
+    areas: prAreaChips(pr, 12),
+    cs: pr.commitShas
+      .map((sha) => getCommitBySha(sha))
+      .filter((c): c is MakaCommit => Boolean(c))
+      .map((c) => ({ s: c.short, sub: c.subject })),
+  }));
 }
 
 export function buildHistoryCommitIndex(): {
@@ -270,6 +297,7 @@ export function buildHistoryCommitIndex(): {
     areas: areaChips(c.pathPrefixes, 3),
     m: c.parents.length > 1,
     p: c.parents.slice(0, 2).map((sha) => shorts.get(sha) || sha.slice(0, 8)),
+    o: c.prNumbers.length === 0,
   }));
 
   const bySha = new Map(all.map((c) => [c.sha, c]));

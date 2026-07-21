@@ -1,5 +1,6 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import { localePath } from "../../../lib/i18n";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import CompactionProjectionKeystone from "../../../components/diagrams/CompactionProjectionKeystone.astro";
@@ -111,12 +112,12 @@ Next model context = Materialize(
       <p class="history-aside__tag">Evolution aside</p>
       <p>
         LLM compaction architecture chapter land:
-        <a href={`${import.meta.env.BASE_URL}history/pr/772`}>maka:pr:772</a>
+        <a href={`${localePath("en", "history/pr/772")}`}>maka:pr:772</a>
         (docs: add LLM compaction architecture chapter). Later V2 checkpoint / rolling / replay
         tightening:
-        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a>,
-        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>,
-        <a href={`${import.meta.env.BASE_URL}history/pr/1090`}>maka:pr:1090</a>.
+        <a href={`${localePath("en", "history/pr/729")}`}>maka:pr:729</a>,
+        <a href={`${localePath("en", "history/pr/955")}`}>maka:pr:955</a>,
+        <a href={`${localePath("en", "history/pr/1090")}`}>maka:pr:1090</a>.
       </p>
     </aside>
   </Section>
@@ -275,7 +276,7 @@ Checkpoint N+1
     <ul class="outline-list">
       <li>Keystone + high-water + rolling + three-compacts flows</li>
       <li>
-        Aside: <a href={`${import.meta.env.BASE_URL}history/pr/772`}>maka:pr:772</a>
+        Aside: <a href={`${localePath("en", "history/pr/772")}`}>maka:pr:772</a>
       </li>
       <li>Compaction rewrites projection only — Event Log facts stay</li>
       <li>Acceptance checklist hard gate met; cold-start figure is optional depth</li>

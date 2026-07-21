@@ -38,7 +38,7 @@ export function localePath(locale: Locale, path = ""): string {
 /**
  * Map current pathname to the other locale's paired URL.
  * Preserves query string when provided.
- * History PR/commit detail pages are zh-canonical for now — EN switch lands on /en/history.
+ * History PR/commit detail pages pair zh `/history/pr|c/…` ↔ en `/en/history/pr|c/…`.
  */
 export function alternateLocalePath(
   locale: Locale,
@@ -49,9 +49,6 @@ export function alternateLocalePath(
   if (path !== "/" && path.endsWith("/")) path = path.slice(0, -1);
 
   if (locale === "zh") {
-    if (/^\/history\/(pr|c)\//.test(path)) {
-      return `${localePath("en", "history")}${search}`;
-    }
     const bare = path === "/" ? "" : path.replace(/^\//, "");
     return `${localePath("en", bare)}${search}`;
   }

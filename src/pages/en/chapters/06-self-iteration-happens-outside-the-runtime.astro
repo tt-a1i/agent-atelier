@@ -1,5 +1,6 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import { localePath } from "../../../lib/i18n";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import AheBoundaryKeystone from "../../../components/diagrams/AheBoundaryKeystone.astro";
@@ -98,11 +99,11 @@ Target Snapshot</pre>
       <p class="history-aside__tag">Evolution aside</p>
       <p>
         AHE self-iteration architecture chapter land:
-        <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a>
+        <a href={`${localePath("en", "history/pr/776")}`}>maka:pr:776</a>
         (docs: add AHE self-iteration architecture chapter). Target protocol / evidence export
         implementations:
-        <a href={`${import.meta.env.BASE_URL}history/pr/411`}>maka:pr:411</a>,
-        <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a>.
+        <a href={`${localePath("en", "history/pr/411")}`}>maka:pr:411</a>,
+        <a href={`${localePath("en", "history/pr/413")}`}>maka:pr:413</a>.
       </p>
     </aside>
   </Section>
@@ -171,7 +172,7 @@ Target Snapshot</pre>
     <ul class="outline-list">
       <li>Keystone + readonly evidence plane + export + manifest/evaluate/rollback</li>
       <li>
-        Aside: <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a>
+        Aside: <a href={`${localePath("en", "history/pr/776")}`}>maka:pr:776</a>
       </li>
       <li>AHE stays outside Runtime; Target controller not sold as Current</li>
       <li>Acceptance checklist hard gate met (zh+en same ship)</li>

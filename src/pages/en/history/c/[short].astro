@@ -1,0 +1,14 @@
+---
+import HistoryCommitDetail from "../../../../components/HistoryCommitDetail.astro";
+import { loadCommits } from "../../../../lib/maka-history";
+
+export function getStaticPaths() {
+  return loadCommits().map((c) => ({
+    params: { short: c.short },
+  }));
+}
+
+const short = Astro.params.short!;
+---
+
+<HistoryCommitDetail locale="en" short={short} />
