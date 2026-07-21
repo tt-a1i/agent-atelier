@@ -1,4 +1,6 @@
 ---
+import { createHash } from "node:crypto";
+
 interface Props {
   caption: string;
   alt?: string;
@@ -6,13 +8,20 @@ interface Props {
 }
 
 const { caption, alt, prototype = false } = Astro.props;
+const label = alt ?? caption;
+const captionId = `fig-${createHash("sha1").update(`${caption}\0${alt ?? ""}`).digest("hex").slice(0, 12)}`;
 ---
 
 <figure class:list={["diagram-figure", { "diagram-figure--prototype": prototype }]}>
-  <div class="diagram-figure__frame" role="img" aria-label={alt ?? caption}>
+  <div
+    class="diagram-figure__frame"
+    role="img"
+    aria-label={label}
+    aria-describedby={captionId}
+  >
     <slot />
   </div>
-  <figcaption class="diagram-figure__caption">
+  <figcaption class="diagram-figure__caption" id={captionId}>
     {prototype && <span class="diagram-figure__badge">Prototype</span>}
     <span class="diagram-figure__caption-text">{caption}</span>
   </figcaption>
