@@ -212,6 +212,66 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="skills-governance"
+      label="Desktop · Skills governance"
+      title="bundled / managed / workspace：治理在 main"
+      lede="Runtime 扫描正文；Desktop 拥有 lock、provenance 与 marketplace 分类——勿把两边揉成「技能系统」。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>三源</strong> — <code>workspace</code>（跟项目）· <code>bundled</code>（产品模板 +
+          <code>maka-bundled</code> lock + contentSha256）· <code>managed</code>（
+          <code>~/.maka/skill-sources</code>）。
+        </li>
+        <li>
+          <strong>封闭 category</strong> — <code>MANAGED_SKILL_CATEGORIES</code> 七桶；未知 front-matter
+          回落 <code>效率工具</code>，防止市场筛选项爆炸。
+        </li>
+        <li>
+          <strong>安装失败原因枚举</strong> —
+          <code>cancelled</code> / <code>invalid_skill</code> / <code>already_exists</code> /
+          <code>blocked_path</code> / <code>write_failed</code>；路径必须通过
+          <code>isPathInside</code> / <code>isSafeSkillId</code>。
+        </li>
+        <li>
+          <strong>bundled lock 信任</strong> — 仅当 content hash 匹配当前或可迁移的 legacy 模板；伪造
+          <code>sourceType: bundled</code> 不构成提权。
+        </li>
+        <li>
+          <strong>enabled 门</strong> — Desktop <code>setSkillEnabled</code> 写入治理态；Runtime catalog
+          在扫描时排除 disabled（见 §01 <code>#skills</code>）。
+        </li>
+      </ul>
+      <p>
+        跨 29 份正文的行为合同见
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>。标本：
+        <code>apps/desktop/src/main/skills.ts</code> · <code>managed-skill-sources.ts</code> ·
+        <code>bundled-skill-catalog.generated.ts</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="pr-five"
+      label="Desktop · Release gate"
+      title="PR 五问（从归档交付合同抬升）"
+      lede="archive/full-product-test-plan 的非协商规则仍教「什么叫做完」——不是月度排期本身。"
+    >
+      <ol class="plain-list numbered">
+        <li><strong>Contract</strong> — 改了哪份数据 / IPC / RuntimeEvent / 持久化面？</li>
+        <li><strong>User Flow</strong> — 合并后用户能完整走通哪条路径？</li>
+        <li><strong>Tests</strong> — unit / storage / IPC / fixture / smoke 覆盖哪一段？</li>
+        <li>
+          <strong>Security</strong> — 信任边界、secret、path、sandbox、redaction 哪条适用？
+        </li>
+        <li><strong>Not Included</strong> — 相邻工作显式划界到哪张 issue？</li>
+      </ol>
+      <p>
+        失败闸门（仍 Current）：配置好默认模型后旧会话仍堵发送；密钥/绝对路径泄漏到 stdout/UI/telemetry；renderer
+        读任意绝对路径；Markdown 逃出 Electron sandbox；新 UI 无 empty/loading/error/focus；可确定测试却只靠手测。
+      </p>
+    </Section>
+
+    <Section
       id="boundaries"
       label="Desktop · Boundaries"
       title="不是 runtime-host，也不是 headless"
@@ -250,6 +310,8 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         <li>Preload 请求明文 secret → 协议层拒绝（masked only）</li>
         <li>Active turn 期间 MCP 配置变更 → 旧 backend 跑完再换 snapshot（不强杀）</li>
         <li>把 Desktop main 当成 <code>runtime-host</code> 四操作面 → 教学错误</li>
+        <li>伪造 bundled lock / 跳过 <code>blocked_path</code> → 技能治理面失守</li>
+        <li>PR 只交 UI 不交 Contract/Tests/Security 五问 → 交付合同剧场</li>
       </ul>
     </Section>
 

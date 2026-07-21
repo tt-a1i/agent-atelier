@@ -35,7 +35,7 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       </p>
       <div class="masthead__meta">
         <span>Home · /guides/desktop-ui</span>
-        <span>Research · #86 · Map · #34</span>
+        <span>Research · #86 · Map · #90</span>
         <span>
           <a href={localePath("en", "guides/desktop-ui")}>EN</a>
         </span>
@@ -220,6 +220,65 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     </Section>
 
     <Section
+      id="composer-mentions"
+      label="UI · Composer mentions"
+      title="@ 文件 / / 技能：纯文本 token，永不自动发送"
+      lede="归档 composer-mentions 规格仍教监督面输入合同——不是 contenteditable chip 模型。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>触发</strong> — 词边界上的 <code>@</code> → workspace 文件（
+          <code>workspace:searchFiles</code>）；<code>/</code> → 已启用 skill 列表（客户端过滤）。
+        </li>
+        <li>
+          <strong>插入</strong> — 文件 → <code>@&lt;relativePath&gt; </code>；技能 →
+          <code>使用 &lt;skillName&gt; 技能：</code>（与 <code>useSkillInChat</code> 家规一致）。
+        </li>
+        <li>
+          <strong>人在环</strong> — 只填 composer，<strong>永不</strong>自动 send。
+        </li>
+        <li>
+          <strong>v1 模型</strong> — 非受控原生 <code>&lt;textarea&gt;</code> 纯文本 token；不做
+          contenteditable chip / <code>@[file:…]</code> wire（竞品模型作对照，非 Current）。
+        </li>
+      </ul>
+      <p>
+        技能加载与 catalog 见 <a href={`${ch01}#skills`}>§01 · #skills</a> 与
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>。标本：
+        <code>packages/ui/src/composer.tsx</code> · archive
+        <code>composer-mentions-spec-2026-07-14.md</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="motion-spacing"
+      label="UI · Motion & spacing"
+      title="四条已拍板路线决策（从质感路线图抬升）"
+      lede="D1–D4 仍约束 agent chrome；排期队列本身是 discard。"
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <strong>D1 · 4pt spacing</strong> — padding/gap 收敛 4/8/12/16/24/32；允许相对对标偏 1–2px。高级感来自一致性。
+        </li>
+        <li>
+          <strong>D2 · Dark 一等公民</strong> — dark 独立 elevation（阴影塌为 border ring）；语义色 desaturate；UI
+          PR 双主题截图。
+        </li>
+        <li>
+          <strong>D3 · 动效人格：快而准</strong> — 高频（切会话/发送/palette）零动画；其余 &lt;300ms 取下限；流式
+          typing 是语义不是装饰。
+        </li>
+        <li>
+          <strong>D4 · 暂不做签名元素</strong> — 先把 layering/圆角/阴影/状态做精；视觉身份创新延后。
+        </li>
+      </ol>
+      <p>
+        与 <code>#css-contracts</code> 同读：token / layer / <code>!important</code> 守卫是执行面；D1–D4
+        是产品拍板的方向约束。来源：archive <code>design-refinement-roadmap-2026-07.md</code>（决策表，非战役清单）。
+      </p>
+    </Section>
+
+    <Section
       id="css-contracts"
       label="UI · CSS contracts"
       title="影响 agent chrome 的治理合同（精简）"
@@ -282,6 +341,8 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
         <li>每个 tool 一张卡 → 权限被埋、并行 settle 抖动</li>
         <li>把 UI 权限对话框当成沙箱 → 信任模型剧场</li>
         <li>把 CSS dump 当 Destination → 静默跳过 agent UX 合同</li>
+        <li><code>/</code> 技能 mention 自动 send → 人在环被拆掉</li>
+        <li>高频切会话带动效 / dark 无独立 elevation → D3/D2 合同失守</li>
       </ul>
     </Section>
 

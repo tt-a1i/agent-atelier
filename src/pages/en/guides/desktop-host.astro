@@ -215,6 +215,68 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="skills-governance"
+      label="Desktop · Skills governance"
+      title="bundled / managed / workspace: governance lives in main"
+      lede="Runtime scans bodies; Desktop owns locks, provenance, and marketplace taxonomy — do not mash them into one “skills system”."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Three sources</strong> — <code>workspace</code> (per project) ·
+          <code>bundled</code> (product templates + <code>maka-bundled</code> lock + contentSha256) ·
+          <code>managed</code> (<code>~/.maka/skill-sources</code>).
+        </li>
+        <li>
+          <strong>Closed categories</strong> — <code>MANAGED_SKILL_CATEGORIES</code> seven buckets;
+          unknown front-matter falls back to <code>效率工具</code> so market filters stay bounded.
+        </li>
+        <li>
+          <strong>Install failure reasons</strong> —
+          <code>cancelled</code> / <code>invalid_skill</code> / <code>already_exists</code> /
+          <code>blocked_path</code> / <code>write_failed</code>; paths must pass
+          <code>isPathInside</code> / <code>isSafeSkillId</code>.
+        </li>
+        <li>
+          <strong>Bundled lock trust</strong> — only when content hash matches current or migratable
+          legacy templates; forging <code>sourceType: bundled</code> is not privilege.
+        </li>
+        <li>
+          <strong>Enabled gate</strong> — Desktop <code>setSkillEnabled</code> writes governance;
+          Runtime catalog excludes disabled at scan (see §01 <code>#skills</code>).
+        </li>
+      </ul>
+      <p>
+        Cross-body behavior contracts:
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>. Specimens:
+        <code>apps/desktop/src/main/skills.ts</code> · <code>managed-skill-sources.ts</code> ·
+        <code>bundled-skill-catalog.generated.ts</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="pr-five"
+      label="Desktop · Release gate"
+      title="PR five questions (elevated from archive delivery contract)"
+      lede="The non-negotiable rules in archive/full-product-test-plan still teach what “done” means — not the monthly schedule itself."
+    >
+      <ol class="plain-list numbered">
+        <li><strong>Contract</strong> — which data / IPC / RuntimeEvent / persistence surface changed?</li>
+        <li><strong>User Flow</strong> — which exact path can the user complete after merge?</li>
+        <li><strong>Tests</strong> — which unit / storage / IPC / fixture / smoke covers it?</li>
+        <li>
+          <strong>Security</strong> — which trust boundary, secret, path, sandbox, or redaction rule applies?
+        </li>
+        <li><strong>Not Included</strong> — which adjacent work is explicitly scoped to another issue?</li>
+      </ol>
+      <p>
+        Still-Current fail gates: configured default model but old sessions block send; secrets/absolute
+        paths leak to stdout/UI/telemetry; renderer reads arbitrary absolute paths; Markdown escapes the
+        Electron sandbox; new UI lacks empty/loading/error/focus; deterministic cases covered only by
+        manual gates.
+      </p>
+    </Section>
+
+    <Section
       id="boundaries"
       label="Desktop · Boundaries"
       title="Not runtime-host, not headless"
@@ -254,6 +316,8 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         <li>Preload asks for cleartext secrets → protocol refuse (masked only)</li>
         <li>MCP config change during active turn → old backend finishes before snapshot swap (no force-kill)</li>
         <li>Teaching Desktop main as the <code>runtime-host</code> four-op surface → teaching error</li>
+        <li>Forged bundled lock / skipped <code>blocked_path</code> → skills governance breach</li>
+        <li>PR ships UI without Contract/Tests/Security five questions → delivery-contract theater</li>
       </ul>
     </Section>
 

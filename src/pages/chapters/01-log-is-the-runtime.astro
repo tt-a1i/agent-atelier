@@ -2042,11 +2042,16 @@ providerTools = [...visibleTools, invalid]         # invalid 永不广告</pre>
       <code>Skill</code>。单条加载失败不阻断其他调用或发送本身。
     </p>
     <div class="stub">
-      <p class="stub__tag">Runtime vs Desktop</p>
+      <p class="stub__tag">Runtime vs Desktop vs corpus</p>
       <p>
         Runtime 拥有扫描、catalog、懒加载与调用合成。Desktop 的 lock / provenance / managed-source /
-        bundled catalog 是产品治理面，不是第二套 runtime 真相。29 份 bundled
-        <code>SKILL.md</code> 正文是产品内容——本站只教<strong>机制</strong>，不把它们读成 Destination。
+        bundled catalog 是产品治理面（见
+        <a href={`${import.meta.env.BASE_URL}guides/desktop-host#skills-governance`}
+          >/guides/desktop-host#skills-governance</a
+        >
+        ）。29 份 bundled <code>SKILL.md</code> 正文编码 agent 行为合同——跨技能模式见
+        <a href={`${import.meta.env.BASE_URL}guides/skills-corpus`}>/guides/skills-corpus</a>（dig v3 /
+        #90），不是可丢弃的 oos dump。
       </p>
     </div>
     <h3 id="skills-failure" class="subhead">失败故事</h3>

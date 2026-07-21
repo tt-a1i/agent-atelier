@@ -36,7 +36,7 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
       </p>
       <div class="masthead__meta">
         <span>Home · /guides/desktop-ui</span>
-        <span>Research · #86 · Map · #34</span>
+        <span>Research · #86 · Map · #90</span>
         <span>
           <a href={localePath("zh", "guides/desktop-ui")}>中文</a>
         </span>
@@ -243,6 +243,69 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
     </Section>
 
     <Section
+      id="composer-mentions"
+      label="UI · Composer mentions"
+      title="@ file / / skill: plain-text tokens, never auto-send"
+      lede="The archived composer-mentions spec still teaches the supervision input contract — not a contenteditable chip model."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Triggers</strong> — word-boundary <code>@</code> → workspace files (
+          <code>workspace:searchFiles</code>); <code>/</code> → enabled skill list (client-side filter).
+        </li>
+        <li>
+          <strong>Insert</strong> — file → <code>@&lt;relativePath&gt; </code>; skill →
+          <code>使用 &lt;skillName&gt; 技能：</code> (house convention from <code>useSkillInChat</code>).
+        </li>
+        <li>
+          <strong>Human-in-the-loop</strong> — fills the composer only; <strong>never</strong> auto-sends.
+        </li>
+        <li>
+          <strong>v1 model</strong> — uncontrolled native <code>&lt;textarea&gt;</code> plain-text tokens;
+          no contenteditable chips / <code>@[file:…]</code> wire (competitor model is contrast, not Current).
+        </li>
+      </ul>
+      <p>
+        Skill load + catalog: <a href={`${ch01}#skills`}>§01 · #skills</a> and
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>. Specimens:
+        <code>packages/ui/src/composer.tsx</code> · archive
+        <code>composer-mentions-spec-2026-07-14.md</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="motion-spacing"
+      label="UI · Motion & spacing"
+      title="Four ratified route decisions (elevated from the polish roadmap)"
+      lede="D1–D4 still bind agent chrome; the campaign queue itself is discard."
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <strong>D1 · 4pt spacing</strong> — padding/gap converge on 4/8/12/16/24/32; 1–2px vs reference OK.
+          Polish comes from consistency.
+        </li>
+        <li>
+          <strong>D2 · Dark as first-class</strong> — independent dark elevation (shadows collapse to border
+          rings); desaturated semantic colors; dual-theme screenshots on UI PRs.
+        </li>
+        <li>
+          <strong>D3 · Motion personality: fast and precise</strong> — zero animation on high-frequency
+          (session switch / send / palette); else &lt;300ms at the low end; streaming typing is semantic, not
+          decoration.
+        </li>
+        <li>
+          <strong>D4 · No signature motif yet</strong> — finish layering / radius / shadow / state craft
+          first; visual identity innovation deferred.
+        </li>
+      </ol>
+      <p>
+        Read with <code>#css-contracts</code>: token / layer / <code>!important</code> guards are the
+        enforcement surface; D1–D4 are product-ratified direction constraints. Source: archive
+        <code>design-refinement-roadmap-2026-07.md</code> (decision table, not the campaign backlog).
+      </p>
+    </Section>
+
+    <Section
       id="css-contracts"
       label="UI · CSS contracts"
       title="Governance that binds agent chrome (lean)"
@@ -307,6 +370,8 @@ const ch01 = chapterHref("01-log-is-the-runtime", locale);
         <li>One card per tool → permission buried, parallel settle jitter</li>
         <li>Treat the UI permission dialog as a sandbox → trust-model theater</li>
         <li>Treat a CSS dump as Destination → silent skip of agent UX contracts</li>
+        <li><code>/</code> skill mention auto-sends → human-in-the-loop removed</li>
+        <li>Animated high-frequency session switches / dark without own elevation → D3/D2 breach</li>
       </ul>
     </Section>
 
