@@ -1,0 +1,152 @@
+---
+/**
+ * §06 specimen keystone — Runtime plane vs Evolution plane (AHE outside the interactive Runtime).
+ */
+---
+
+<svg
+  class="ahe-boundary"
+  viewBox="0 0 868 320"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="ah-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="ah-kicker ah-stage ah-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §06 · SELF-ITERATION OUTSIDE THE RUNTIME
+  </text>
+  <text class="ah-title ah-stage ah-stage--0" x="8" y="52" fill="var(--ink)">
+    Runtime plane produces facts · Evolution plane proposes change
+  </text>
+  <line class="ah-stage ah-stage--0" x1="8" y1="70" x2="860" y2="70" stroke="var(--hair)"></line>
+
+  <!-- Runtime band -->
+  <g class="ah-stage ah-stage--1">
+    <rect x="8" y="88" width="420" height="140" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect x="8" y="88" width="420" height="2" fill="var(--accent)"></rect>
+    <text class="ah-band" x="22" y="112" fill="var(--accent)">RUNTIME PLANE · serves current Turn</text>
+    <text class="ah-item" x="22" y="142" fill="var(--ink)">User tasks → Headless / Runtime</text>
+    <text class="ah-item" x="22" y="164" fill="var(--ink)">Runtime + Task Events</text>
+    <text class="ah-item" x="22" y="186" fill="var(--ink)">TaskRun Projection</text>
+    <text class="ah-hint" x="22" y="210" fill="var(--mute)">evidence export (read-only boundary)</text>
+  </g>
+
+  <!-- Evolution band -->
+  <g class="ah-stage ah-stage--2">
+    <rect
+      x="448"
+      y="88"
+      width="412"
+      height="140"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect x="448" y="88" width="412" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ah-band" x="462" y="112" fill="var(--accent)">EVOLUTION PLANE · outside Runtime</text>
+    <text class="ah-item" x="462" y="142" fill="var(--ink)">AHE Controller</text>
+    <text class="ah-item" x="462" y="164" fill="var(--ink)">Change Manifest + staged patch</text>
+    <text class="ah-item" x="462" y="186" fill="var(--ink)">Independent evaluation</text>
+    <text class="ah-hint" x="462" y="210" fill="var(--mute)">keep lineage · or rollback</text>
+  </g>
+
+  <g class="ah-connectors ah-stage ah-stage--3" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <path d="M 428 158 C 436 158, 440 158, 448 158" marker-end="url(#ah-arrow)"></path>
+  </g>
+
+  <g class="ah-callout ah-stage ah-stage--3" transform="translate(8,250)">
+    <rect width="852" height="52" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="3" height="52" fill="var(--accent)"></rect>
+    <text class="ah-callout__label" x="20" y="22" fill="var(--accent)">INVARIANT</text>
+    <text class="ah-callout__body" x="20" y="42" fill="var(--ink)">
+      Event Log makes experience replayable; the AHE boundary makes change falsifiable.
+    </text>
+  </g>
+</svg>
+
+<style>
+  .ahe-boundary {
+    font-family: var(--sans);
+  }
+  .ah-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .ah-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  .ah-band {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .ah-item {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .ah-hint {
+    font-family: var(--mono);
+    font-size: 10.5px;
+  }
+  .ah-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .ah-callout__body {
+    font-family: var(--serif);
+    font-size: 14.5px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ah-stage {
+      opacity: 0;
+      animation: ah-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .ah-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .ah-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .ah-stage--2 {
+      animation-delay: 0.32s;
+    }
+    .ah-stage--3 {
+      animation-delay: 0.5s;
+    }
+    @keyframes ah-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ah-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

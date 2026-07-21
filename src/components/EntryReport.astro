@@ -53,6 +53,23 @@ const copy =
         tracksBody:
           "The cognitive track advances through six milestone chapters instead of dumping every commit into the TOC. To ask when a mechanism matured, open /history (PR-first snapshot) or follow sparse in-chapter evolution asides.",
         pull: "This site is for readers who want to understand how an Agent keeps its ledger, thins context, reviews failure, and improves in a falsifiable way — not only how to call an API.",
+        pathsLabel: "Reading paths",
+        pathsTitle: "Choose a path by problem",
+        pathsLede: "Same six chapters; different entry orders. All routes remain WIP.",
+        paths: [
+          {
+            title: "First time in the Runtime",
+            body: "Read §01 → §02 → §03. Facts, then tool evidence, then history projection.",
+          },
+          {
+            title: "Tool, context, or compaction",
+            body: "Start at §01 for the fact boundary, then §02 → §03. Add §04 if long-running tasks consume the evidence.",
+          },
+          {
+            title: "Headless, Self-check, or AHE",
+            body: "§01 → §04 → §05 for recovery and completion; add §06 for falsifiable system change outside the Runtime.",
+          },
+        ],
       }
     : {
         title: "用 Maka 解剖 Agent · Agent Atelier",
@@ -77,6 +94,23 @@ const copy =
         tracksBody:
           "认知轨按六章里程碑推进，不把仓库每一笔提交摊成目录。需要追「这一机制何时长成」时，进入 /history（PR-first 快照），或在章内稀疏的演进旁注中跳转。",
         pull: "目标读者不是「只会调 API 的人」，而是想弄清 Agent 内部账本怎么记、上下文怎么瘦、失败怎么复盘、系统如何可证伪地改进的人。",
+        pathsLabel: "Reading paths",
+        pathsTitle: "按问题选择阅读路径",
+        pathsLede: "六章不变，入口顺序可变；全部仍为 WIP。",
+        paths: [
+          {
+            title: "第一次进入 Runtime",
+            body: "按 §01 → §02 → §03。先事实日志，再工具证据，再历史投影。",
+          },
+          {
+            title: "改 Tool、上下文或 Compaction",
+            body: "先读 §01 立事实边界，再读 §02 → §03；若影响长程任务证据消费，补 §04。",
+          },
+          {
+            title: "改 Headless、Self-check 或 AHE",
+            body: "按 §01 → §04 → §05 看恢复与完成条件；要做可证伪系统改进时再读 §06。",
+          },
+        ],
       };
 ---
 
@@ -165,6 +199,26 @@ const copy =
     </Section>
 
     <Section
+      id="paths"
+      label={copy.pathsLabel}
+      title={copy.pathsTitle}
+      lede={copy.pathsLede}
+    >
+      <ol class="path-list">
+        {
+          copy.paths.map((path, i) => (
+            <li class="path-card">
+              <p class="path-card__n">
+                {i + 1}. {path.title}
+              </p>
+              <p class="path-card__body">{path.body}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section
       id="tracks"
       label={copy.tracksLabel}
       title={copy.tracksTitle}
@@ -241,6 +295,40 @@ const copy =
     font-family: var(--mono);
     font-size: 0.78rem;
     color: var(--mute);
+  }
+
+  .path-list {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .path-card {
+    padding: 0 0 1.1rem;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .path-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .path-card__n {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.4rem;
+  }
+
+  .path-card__body {
+    margin: 0;
+    font-family: var(--serif);
+    max-width: 40em;
   }
 
   .chapter-toc {

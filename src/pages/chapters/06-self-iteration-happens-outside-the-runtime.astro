@@ -1,38 +1,171 @@
 ---
 import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import AheBoundaryKeystone from "../../components/diagrams/AheBoundaryKeystone.astro";
 ---
 
 <ChapterShell chapterId="06">
   <div slot="thesis">
     <p>
       系统改进若发生在交互 Runtime 内部且不可证伪，就会把一次跑通的偶然性固化成「进化」。AHE
-      把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。
+      把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。关键句：
+      <strong>Event Log makes experience replayable; the AHE boundary makes change falsifiable.</strong>
     </p>
   </div>
 
   <Section
-    id="boundary"
-    label="§06 · Boundary"
-    title="演化在 Runtime 墙外"
-    lede="可证伪、可回滚，才配叫改进。"
+    id="scene"
+    label="§06 · Scene"
+    title="从「这次任务失败了」到「下一版系统应该不同」"
+    lede="单次 Self-check 修当前任务；系统性失败需要外循环实验边界。"
   >
     <p>
-      第三层心智模型：演化。本章收束前五章建立的事实、证据、任务与权威边界，说明经验如何变成可治理的变更。
+      假设连续十个长程任务里，四个在相似位置失败：Agent 理解目标，却在工具失败后过早结束，且
+      Self-check 把不完整结果判为可接受。一次 Run 只能修当前任务；一次 Self-check
+      只能在有限 Turn 内指出缺口。真正的问题是：这组失败是否说明 system prompt、tool contract、context
+      policy 或 Headless policy 本身需要改变？
+    </p>
+    <p>
+      若直接把全部 trace 交给另一个模型并允许改仓库，立刻会问：改的是哪一版？哪些文件是控制面、哪些是证据面？「修复了」是叙述还是有失败案例与预测？候选是否只记住已见案例？如何回到上一条稳定
+      lineage？
+    </p>
+  </Section>
+
+  <Section
+    id="keystone"
+    label="§06 · Keystone"
+    title="自迭代是外循环，不是 Runtime 递归"
+    lede="正在被改进的系统，不应同时担任事实记录者、改动提出者和最终裁判。"
+  >
+    <DiagramFigure
+      prototype
+      caption="图 1 · Runtime plane 产生可导出证据；Evolution plane 提出受限 manifest，经独立评估决定保留或回滚。"
+      alt="左侧 Runtime plane（任务→事件→投影→只读导出），右侧虚线 Evolution plane（AHE Controller、Change Manifest、独立评估）；不变式：Event Log 可回放经验，AHE 边界使变更可证伪。"
+    >
+      <AheBoundaryKeystone />
+    </DiagramFigure>
+
+    <ul class="plain-list">
+      <li>
+        <strong>Runtime plane</strong> — 执行模型与工具交互，记录事件、权限、artifact 与任务状态；服务当前用户
+        Turn。
+      </li>
+      <li>
+        <strong>Evolution plane</strong> — 汇总多次运行证据，提出候选改动，比较 baseline 与
+        candidate；不服务当前 Turn。
+      </li>
+    </ul>
+  </Section>
+
+  <Section
+    id="experience"
+    label="§06 · Experience"
+    title="Event Log 从恢复底座变成经验底座"
+    lede="AHE 不应直接吞下没有边界的 JSONL；先经 TaskRun projection 规范化。"
+  >
+    <pre class="code-block" aria-label="证据导出链">Runtime / Task Events
+        ↓ project
+TaskRunProjection
+        ↓ normalize and classify
+Harness Results + Lineage + Trace Index + Failure Digest
+        ↓ bind to
+Target Snapshot</pre>
+    <p>
+      Projection 提供稳定任务语义（最终状态、artifact、Self-check、workspace observation、score
+      authority），不是替代原始事实。索引层帮助 controller 定位失败类别与 lineage
+      gaps；原始追踪层（显式请求时）回到 canonical Runtime Events 验证投影是否遗漏因果链——这是前五章
+      log-first 架构的第三种回报：历史可被新的 projection 重新解释。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        AHE / self-iteration 边界文档演进，见
-        <a href="/history">/history</a>。
+        AHE self-iteration 架构章合入：
+        <a href="/history/pr/776">maka:pr:776</a>
+        （docs: add AHE self-iteration architecture chapter）。Target protocol / evidence export 实现对照
+        <a href="/history/pr/411">maka:pr:411</a>、
+        <a href="/history/pr/413">maka:pr:413</a>。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="target"
+    label="§06 · Target"
+    title="先声明「什么可以被改进」"
+    lede="最危险的默认值是「整个仓库都可以改」。"
+  >
+    <p>
+      <code>MakaAheTargetSnapshot</code> 显式列出可理解的 component（system prompt、heavy-task
+      policy、tool contracts、context management、permission policy、headless evaluation
+      等），每个带 <code>sourceRefs</code>。最精妙的是只读的
+      <code>maka-runtime-evidence</code>：
+      <strong>产生判断依据的 ledger 不能同时成为候选 patch 的目标</strong>——否则最容易的「提升」是改记分、删失败或让证据对候选更有利。
+    </p>
+    <p>
+      Snapshot identity 绑定受管源码字节与 component topology（内容身份），而不是某次导出动作的时间戳。相同源码与拓扑得到相同
+      <code>snapshotId</code>；任一已登记源码变化则 id 变化。
+    </p>
+  </Section>
+
+  <Section
+    id="current"
+    label="§06 · Current"
+    title="Current 能做什么，Target 还缺什么"
+    lede="不声称 Maka 已无人监管地自行改代码。"
+  >
+    <p>
+      Current：可声明 source-backed target surface；从 TaskRun projection 导出带 authority
+      的结果、trace index、messages 与 failure digest；验证受限 change manifest。Evidence export
+      CLI 是只读边界——读取已有 store，不重新执行任务。
+    </p>
     <div class="stub">
-      <p class="stub__tag">Stub · 待展开</p>
+      <p class="stub__tag">Current vs Target</p>
       <p>
-        计划：Runtime ↔ AHE 边界图 + manifest / evaluation / rollback
-        三段流水线；明确「Target」与已落地 Current 的标注纪律。
+        Target：外部 AHE controller 完整执行 snapshot → 分析 → 候选 patch → 评估 → 接受或回滚，并形成可恢复
+        lineage。仓库中 Prompt Optimization Loop 等是相邻实现模式，不是通用无人演化系统已完成的证明。
       </p>
     </div>
   </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>已有：Runtime / Evolution 边界关键图 + 经验底座 / target / Current·Target 叙事</li>
+      <li>
+        已有：演进旁注 <a href="/history/pr/776">maka:pr:776</a>
+      </li>
+      <li>待补：manifest→evaluate→rollback 体量流图；全文 EN 同船</li>
+      <li>本页不标 checklist 完成</li>
+    </ul>
+  </div>
 </ChapterShell>
+
+<style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+</style>

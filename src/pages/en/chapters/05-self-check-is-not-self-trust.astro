@@ -1,5 +1,54 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import SelfCheckKeystone from "../../../components/diagrams/SelfCheckKeystone.astro";
 ---
 
-<ChapterShell chapterId="05" locale="en" />
+<ChapterShell chapterId="05" locale="en">
+  <div slot="thesis">
+    <p lang="zh-CN">
+      （正文仍以中文源稿为准）Self-check 是有界反馈环：帮助修复，不接管事实。
+    </p>
+    <p>
+      Structural parity with zh: scene → keystone → plan → schema → authority. Full EN prose pending —
+      WIP.
+    </p>
+  </div>
+
+  <Section
+    id="keystone"
+    label="§05 · Keystone"
+    title="Feedback plane, not authority plane"
+    lede="Model reports; Runtime admits, audits, and bounds."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · Plan → Evidence → Guard → Gate → bounded repair."
+      alt="Five-step self-check feedback plane ending in bounded repair; invariant: cannot manufacture trust."
+    >
+      <SelfCheckKeystone />
+    </DiagramFigure>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Architecture chapter: <a href="/history/pr/774">maka:pr:774</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
+      <li>Do not mark checklist complete</li>
+    </ul>
+  </div>
+</ChapterShell>
+
+<style>
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+</style>

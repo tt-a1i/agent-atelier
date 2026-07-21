@@ -1,0 +1,195 @@
+---
+/**
+ * §04 specimen keystone — TaskRun durable envelope wrapping bounded Attempts → Runtime.
+ */
+---
+
+<svg
+  class="durable-task"
+  viewBox="0 0 868 340"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="dt-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="dt-kicker dt-stage dt-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §04 · THE DURABLE TASK LOOP
+  </text>
+  <text class="dt-title dt-stage dt-stage--0" x="8" y="52" fill="var(--ink)">
+    TaskRun envelope · Attempts · Runtime facts
+  </text>
+  <line class="dt-stage dt-stage--0" x1="8" y1="70" x2="860" y2="70" stroke="var(--hair)"></line>
+
+  <!-- Outer TaskRun frame -->
+  <g class="dt-stage dt-stage--1">
+    <rect
+      x="8"
+      y="88"
+      width="852"
+      height="168"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-width="1"
+    ></rect>
+    <text class="dt-frame-label" x="20" y="110" fill="var(--accent)">TASKRUN · durable long-lived objective</text>
+  </g>
+
+  <!-- Attempt boxes -->
+  <g class="dt-node dt-stage dt-stage--2" transform="translate(28,126)">
+    <rect width="200" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="dt-node__idx" x="14" y="28" fill="var(--accent)">01</text>
+    <text class="dt-node__name" x="14" y="52" fill="var(--ink)">Attempt 1</text>
+    <text class="dt-node__hint" x="14" y="76" fill="var(--mute)">bounded slice</text>
+    <text class="dt-node__hint" x="14" y="94" fill="var(--mute)">→ Run / Events</text>
+  </g>
+
+  <g class="dt-node dt-stage dt-stage--3" transform="translate(252,126)">
+    <rect width="200" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="dt-node__idx" x="14" y="28" fill="var(--accent)">02</text>
+    <text class="dt-node__name" x="14" y="52" fill="var(--ink)">Attempt 2</text>
+    <text class="dt-node__hint" x="14" y="76" fill="var(--mute)">continue / retry</text>
+    <text class="dt-node__hint" x="14" y="94" fill="var(--mute)">→ Run / Events</text>
+  </g>
+
+  <!-- Task Event Log + projection -->
+  <g class="dt-connectors dt-stage dt-stage--3" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="452" y1="180" x2="500" y2="180" marker-end="url(#dt-arrow)"></line>
+    <line x1="668" y1="180" x2="716" y2="180" marker-end="url(#dt-arrow)"></line>
+  </g>
+
+  <g class="dt-node dt-stage dt-stage--4" transform="translate(500,126)">
+    <rect width="168" height="108" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="168" height="2" fill="var(--accent)"></rect>
+    <text class="dt-node__idx" x="14" y="28" fill="var(--accent)">03</text>
+    <text class="dt-node__name" x="14" y="52" fill="var(--ink)">Task Event</text>
+    <text class="dt-node__name" x="14" y="70" fill="var(--ink)">Log</text>
+    <text class="dt-node__hint" x="14" y="94" fill="var(--mute)">append-only</text>
+  </g>
+
+  <g class="dt-node dt-stage dt-stage--5" transform="translate(716,126)">
+    <rect
+      width="128"
+      height="108"
+      rx="1"
+      fill="var(--bg)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="128" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="dt-node__idx" x="12" y="28" fill="var(--accent)">04</text>
+    <text class="dt-node__name" x="12" y="52" fill="var(--ink)">TaskRun</text>
+    <text class="dt-node__name" x="12" y="70" fill="var(--ink)">Projection</text>
+    <text class="dt-node__hint" x="12" y="94" fill="var(--mute)">next-work</text>
+  </g>
+
+  <g class="dt-callout dt-stage dt-stage--5" transform="translate(8,276)">
+    <rect width="852" height="48" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="3" height="48" fill="var(--accent)"></rect>
+    <text class="dt-callout__label" x="20" y="20" fill="var(--accent)">INVARIANT</text>
+    <text class="dt-callout__body" x="20" y="38" fill="var(--ink)">
+      A task is longer than a turn; durability begins by giving the task its own log.
+    </text>
+  </g>
+</svg>
+
+<style>
+  .durable-task {
+    font-family: var(--sans);
+  }
+  .dt-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .dt-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  .dt-frame-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .dt-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .dt-node__name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .dt-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .dt-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .dt-callout__body {
+    font-family: var(--serif);
+    font-size: 14.5px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dt-stage {
+      opacity: 0;
+      animation: dt-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .dt-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .dt-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .dt-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .dt-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .dt-stage--4 {
+      animation-delay: 0.48s;
+    }
+    .dt-stage--5 {
+      animation-delay: 0.62s;
+    }
+    @keyframes dt-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dt-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

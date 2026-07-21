@@ -1,39 +1,169 @@
 ---
 import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import DurableTaskKeystone from "../../components/diagrams/DurableTaskKeystone.astro";
 ---
 
 <ChapterShell chapterId="04">
   <div slot="thesis">
     <p>
-      交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。Headless 的 Durable Task
-      Loop 把「一次聊天」升级为「可续跑的任务」。
+      交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。Headless 的 Durable Task Loop
+      把「一次聊天」升级为「可续跑的任务」。关键句：
+      <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
 
   <Section
-    id="durability"
-    label="§04 · Durability"
-    title="任务活得比进程久"
-    lede="Task Event Log + TaskRun projection：进度有账可查。"
+    id="scene"
+    label="§04 · Scene"
+    title="从一个无法在一轮里完成的任务开始"
+    lede="只靠 Session 续聊，回答不了 Attempt、预算、暂停与 workspace 归属。"
   >
     <p>
-      进入第二层心智模型：长程任务。本章说明 Attempt、恢复与和 Runtime Event Log
-      的衔接，为 §05 Self-check 与 §06 AHE 准备舞台。
+      假设任务是：阅读大型代码库，迁移旧接口，逐步修复构建，并在高风险权限处停下来等待确认。它可能经历：首轮只做
+      inventory；一次 Run 因 tool-step cap 结束但任务未完；第二次执行需要知道已检查文件与开放
+      todo；中途 park 等待批准；人几小时后回来继续；进程可能重启，内存中的 loop counter
+      与 active backend 都已消失。
+    </p>
+    <p>
+      Turn 表达一轮问答，Run 表达一次具体执行，RuntimeEvent ledger 能回放模型与工具经历。长程任务还要回答：稳定目标
+      ID、尝试次数、剩余预算、有效 progress、是在运行还是等待批准、下次继承什么、workspace
+      是否仍是离开时的那个、谁有权接管下一步。
+    </p>
+  </Section>
+
+  <Section
+    id="keystone"
+    label="§04 · Keystone"
+    title="TaskRun 是 Runtime 外面的 Durable Envelope"
+    lede="Headless 没有重写 Agent Runtime；它把 Runtime execution 组织成长程 Task lifecycle。"
+  >
+    <DiagramFigure
+      prototype
+      caption="图 1 · TaskRun 包裹多次有界 Attempt；跨 Attempt 事实进入 Task Event Log，再投影为 next-work view。"
+      alt="TaskRun 外壳内 Attempt 1/2，经 Task Event Log 到虚线框 TaskRun Projection；不变式：任务长于 Turn，耐久性始于任务自有日志。"
+    >
+      <DurableTaskKeystone />
+    </DiagramFigure>
+
+    <ul class="plain-list">
+      <li><strong>TaskRun</strong> — 长程目标从开始到终止是谁（跨 Attempt）</li>
+      <li><strong>Attempt</strong> — 有预算边界的一次推进切片</li>
+      <li><strong>Turn</strong> — 一次送给 Agent 的输入与回复</li>
+      <li><strong>Run / Invocation</strong> — 一次模型与工具循环的起止</li>
+    </ul>
+    <pre class="code-block" aria-label="Task 投影">TaskRunProjection(t) = Project(TaskEvents[0..t])
+
+Long task progress
+  = sequence of bounded Attempts
+  + durable Task Events between them
+  + explicitly selected continuation state</pre>
+  </Section>
+
+  <Section
+    id="session"
+    label="§04 · Identity"
+    title="为什么 Session 还不等于 TaskRun"
+    lede="对话归属与 durable orchestration 不应互相污染。"
+  >
+    <p>
+      Session 可跨多个 Turn 并保留模型历史，但主要回答「这些对话属于谁」。TaskRun 还必须表达
+      Attempt 数量与 outcome、loop budget、权限/预算暂停、跨 Attempt 的 progress/evidence、workspace
+      lease、continue/retry/stop/abort，以及生效的 task policy。普通交互式对话不该被迫携带这些控制字段；不同
+      Attempt 当前也可创建不同 Session / AgentRun。引用方向：Task Events 保存
+      <code>sessionId</code> / <code>agentRunId</code>，而不是让 Session header 成为 TaskRun 真相。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Headless / durable task 文档与实现演进，见
-        <a href="/history">/history</a>。
+        Durable Task Loop 架构章合入：
+        <a href="/history/pr/773">maka:pr:773</a>
+        （docs: add durable task loop architecture chapter）。Task ledger 生命周期相关演进亦可对照
+        <a href="/history/pr/567">maka:pr:567</a>。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="durable"
+    label="§04 · Current"
+    title="Durable 的究竟是什么"
+    lede="控制面事实 durable ≠ 整个执行世界已 checkpoint。"
+  >
+    <p>
+      <code>TaskRunStore</code> 以 append-only JSONL 保存 TaskEvent；
+      <code>projectTaskRun()</code> 从头投影状态、Attempts、progress、evidence、permission、parked
+      state 与 Runtime refs。当前明确 durable：TaskRun identity、已 append 的 Task Events、其中记录的
+      Attempt / progress / decision / permission / lifecycle，以及指向 Session、AgentRun、RuntimeEvents
+      与 artifact 的 refs。
+    </p>
+    <p>
+      不能由 TaskRun ledger 单独保证：临时 workspace 当前 bytes、正在跑的 provider stream、tool
+      process live handle、内存中的 backend / abort controller、外部 executor 是否仍持有同一
+      workspace、进程重启后是否有 scheduler 自动接管。
+    </p>
     <div class="stub">
-      <p class="stub__tag">Stub · 待展开</p>
+      <p class="stub__tag">Current vs Target</p>
       <p>
-        计划：Task identity 生命周期图 + Attempt 失败续跑时间线；对照「只靠 Session
-        续聊」与「有 TaskRun 投影」。
+        Current：TaskRun ledger 与 Attempt 包装已落地。Target：跨进程安全接管的统一 checkpoint
+        协议（workspace、in-flight Invocation、scheduler ownership）——教学必须显式标注，不得伪装成已保证。
       </p>
     </div>
   </Section>
+
+  <Section
+    id="attempt"
+    label="§04 · Attempt"
+    title="Attempt 是进度切片，不是失败的同义词"
+    lede="外层 policy 决定 continue / retry / stop / abort；不是复活 immortal Invocation。"
+  >
+    <p>
+      Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。
+      <code>AutonomousAgentLoop</code> 每次 <code>runTaskOnce()</code> 创建新
+      Attempt——不是从旧 RuntimeRunner 的 instruction pointer 恢复，也不会复活已退出的 tool process。三层预算（如
+      <code>maxAttempts</code> / <code>maxRuntimeSteps</code> 等）给无人值守循环可证明的边界：没有「继续直到完成」的无限许可。
+    </p>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>已有：TaskRun envelope 关键图 + 身份层 / durable 边界 / Attempt 叙事</li>
+      <li>
+        已有：演进旁注 <a href="/history/pr/773">maka:pr:773</a>
+      </li>
+      <li>待补：Attempt 续跑时间线体量图、预算三层细节图；全文 EN 同船</li>
+      <li>本页不标 checklist 完成</li>
+    </ul>
+  </div>
 </ChapterShell>
+
+<style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+</style>

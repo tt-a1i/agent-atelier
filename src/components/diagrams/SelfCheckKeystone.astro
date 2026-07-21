@@ -1,0 +1,184 @@
+---
+/**
+ * §05 specimen keystone — Self-check feedback plane with bounded repair, not authority.
+ */
+---
+
+<svg
+  class="self-check"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="sc-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="sc-kicker sc-stage sc-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §05 · SELF-CHECK IS NOT SELF-TRUST
+  </text>
+  <text class="sc-title sc-stage sc-stage--0" x="8" y="52" fill="var(--ink)">
+    Feedback plane · Runtime admits and bounds
+  </text>
+  <line class="sc-stage sc-stage--0" x1="8" y1="70" x2="860" y2="70" stroke="var(--hair)"></line>
+
+  <g class="sc-connectors sc-stage sc-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="156" y1="140" x2="184" y2="140" marker-end="url(#sc-arrow)"></line>
+    <line x1="332" y1="140" x2="360" y2="140" marker-end="url(#sc-arrow)"></line>
+    <line x1="508" y1="140" x2="536" y2="140" marker-end="url(#sc-arrow)"></line>
+    <line x1="684" y1="140" x2="712" y2="140" marker-end="url(#sc-arrow)"></line>
+  </g>
+
+  <g class="sc-node sc-stage sc-stage--1" transform="translate(8,90)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="sc-node__idx" x="12" y="26" fill="var(--accent)">01</text>
+    <text class="sc-node__name" x="12" y="50" fill="var(--ink)">Plan</text>
+    <text class="sc-node__hint" x="12" y="74" fill="var(--mute)">artifacts</text>
+    <text class="sc-node__hint" x="12" y="90" fill="var(--mute)">+ scratch</text>
+  </g>
+
+  <g class="sc-node sc-stage sc-stage--2" transform="translate(184,90)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="sc-node__idx" x="12" y="26" fill="var(--accent)">02</text>
+    <text class="sc-node__name" x="12" y="50" fill="var(--ink)">Evidence</text>
+    <text class="sc-node__hint" x="12" y="74" fill="var(--mute)">commands</text>
+    <text class="sc-node__hint" x="12" y="90" fill="var(--mute)">+ artifacts</text>
+  </g>
+
+  <g class="sc-node sc-stage sc-stage--3" transform="translate(360,90)">
+    <rect width="148" height="100" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="sc-node__idx" x="12" y="26" fill="var(--accent)">03</text>
+    <text class="sc-node__name" x="12" y="50" fill="var(--ink)">Source</text>
+    <text class="sc-node__name" x="12" y="68" fill="var(--ink)">Guard</text>
+    <text class="sc-node__hint" x="12" y="90" fill="var(--mute)">Runtime admits</text>
+  </g>
+
+  <g class="sc-node sc-stage sc-stage--4" transform="translate(536,90)">
+    <rect width="148" height="100" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="sc-node__idx" x="12" y="26" fill="var(--accent)">04</text>
+    <text class="sc-node__name" x="12" y="50" fill="var(--ink)">Semantic</text>
+    <text class="sc-node__name" x="12" y="68" fill="var(--ink)">gate</text>
+    <text class="sc-node__hint" x="12" y="90" fill="var(--mute)">hygiene audit</text>
+  </g>
+
+  <g class="sc-node sc-stage sc-stage--5" transform="translate(712,90)">
+    <rect
+      width="148"
+      height="100"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="sc-node__idx" x="12" y="26" fill="var(--accent)">05</text>
+    <text class="sc-node__name" x="12" y="50" fill="var(--ink)">Bounded</text>
+    <text class="sc-node__name" x="12" y="68" fill="var(--ink)">repair</text>
+    <text class="sc-node__hint" x="12" y="90" fill="var(--mute)">cap · not trust</text>
+  </g>
+
+  <g class="sc-callout sc-stage sc-stage--5" transform="translate(8,220)">
+    <rect width="852" height="60" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect x="0" y="0" width="3" height="60" fill="var(--accent)"></rect>
+    <text class="sc-callout__label" x="20" y="24" fill="var(--accent)">INVARIANT</text>
+    <text class="sc-callout__body" x="20" y="44" fill="var(--ink)">
+      Self-check can produce evidence and feedback; it cannot manufacture trust.
+    </text>
+  </g>
+</svg>
+
+<style>
+  .self-check {
+    font-family: var(--sans);
+  }
+  .sc-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .sc-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  .sc-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .sc-node__name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .sc-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .sc-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .sc-callout__body {
+    font-family: var(--serif);
+    font-size: 14.5px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sc-stage {
+      opacity: 0;
+      animation: sc-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .sc-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .sc-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .sc-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .sc-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .sc-stage--4 {
+      animation-delay: 0.5s;
+    }
+    .sc-stage--5 {
+      animation-delay: 0.64s;
+    }
+    @keyframes sc-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sc-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

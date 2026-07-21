@@ -1,5 +1,54 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeystone.astro";
 ---
 
-<ChapterShell chapterId="04" locale="en" />
+<ChapterShell chapterId="04" locale="en">
+  <div slot="thesis">
+    <p lang="zh-CN">
+      （正文仍以中文源稿为准）交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。
+    </p>
+    <p>
+      Structural parity with zh: scene → keystone → Session≠TaskRun → durable boundary → Attempt.
+      Full EN prose pending — WIP.
+    </p>
+  </div>
+
+  <Section
+    id="keystone"
+    label="§04 · Keystone"
+    title="TaskRun is a durable envelope outside the Runtime"
+    lede="Scene-local metaphor; NewsLiquid tokens and hand keystones stay fixed."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · TaskRun wraps bounded Attempts; Task Event Log projects the next-work view."
+      alt="TaskRun envelope with Attempt 1/2, Task Event Log, dashed TaskRun Projection; invariant: a task is longer than a turn."
+    >
+      <DurableTaskKeystone />
+    </DiagramFigure>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Architecture chapter: <a href="/history/pr/773">maka:pr:773</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
+      <li>Do not mark checklist complete</li>
+    </ul>
+  </div>
+</ChapterShell>
+
+<style>
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+</style>

@@ -1,38 +1,155 @@
 ---
 import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro";
 ---
 
 <ChapterShell chapterId="05">
   <div slot="thesis">
     <p>
       Agent 可以检查自己的产出，但不能把「我觉得做完了」写成最终权威。Self-check
-      是有界反馈环：帮助修复，不接管事实。
+      是有界反馈环：帮助修复，不接管事实。关键句：
+      <strong>Self-check can produce evidence and feedback; it cannot manufacture trust.</strong>
     </p>
   </div>
 
   <Section
-    id="authority"
-    label="§05 · Authority"
-    title="自检可以，自证权威不行"
-    lede="反馈有预算；完成条件不能只听自述。"
+    id="scene"
+    label="§05 · Scene"
+    title="从一句「我已经检查过了」开始"
+    lede="自由 reflection 复述意图；无限检查—修复会变成没有预算的第二 Agent loop。"
   >
     <p>
-      承接 §04 的任务循环：在 Attempt 内引入受限 Self-check，并划清它与 Event Log / 外部验收的边界。
+      假设 Agent 完成复杂迁移后回复「已经完成，代码应该可以正常工作」。它没有回答：检查了哪些最终
+      artifact、执行了什么公开命令、exit code、是否只在 scratch 产生临时输出、有没有污染最终
+      workspace、新增文件是计划内 deliverable 还是意外 side effect、证据是否只来自公开任务材料、失败后允许多少次
+      repair。
+    </p>
+    <blockquote class="pull">
+      怎样让模型拥有发现自己错误的机会，同时把自检的输入、证据、副作用和重试次数放进 Runtime
+      可以检查的协议？
+    </blockquote>
+  </Section>
+
+  <Section
+    id="keystone"
+    label="§05 · Keystone"
+    title="Self-check 是 Feedback Plane，不是 Authority Plane"
+    lede="Model reports; Runtime admits, audits, and bounds."
+  >
+    <DiagramFigure
+      prototype
+      caption="图 1 · Plan → Evidence → Source Guard → Semantic gate → 有界 repair；模型不能决定无限自证。"
+      alt="五步反馈平面：Plan、Evidence、Source Guard、Semantic gate、Bounded repair；不变式：Self-check 产生证据与反馈，不能制造信任。"
+    >
+      <SelfCheckKeystone />
+    </DiagramFigure>
+
+    <ul class="plain-list">
+      <li><strong>Self-check Plan</strong> — 准备检查什么，临时输出放哪里（model 提交，Runtime admission）</li>
+      <li><strong>Public Evidence</strong> — 实际执行或观察了什么（带 source refs）</li>
+      <li><strong>Source Guard</strong> — 是否只引用公开任务材料（deterministic policy）</li>
+      <li><strong>Hygiene / Consistency Audit</strong> — 是否越出 scratch、产生未计划 side effects</li>
+      <li><strong>Repair Gate</strong> — 是否允许一次额外检查/修复 Turn（有 cap）</li>
+    </ul>
+  </Section>
+
+  <Section
+    id="plan"
+    label="§05 · Plan"
+    title="为什么必须先有 Self-check Plan"
+    lede="检查本身也会产生副作用；事后合理化无法区分事先计划。"
+  >
+    <p>
+      编译可能写出 object files，脚本可能覆盖 deliverable，「验证输出」也可能改变 workspace listing。若完成检查后才解释「那些文件都是临时的」，Runtime
+      无法区分事先计划与事后合理化。因此先有
+      <code>self_check_plan_submit</code>：声明 finalArtifacts、selfCheckScratch、workspaceGuardPlan，给后续
+      audit 一个稳定基线。没有 plan 时事实仍可进入 Task Events，但 strong pass gate 可以
+      <code>missing_self_check_plan</code> 阻塞——工具层允许记录，gate 层决定是否支持语义完成。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Self-check 架构章与后续收紧，见
-        <a href="/history">/history</a>。
+        Self-check 架构章合入：
+        <a href="/history/pr/774">maka:pr:774</a>
+        （docs: add self-check architecture chapter）。证据新鲜度绑定等后续收紧见
+        <a href="/history/pr/954">maka:pr:954</a>。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="schema"
+    label="§05 · Schema"
+    title="先把 Self-check 变成有限对象"
+    lede="Schema 解决可持久化与 prompt safety，不单独证明证据真实性。"
+  >
+    <p>
+      <code>self_check_submit</code> 不是自由文本：status 仅
+      <code>pass / fail / inconclusive</code>；publicReason 有界；至少一项 command 或 artifact
+      evidence；各项字符/条数上限。当前字段多由模型经 tool args 提交——schema 阻止无界 payload，却不能单独证明
+      command 真的执行过或 hash 真的来自当前 bytes（Target：进一步升级为 executor-owned、high-water-bound
+      evidence）。
+    </p>
     <div class="stub">
-      <p class="stub__tag">Stub · 待展开</p>
+      <p class="stub__tag">Current vs Target</p>
       <p>
-        计划：有界反馈环示意图 + 「自述完成 / 证据完成」对照表；回链 §02「证据不可被 prune
-        删掉」。
+        Current：Heavy-task Self-check 是严格受限的 advisory mechanism，不是任务正确性的独立证明。Target：把声明升级为
+        executor-owned evidence——不得伪装成已落地。
       </p>
     </div>
   </Section>
+
+  <Section
+    id="authority"
+    label="§05 · Authority"
+    title="回链事实权威"
+    lede="完成条件不能只听自述；官方结论在日志、外部验收与 terminal fact。"
+  >
+    <p>
+      承接 §02：证据不可被 prune 删掉，也不该被一段自述覆盖。承接 §04：Self-check
+      发生在 Attempt / Task 循环内，受 repair budget 约束。模型写「测试已通过」仍只是对公开材料的报告；Source
+      Guard 拒绝私有材料进入反馈；gate 失败且预算耗尽时停止自检环，而不是无限自我授权。
+    </p>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>已有：反馈平面关键图 + Plan / Schema / Authority 叙事</li>
+      <li>
+        已有：演进旁注 <a href="/history/pr/774">maka:pr:774</a>
+      </li>
+      <li>待补：repair 时序体量图、对照表动效；全文 EN 同船</li>
+      <li>本页不标 checklist 完成</li>
+    </ul>
+  </div>
 </ChapterShell>
+
+<style>
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+</style>

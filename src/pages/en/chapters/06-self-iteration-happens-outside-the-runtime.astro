@@ -1,5 +1,54 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import AheBoundaryKeystone from "../../../components/diagrams/AheBoundaryKeystone.astro";
 ---
 
-<ChapterShell chapterId="06" locale="en" />
+<ChapterShell chapterId="06" locale="en">
+  <div slot="thesis">
+    <p lang="zh-CN">
+      （正文仍以中文源稿为准）AHE 把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。
+    </p>
+    <p>
+      Structural parity with zh: scene → keystone → experience → target → Current/Target. Full EN
+      prose pending — WIP.
+    </p>
+  </div>
+
+  <Section
+    id="keystone"
+    label="§06 · Keystone"
+    title="Evolution outside the interactive Runtime"
+    lede="Event Log makes experience replayable; the AHE boundary makes change falsifiable."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · Runtime plane exports evidence; Evolution plane proposes falsifiable change."
+      alt="Runtime plane versus dashed Evolution plane with AHE controller and independent evaluation."
+    >
+      <AheBoundaryKeystone />
+    </DiagramFigure>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Architecture chapter: <a href="/history/pr/776">maka:pr:776</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
+      <li>Do not mark checklist complete</li>
+    </ul>
+  </div>
+</ChapterShell>
+
+<style>
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+</style>
