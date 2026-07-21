@@ -1,0 +1,396 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/computer-use");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+---
+
+<ReportLayout
+  title="Computer Use six contracts · Agent Atelier"
+  description="Maka Desktop Computer Use: observation authority, bind/validate, cua-driver ownership, evidence classes, and host events — a companion report, not a seventh worldview chapter."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Computer Use six contracts</span>
+        <span class="masthead__title-en">Computer-use contract suite</span>
+      </h1>
+      <p class="masthead__sub">
+        Stacked Desktop foundation contracts: observation-frame authority, action binding, sole native
+        executor, evidence qualification. Orthogonal to the §01–§06 worldview — enter from
+        <a href={`${ch01}#mcp`}>§01 · MCP</a> / <a href={`${ch01}#permission`}>#permission</a>, then
+        read here.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/computer-use</span>
+        <span>Research · #47</span>
+        <span>
+          <a href={localePath("zh", "guides/computer-use")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="CU · Scene"
+      title="Why contracts — not a demo reel"
+      lede="Coordinates, focus, occlusion, and process generation turn “click once” into TOCTOU."
+    >
+      <p>
+        Computer Use turns model intent into real window input. Allowing “re-pick the current topmost
+        window,” auto-replay on unknown outcomes, or treating approval as observation freshness yields
+        irreversible side effects on the wrong target. Maka pins the boundary with six current
+        contracts plus <code>packages/computer-use</code> and Runtime
+        <code>openai-computer-*</code> tests; when docs disagree, <strong>code + contract tests
+        win</strong>.
+      </p>
+      <blockquote class="pull">
+        Observation owns coordinates; cua-driver owns dispatch; approval never proves freshness.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="six"
+      label="CU · Six docs"
+      title="How the six contracts stack"
+      lede="Foundation is the non-breakable floor; other layers pin model path, evidence qualification, host events, and artifact integrity."
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <code>computer-use-foundation-contract.md</code> — observation / binding / validation /
+          execution ownership / postcondition / service lifecycle / approval+privacy / presentation
+          isolation.
+        </li>
+        <li>
+          <code>computer-use-model-loop-foundation.md</code> — primary <code>maka_computer</code>;
+          native OpenAI <code>computer_call</code> observation-only by default.
+        </li>
+        <li><code>computer-use-evidence-classes.md</code> — four evidence classes.</li>
+        <li><code>computer-use-provider-evidence.md</code> — provider matrix and sanitizer.</li>
+        <li><code>computer-use-host-events-contract.md</code> — typed attributable producers + gaps.</li>
+        <li><code>cua-driver-artifact-integrity.md</code> — pin/hash; not notarization.</li>
+      </ol>
+      <p>
+        Headless is out of foundation scope. CLI is experimental opt-in only. Coordinate / pixel /
+        CGEvent paths are described as disabled and fail closed.
+      </p>
+    </Section>
+
+    <Section
+      id="observation"
+      label="CU · Observation"
+      title="Observation authority and action binding"
+      lede="Coordinates are meaningful only inside the producing frame; mutations claim before the first async boundary."
+    >
+      <ul class="plain-list">
+        <li>
+          Each executable observation: unique <code>frameId + epoch</code>, screenshot size,
+          <code>pid + windowId</code>, capture-local coordinates; Electron page identity when
+          applicable.
+        </li>
+        <li>Dispatch <strong>must not</strong> re-select the current global topmost window.</li>
+        <li>
+          New observation, turn/session end, abort, user stop, service loss, and explicit intervention
+          invalidate old action claims and keyboard ownership.
+        </li>
+        <li>
+          Mutations snapshot, normalize, fingerprint, and claim before the first async boundary, bound
+          to the active observation; ordered actions serialize per Computer Use session.
+        </li>
+        <li>
+          Stale / replay / unclaimed / malformed / targetless → fail closed; no bare-pixel or focus-steal
+          fallback.
+        </li>
+      </ul>
+      <h3 class="subhead">Exact target validation</h3>
+      <p>
+        Coordinate actions verify the same window identity, geometry, screenshot scale, page identity,
+        and occlusion. Semantic actions prefer stable-token refetch; otherwise only a unique
+        identity-preserving match. Irrelevant AX/DOM churn must not synthesize
+        <code>user_intervened</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="executor"
+      label="CU · Executor"
+      title="cua-driver is the sole native executor"
+      lede="The agent must not move the real mouse, steal foreground, or perform windowless desktop input."
+    >
+      <p>
+        Window/page discovery, semantic preparation, input dispatch, and effect readback stay inside
+        the cua-driver boundary. Keyboard ownership binds
+        <code>session + turn + generation + pid + windowId + page/frame</code> and is revoked on
+        failure, stale, new observation, intervention, service-generation change, and turn/session end.
+        Child process exit with unknown action outcome → <strong>re-observe</strong>; never auto-replay.
+      </p>
+      <h3 class="subhead">Postcondition</h3>
+      <ul class="plain-list">
+        <li>After a successful mutation, the old observation is consumed and a fresh full observation returns.</li>
+        <li>Transport success ≠ business success; <code>verified:true</code> needs action-specific effect/readback.</li>
+        <li><code>supported:true, ok:false</code> is a terminal failure for that action.</li>
+        <li>Retries use a fresh observation and a new claim — never old coordinates/fingerprints.</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="approval"
+      label="CU · Approval"
+      title="Graded leases: approval ≠ freshness"
+      lede="PermissionEngine and CU leases are both gates — do not collapse them into “approved.”"
+    >
+      <p>
+        Approval is an app capability gate (graded short leases for metadata / screenshot / pointer /
+        keyboard / semantic mutation), not proof of active observation or action freshness. Re-authorize
+        when target, action class, observation, or session generation changes. Sensitive apps,
+        secure/password fields, and unsupported destinations fail closed. Screenshots, typed text,
+        coordinates, raw AX, window titles, secrets, and raw page content stay out of durable session
+        logs / telemetry / evaluation reports by default.
+      </p>
+      <p>
+        Presentation (cursor/PiP) sits <strong>downstream</strong> of targeting: it cannot select,
+        transform, authorize, or rewrite execution coordinates. <code>readyForInteraction</code> may
+        only affect timing via bounded fail-open; <code>finished</code> does not block native dispatch.
+        See <a href={`${ch01}#permission`}>§01 · PermissionEngine</a> for park/grant control flow — a
+        different door.
+      </p>
+    </Section>
+
+    <Section
+      id="model-loop"
+      label="CU · Model loop"
+      title="Primary path maka_computer; native computer is observation-only by default"
+      lede="AX / semantic first; validate a whole native batch before any action executes."
+    >
+      <pre class="code-block" aria-label="Model path">model function/tool call
+  → Computer Use facade
+  → observed AX element identity
+  → stale-element refetch + uniqueness
+  → element executor (AXPick / AXPress / AXValue…)
+  → synthetic event fallback only inside native executor</pre>
+      <p>
+        Provider adapters must not infer a missing observation ID or silently bind to “the current
+        frame.” Under OpenAI strict schemas the adapter projects action-allowed keys; the core
+        <code>maka_computer</code> parser stays provider-neutral and strict. Real provider evidence
+        lives in the provider-evidence contract; without credentials use hermetic-protocol — never
+        upgrade it to real-runtime.
+      </p>
+    </Section>
+
+    <Section
+      id="evidence"
+      label="CU · Evidence"
+      title="Four evidence classes are qualification boundaries"
+      lede="Missing evidence is invalid/inconclusive — never inferred from fixture state alone."
+    >
+      <div class="table-wrap" role="region" aria-label="Evidence classes" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Class</th>
+              <th scope="col">Meaning</th>
+              <th scope="col">Fills a real matrix cell?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>real-runtime</code></td>
+              <td>Live provider + production Runtime + owned fixture + cua-driver</td>
+              <td>Yes (when the report contract is met)</td>
+            </tr>
+            <tr>
+              <td><code>fault-injection</code></td>
+              <td>Named failure injected (e.g. wrapper intervention)</td>
+              <td>No — useful regression, cannot qualify</td>
+            </tr>
+            <tr>
+              <td><code>hermetic-protocol</code></td>
+              <td>Local protocol server; no live-credential claim</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><code>static-contract</code></td>
+              <td>Source/schema/deterministic harness</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Distinct from <a href={ch02}>§02</a> tool-result evidence vocabulary: here the topic is
+        <strong>provider qualification</strong>. The sanitizer keeps action types/timing/result codes and
+        strips coordinates, typed text, raw UI, credentials, and provider payloads.
+      </p>
+    </Section>
+
+    <Section
+      id="host-events"
+      label="CU · Host events"
+      title="Connect only typed, attributable events"
+      lede="AX/DOM content churn ≠ physical intervention."
+    >
+      <ul class="plain-list">
+        <li>
+          Typed outcomes: <code>user_intervened</code> → re-observe; <code>screen_locked</code> →
+          locked; <code>blocked_url</code> → terminal; unknown/unavailable/mismatch → re-observe.
+        </li>
+        <li>
+          cua-driver service release clears executor-local observations / keyboard ownership and advances
+          the Runtime session.
+        </li>
+        <li>
+          <strong>Deliberate gaps</strong>: no claim of a global macOS physical-input producer until one
+          exists; raw error-string matching is not an accepted producer; Codex’s signed turn-ended helper
+          is not invoked.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="artifact"
+      label="CU · Artifact"
+      title="Integrity check ≠ distribution-ready"
+      lede="check:cua-driver-artifact pins local/pre-package inputs; distributionReady stays false."
+    >
+      <p>
+        The repo pins one macOS universal cua-driver: archive/binary SHA-256, version, arm64+x86_64,
+        structural code signature, license/source-claim hashes. It does <strong>not</strong> prove
+        reproducible builds, trusted attestation, full SBOM, or Developer ID nested signing /
+        notarization / Gatekeeper. Integrity checks are intentionally outside
+        <code>check:release</code> until the release pipeline supplies provenance.
+      </p>
+    </Section>
+
+    <Section
+      id="failures"
+      label="CU · Failures"
+      title="Fail-closed matrix (teaching)"
+      lede="Stop rather than guess the target."
+    >
+      <div class="table-wrap" role="region" aria-label="Failure matrix" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Situation</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Claim on an old frame</td>
+              <td>stale → fail closed</td>
+            </tr>
+            <tr>
+              <td>Missing / ambiguous semantic target</td>
+              <td>Reject; no guessing</td>
+            </tr>
+            <tr>
+              <td>Occlusion / geometry / scale / page change</td>
+              <td>Reject</td>
+            </tr>
+            <tr>
+              <td>Model omits <code>observation_id</code></td>
+              <td>Typed tool error; must re-observe</td>
+            </tr>
+            <tr>
+              <td>Transport OK but effect fails</td>
+              <td><code>supported:true, ok:false</code></td>
+            </tr>
+            <tr>
+              <td>Unknown child outcome</td>
+              <td>re-observe; no auto-replay</td>
+            </tr>
+            <tr>
+              <td>Fault-injected intervention</td>
+              <td>Regression OK; cannot fill a real cell</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="history-aside">
+        <p class="history-aside__tag">Verification</p>
+        <p>
+          <code>packages/computer-use/src/__tests__/*</code> ·
+          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · operator commands
+          <code>e2e:computer-use-real</code> / <code>process-restart</code> /
+          <code>real-model</code>. Archive hardening (tombstone, per-session queue, generation release)
+          contributes durable policy only — not PR archaeology. Outline:
+          <code>docs/research/computer-use-six-contracts-deep-outline.md</code>.
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

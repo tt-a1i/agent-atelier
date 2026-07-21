@@ -11,6 +11,8 @@ import ExecSpineFlow from "../../../components/diagrams/ExecSpineFlow.astro";
 import DualStreamBridge from "../../../components/diagrams/DualStreamBridge.astro";
 import ModelToolLoop from "../../../components/diagrams/ModelToolLoop.astro";
 import PermissionControlFlow from "../../../components/diagrams/PermissionControlFlow.astro";
+import SandboxOwnershipFlow from "../../../components/diagrams/SandboxOwnershipFlow.astro";
+import RecoveryLayersFlow from "../../../components/diagrams/RecoveryLayersFlow.astro";
 import TerminalRace from "../../../components/diagrams/TerminalRace.astro";
 import PrefixVsShape from "../../../components/diagrams/PrefixVsShape.astro";
 import AttributionLadder from "../../../components/diagrams/AttributionLadder.astro";
@@ -419,7 +421,159 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       Routing: <code>RuntimeKernel.respondToPermission()</code> → Backend → ToolRuntime writes the
       decision → continue or deny. Replay/diagnostics must answer why the run stopped and how control
       returned. Pairing with §02: synthetic error results preserve call/result pairing (full protocol
-      in §02).
+      in §02). Whether an allowed call still needs an OS sandbox wrap is orthogonal — do not conflate
+      “user clicked allow” with “unsafe host execution.”
+    </p>
+  </Section>
+
+  <Section
+    id="sandbox"
+    label="§01 · Sandbox"
+    title="Sandbox is an execution transform, not approval"
+    lede="PermissionProfile → SandboxManager.transform → platform argv wrap. Missing backend fails closed — never silent host downgrade."
+  >
+    <DiagramFigure
+      caption="Fig 7b · Approval ⊥ sandbox: Engine decides allow/prompt/block; SandboxManager only selects/transforms; shell/PTY/executor owns spawn; escalation grants are one-shot."
+      alt="PermissionEngine to PermissionProfile to SandboxManager to spawn owner; escalation one-shot callout."
+    >
+      <SandboxOwnershipFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>@maka/core</code> owns the platform-neutral <code>PermissionProfile</code> language
+      (managed / disabled / external, plus FS/network policy). <code>@maka/runtime</code>’s
+      <code>SandboxManager</code> answers only: does this profile need a sandbox, which backend, how to
+      rewrite argv. <strong>It does not spawn, retry unsandboxed, emit UI, or own telemetry.</strong>
+      Callers own canonical cwd and <code>SandboxPathContext</code> (workspaceRoots / tmp /
+      runtimeReadable / executable); backends must not guess workspace roots.
+    </p>
+
+    <h3 class="subhead">Selection matrix (fail-closed)</h3>
+    <div class="table-wrap" role="region" aria-label="Sandbox selection matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Situation</th>
+            <th scope="col">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">managed + restricted + <code>auto</code> + darwin</th>
+            <td><code>macos-seatbelt</code>: <code>/usr/bin/sandbox-exec</code> + SBPL</td>
+          </tr>
+          <tr>
+            <th scope="row">Same, Seatbelt unregistered/unavailable</th>
+            <td><code>backend_not_available</code> — no silent host</td>
+          </tr>
+          <tr>
+            <th scope="row">managed + restricted + <code>auto</code> + linux + bwrap available</th>
+            <td><code>linux</code>: bubblewrap argv (Current; default manager registers it)</td>
+          </tr>
+          <tr>
+            <th scope="row">linux missing bwrap/capability, or deny entries unenforceable</th>
+            <td>Typed failure (<code>backend_not_available</code> / <code>invalid_request</code>)</td>
+          </tr>
+          <tr>
+            <th scope="row">unrestricted / disabled / external + <code>auto</code></th>
+            <td><code>sandboxType: none</code> (External = environment already isolates FS)</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>require</code> on unsupported platform (e.g. win32)</th>
+            <td><code>unsupported_platform</code></td>
+          </tr>
+          <tr>
+            <th scope="row"><code>forbid</code></th>
+            <td>Host path; Engine approval still required — forbid ≠ authorized</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Standard profiles: <code>read-only</code> / <code>workspace-write</code> (with deny_write
+      metadata for <code>.git</code> / <code>.agents</code> / <code>.codex</code>) /
+      <code>danger-full-access</code>. <code>additionalPermissions</code> merge into
+      <strong>this transform only</strong>, without mutating the base profile.
+    </p>
+
+    <h3 class="subhead">Escalation one-shot</h3>
+    <p>
+      Bash may declare <code>sandbox_permissions.mode = require_escalated</code> (justification
+      required). Planning blocks in explore, may skip in bypass; otherwise PermissionEngine prompts with
+      <code>sandbox_escalation</code> (<code>rememberForTurnAllowed: false</code>). An allow produces a
+      grant bound to exact command / cwd / intentHash — <strong>consumable once</strong> within TTL.
+      Changed command, second consume, or expiry → <code>command_mismatch</code> /
+      <code>grant_consumed</code> / <code>grant_expired</code>. This is one-shot escalation, not a
+      standing unsandboxed mode; the proposal’s risk summary honestly flags unrestricted FS/network and
+      protected-metadata exposure.
+    </p>
+
+    <h3 class="subhead">Three “sandboxes” that must not collapse</h3>
+    <ul class="plain-list">
+      <li>
+        <strong>OS platform sandbox</strong> (this section) — Seatbelt / bubblewrap argv transform.
+      </li>
+      <li>
+        <strong>§04 throwaway workspace</strong> — fixture-mutation isolation directory, not a security
+        sandbox; see
+        <a href={localePath("en", "chapters/04-the-durable-task-loop") + "#workspace"}>§04</a>.
+      </li>
+      <li>
+        <strong>§05 hygiene “sandbox root”</strong> — Heavy-task execution-hygiene report field, not
+        Seatbelt.
+      </li>
+    </ul>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">History · verification</p>
+      <p>
+        Contracts live in code + tests: <code>sandbox-manager.test.ts</code>,
+        <code>macos-seatbelt*.test.ts</code>, <code>sandbox-escalation.test.ts</code>. Remaining
+        enforcement: maka #843. If the local sandbox README still claims Linux
+        <code>backend_not_implemented</code>, prefer the <code>LinuxBubblewrapBackend</code> registered by
+        the default manager. Managed Bash inserts sandbox via <code>transformCommand</code>; PTY is
+        mutually exclusive with mandatory sandbox argv — spawn details in
+        <code>shell-pty-executor-deep-outline.md</code>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="trust"
+    label="§01 · Trust"
+    title="Trust boundary: the OS account, not PermissionEngine"
+    lede="The only load-bearing boundary against an adversarial LLM is the operating-system user account. In-process screens are UX safety nets, not containment."
+  >
+    <p>
+      Maka is a single-tenant personal desktop assistant; tools run as the user’s OS identity.
+      <code>SECURITY.md</code> shares hermes-style honesty: PermissionEngine, output redaction, URL
+      allowlists, and WebSearch fail-closed are <strong>valuable</strong>, but they operate on
+      attacker-influenced strings — limits of those heuristics are ordinary issues, not “sandbox break”
+      narratives.
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>Load-bearing:</strong> OS account; <code>credentials.json</code> (dir 0o700 / file
+        0o600); Renderer ↔ Main preload IPC (cleartext secrets never flow main→renderer).
+      </li>
+      <li>
+        <strong>Seatbelt / bubblewrap:</strong> code and tests exist; until product compositions route
+        command execution through transform, they are <strong>not</strong> a shipped product boundary
+        (keep “mechanism ready” separate from “boundary delivered”).
+      </li>
+      <li>
+        <strong>Workspace privacy:</strong>
+        <code>WorkspacePrivacyContext = &#123; incognitoActive &#125;</code> is resolved by main;
+        renderers must not self-attest. Malformed input fails closed and never defaults to
+        <code>false</code>. <code>incognitoActive: false</code> only means incognito did not block —
+        each consumer still applies its own settings / permission / retention.
+      </li>
+    </ul>
+    <p>
+      IM / bot channels are one input surface (bot-onboarding contract): credential persistence is
+      separate from long-lived bridges; cancel paths use CAS rollback — do not pretend Keychain is
+      already shipped.
     </p>
   </Section>
 
@@ -519,16 +673,77 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       </table>
     </div>
 
-    <pre class="code-block" aria-label="File-backed directory sketch">sessions/&lt;sessionId&gt;/
-  ... session projection ...
-  runs/&lt;runId&gt;/
-    run.json
-    events.jsonl
-    runtime-events.jsonl
-    runtime-partials/</pre>
+    <pre class="code-block" aria-label="File-backed directory sketch">{workspaceRoot}/
+  .maka-storage-root.json
+  runtime.sqlite                 # optional canonical RuntimeEvent
+  sessions/&lt;sessionId&gt;/
+    session.jsonl                # header + StoredMessage
+    task-events.jsonl + tasks.json
+    runs/&lt;runId&gt;/
+      run.json
+      events.jsonl
+      runtime-events.jsonl
+      runtime-partials/
+    shell-runs/&lt;id&gt;/state.jsonl
+  artifacts/…</pre>
     <p>
       Partial streams are bounded, replaceable snapshots; the final non-partial covers the semantic
       slot. Do not treat live deltas as durable truth forever.
+    </p>
+
+    <h3 id="durability" class="subhead">What is actually durable</h3>
+    <p>
+      <code>appendJsonl(..., &#123; durable: true &#125;)</code> <code>fsync</code>s the file and syncs the
+      directory chain under <code>durabilityRoot</code>; failures wrap as
+      <code>DurableStoreWriteError</code>. Terminal RuntimeEvents and root-turn admissions use this path.
+      Session message appends, task ledger, shell-run checkpoints, and artifact blobs are
+      <strong>not</strong> directory-chain fsync by default — they may be atomic renames or best-effort
+      appends. Calling “written to disk” “crash-safe” is a classic authority mix-up.
+    </p>
+    <div class="table-wrap" role="region" aria-label="Durability contrast" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Write</th>
+            <th scope="col">Current durability</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">RuntimeEvent terminal / root-turn admission</th>
+            <td><code>durable: true</code> (file + dir chain)</td>
+          </tr>
+          <tr>
+            <th scope="row">Session JSONL messages</th>
+            <td>Best-effort append (no default fsync)</td>
+          </tr>
+          <tr>
+            <th scope="row">Task / ShellRun / Artifact</th>
+            <td>Projection or checkpoint; no dir-chain sync</td>
+          </tr>
+          <tr>
+            <th scope="row">SQLite RuntimeEvent (when enabled)</th>
+            <td><code>synchronous=FULL</code> + WAL</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      JSONL tail repair: if the file lacks a trailing newline, truncate an
+      <code>incomplete-prefix</code> via <code>classifyJsonRecord</code>; <code>invalid</code> rejects
+      the append. Ordinary Session reads may soft-degrade to <code>system_note</code>; recovery /
+      RuntimeEvent reads <strong>throw strictly</strong>. A torn JSON row is storage corruption — not a
+      legal Phase0 prefix.
+    </p>
+
+    <h3 id="runtime-host" class="subhead">Runtime-host: a thin gateway, not full RPC</h3>
+    <p>
+      Optional desktop path: <code>@maka/runtime-host</code> elects a single-writer Host on a local unix
+      socket and exposes only <code>host.status</code> / <code>turn.start</code> /
+      <code>turn.query</code> / <code>turn.stop</code>. <code>turn.start</code> performs durable
+      root-turn admission before creating a Run; client/protocol must not import
+      <code>@maka/runtime</code>. Headless/CLI may bypass the Host entirely. Do not teach it as “the
+      entire remote Runtime API.”
     </p>
   </Section>
 
@@ -536,31 +751,141 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
     id="recovery"
     label="§01 · Recovery"
     title="What crash recovery repairs"
-    lede="State repair ≠ warm resume. Recovery does not guess what the model “was about to do.”"
+    lede="State repair ≠ Phase0 prefix plan ≠ Phase1 safe continuation. Do not collapse the three into “warm resume.”"
   >
-    <p>Startup recovery <strong>does</strong>:</p>
-    <ul class="plain-list">
-      <li>Scan non-terminal Runs + ledgers;</li>
-      <li>Detect stale model stream / tool tail / permission wait / corrupt ops events;</li>
-      <li>Conservatively commit failed/cancelled and repair Session/Turn projections.</li>
-    </ul>
-    <p>Startup recovery <strong>does not</strong>:</p>
-    <ul class="plain-list">
-      <li>Re-invoke the model mid-tool;</li>
-      <li>Warm-resume from the next line of a side effect;</li>
-      <li>Guess what the model “was about to do” without durable facts.</li>
-    </ul>
+    <DiagramFigure
+      caption="Fig 8b · Three recovery layers: startup projection repair (default) · Phase0 decision over a committed prefix · Phase1 flag-gated safe continuation (fresh identity)."
+      alt="Three columns: Startup repair, Phase0 plan, Phase1 continue."
+    >
+      <RecoveryLayersFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">A. Startup state repair (default crash path)</h3>
     <p>
-      Label: <strong>state repair</strong> — foundation for future checkpoint resume, not today’s
-      mid-tool warm resume. Cross-process Attempt durability lives in §04 TaskRun / park-grant.
+      <strong>Does:</strong> scan non-terminal Runs + ledgers; detect stale model stream / tool tail /
+      permission wait / corrupt ops; conservatively commit failed/cancelled and repair Session/Turn
+      projections.
     </p>
+    <p>
+      <strong>Does not:</strong> re-invoke the model mid-tool; warm-resume from the next line of a side
+      effect; invent what the model “was about to do” without durable facts.
+    </p>
+
+    <h3 class="subhead">B. Phase0 failpoint matrix</h3>
+    <p>
+      The production API is pure: committed <code>RuntimeEvent</code> prefix → ToolOperation projection →
+      <code>ResumePlan</code> → <code>safe_replay</code> or <code>blocked</code>. The machine-readable
+      catalog is <code>RUNTIME_RESUME_FAILPOINTS</code> (P0–P11). It <strong>deliberately does not
+      pretend</strong> a future T1/T2 journal already exists — only the last fully committed RuntimeEvent
+      prefix after a crash. A torn JSON row is storage corruption, not a legal prefix.
+    </p>
+    <div class="table-wrap" role="region" aria-label="Phase0 failpoint matrix" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">IDs</th>
+            <th scope="col">Committed prefix</th>
+            <th scope="col">Disposition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">P0</th>
+            <td><code>before_function_call</code></td>
+            <td><code>safe_replay</code> (no tool op yet)</td>
+          </tr>
+          <tr>
+            <th scope="row">P1–P4</th>
+            <td><code>after_function_call</code></td>
+            <td>
+              <code>blocked</code> · <code>dangling_tool_state</code> · operation indeterminate;
+              unpaired call omitted from provider replay
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">P5–P8</th>
+            <td><code>after_function_response</code></td>
+            <td><code>safe_replay</code> (call/response paired)</td>
+          </tr>
+          <tr>
+            <th scope="row">P9–P11</th>
+            <td><code>after_terminal_event</code></td>
+            <td>Same tool decision as prior prefix; terminal fact stays in the canonical ledger</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Expected high-water ≠ reopened prefix → always <code>runtime_offset_mismatch</code>. The SIGKILL
+      process-crash harness pins all twelve points; it does not claim power-loss / fsync durability.
+    </p>
+
+    <h3 class="subhead">C. Phase1 safe-boundary continuation</h3>
+    <p>
+      Only when <code>MAKA_RUNTIME_SAFE_BOUNDARY_RESUME=1</code> does a host expose Safe resume /
+      <code>/resume</code>. Continuation <strong>never</strong> revives an old provider stream / JS
+      stack / OS process; it creates a fresh Invocation / Run / Turn, durably writes a
+      continuation-start RuntimeEvent first, then feeds validated replay to the provider (no duplicate
+      user message). Any missing or contradictory fact → <code>park</code>; execution revalidates
+      immediately before start. This is single-process ownership, not distributed fencing.
+    </p>
+
+    <h3 class="subhead">RecoveryResolver: sole decision authority</h3>
+    <p>
+      Planner / CLI / UI must not assemble call / dispatch / response facts themselves. They consume
+      only <code>resolveRuntimeRecovery()</code> decisions. RuntimeEvent is the sole canonical recovery
+      fact source; Tool Journal is a rebuildable projection (RecoveryResolver ADR) — conflicts prefer
+      RuntimeEvent.
+    </p>
+    <div class="table-wrap" role="region" aria-label="RecoveryResolver decision table" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Fact combination</th>
+            <th scope="col">Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">call + matching response (dispatch optional)</th>
+            <td><code>completed</code></td>
+          </tr>
+          <tr>
+            <th scope="row">call + dispatch, no response</th>
+            <td><code>indeterminate</code> / reconcile_required — <strong>no</strong> auto re-run</td>
+          </tr>
+          <tr>
+            <th scope="row">call, no dispatch/response, new-protocol marker</th>
+            <td><code>definitely_not_dispatched</code></td>
+          </tr>
+          <tr>
+            <th scope="row">Same, but legacy / unknown protocol</th>
+            <td><code>indeterminate</code> (missing events ≠ proof of non-execution)</td>
+          </tr>
+          <tr>
+            <th scope="row">orphan / duplicate / identity conflict</th>
+            <td><code>corruption</code> · fail-closed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      T1 is an independent, non-model-visible <code>actions.toolDispatch</code> RuntimeEvent: it means
+      “Runtime crossed the boundary where it is unsafe to assume implementation did not run,” not “side
+      effects happened.” Protocol marker <code>toolBoundary: t1_after_preflight_v1</code> appears only on
+      the first canonical event when a durable commit sink is actually wired — never inferred from a
+      software version alone.
+    </p>
+
     <div class="stub">
       <p class="stub__tag">Current vs Target</p>
       <p>
-        Warm mid-tool resume = Target / not Current startup recovery. Advanced aside: durable
-        safe-boundary resume phases —
-        <a href={localePath("en", "history/pr/1223")}>maka:pr:1223</a>
-        — teach Current honesty; do not present evolution phases as the default shipping path.
+        Default startup path remains state repair. Warm mid-tool resume = Target. Phase1 is a
+        flag-gated Current capability, not the default. Cross-process Attempt durability:
+        <a href={localePath("en", "chapters/04-the-durable-task-loop") + "#crash"}>§04 crash</a>.
+        Mechanism aside:
+        <a href={localePath("en", "history/pr/1223")}>maka:pr:1223</a>; tests:
+        <code>runtime-resume*.test.ts</code>, <code>recovery-resolver.test.ts</code>.
       </p>
     </div>
   </Section>
@@ -822,6 +1147,35 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       </li>
     </ul>
 
+    <h3 id="usage-stores" class="subhead">Usage dual-store and pricing honesty</h3>
+    <p>
+      Above hit/miss/write diagnostics sit two stores that answer
+      <strong>different questions</strong> — do not collapse them into “the billing truth”:
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong><code>telemetry.json</code> (TelemetryRepo)</strong> — written by
+        <code>recordLlmCall</code> / <code>recordToolInvocation</code>; holds pricing overrides;
+        pricing key is <code>providerId:modelId</code>; missing unit prices yield
+        <strong>$0</strong> cost (not an error).
+      </li>
+      <li>
+        <strong>Session JSONL aggregation (usage-stats-store)</strong> — Settings
+        <code>usageStats()</code> scans each session’s <code>token_usage</code> / tool rows; it does
+        <strong>not</strong> read telemetry.json.
+      </li>
+      <li>
+        <strong>Provider request capture</strong> — full serialized request into an artifact + ledger
+        event <code>provider_request_captured</code> for debug/replay; hidden by default in desktop UI;
+        <strong>not</strong> billing telemetry. Do not treat it as a provider cache key.
+      </li>
+    </ul>
+    <p>
+      WebSearch query strings are scrubbed at the <code>recordToolInvocation</code> boundary (privacy
+      commitment). Builtin pricing is a dated snapshot; special plans need overrides — do not pretend
+      it is always current.
+    </p>
+
     <h3 id="cost-fail-open" class="subhead">Never delete facts to chase cache</h3>
     <ul class="plain-list">
       <li>§02: archive fail → keep the full tool result message.</li>
@@ -850,6 +1204,142 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
   </Section>
 
   <Section
+    id="skills"
+    label="§01 · Skills"
+    title="The skill catalog is a budgeted advertisement — not always-on manuals"
+    lede="Catalog enters the system prompt; bodies lazy-load. allowed-tools never grants."
+  >
+    <p>
+      Maka keeps skill bodies in <code>SKILL.md</code> out of the always-on system prompt. The prompt
+      carries only a bounded <strong>catalog</strong>; when a task matches, the read-only
+      <code>Skill</code> tool (or explicit <code>/skill:</code> / invocation chips) loads full
+      instructions. The contract is <code>docs/skill-catalog-policy.md</code>, locked by
+      <code>packages/runtime/src/skills.ts</code> / <code>skill-invocation.ts</code>.
+    </p>
+    <h3 class="subhead">Discover → gate → budget</h3>
+    <ol class="plain-list numbered">
+      <li>
+        Scan in source precedence: project → workspace compatibility paths → user; duplicate ids use
+        <strong>first-found wins</strong>; within one directory, order by display name.
+      </li>
+      <li>Exclude disabled skills.</li>
+      <li>
+        When the host supplies capabilities, hide skills missing explicit
+        <code>required-tools</code> / <code>required-capabilities</code>.
+        <code>allowed-tools</code> / <code>declaredTools</code> are informational only — they
+        <strong>never grant</strong>.
+      </li>
+      <li>
+        Fill the catalog until budget: 2% of the model context window, clamped to about 4,000–8,000
+        estimated tokens (four characters per token); if the window is unknown, fall back to
+        <code>MAX_SKILLS_PROMPT_CHARS = 18000</code>. The window is an <strong>explicit prompt
+        input</strong>, not an implicit provider lookup inside the scanner.
+      </li>
+    </ol>
+    <p>
+      Omitted entries still list their ids: omission affects advertisement only — enabled,
+      host-compatible skills remain loadable by id/name. The host gate runs <strong>before</strong>
+      budget truncation so incompatible skills are never advertised.
+    </p>
+    <h3 class="subhead">Explicit invocation and the trust frame</h3>
+    <p>
+      <code>composeSkillInvocationMessage</code> injects <code>&lt;invoked-skill&gt;</code> blocks
+      before user text and states: skill content ranks below system / developer / safety /
+      permission; it cannot grant tools, weaken prompts, reveal secrets, or override higher-priority
+      instructions; do not call <code>Skill</code> again for skills already loaded this turn.
+      Per-request load failures do not block other invocations or the send itself.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Runtime vs Desktop</p>
+      <p>
+        Runtime owns scan, catalog, lazy load, and invocation composition. Desktop lock / provenance /
+        managed-source / bundled catalog is product governance — not a second runtime truth. The 29
+        bundled <code>SKILL.md</code> bodies are product content; this site teaches the
+        <strong>mechanism</strong>, not those essays as Destination.
+      </p>
+    </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        Contract tests: <code>packages/runtime/src/__tests__/skills.test.ts</code>,
+        <code>skill-invocation.test.ts</code>. Outline:
+        <code>docs/research/skill-catalog-policy-deep-outline.md</code>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="mcp"
+    label="§01 · MCP"
+    title="MCP projects into the same ToolRuntime — not a second agent loop"
+    lede="Manager connects remotes; the adapter becomes MakaTool; permission / log / abort are reused."
+  >
+    <p>
+      MCP must reuse the existing <code>MakaTool</code> execution boundary:
+      <code>McpClientManager</code> (<code>@maka/mcp</code>) owns connect, discovery, and calls;
+      <code>buildMcpTools</code> projects remote tools into dynamic <code>MakaTool[]</code>. MCP then
+      inherits PermissionEngine, Runtime event log, telemetry, result persistence, abort, and loop
+      gates — there is no parallel “MCP agent.”
+    </p>
+    <pre class="code-block" aria-label="MCP data flow">Desktop IPC → McpConfigStore (mcp.json)
+  → McpClientManager (stdio | Streamable HTTP | SSE)
+  → buildMcpTools → AiSdkBackend
+  → ToolRuntime (permission + events + telemetry)
+  → Manager.callTool</pre>
+    <h3 class="subhead">Trust and naming</h3>
+    <ul class="plain-list">
+      <li>
+        Every MCP tool uses <code>categoryHint: network_send</code>. Server
+        <code>readOnlyHint</code> is an <strong>untrusted advisory</strong> and cannot lower
+        permission policy; explore mode fails closed.
+      </li>
+      <li>
+        Proxy names are <code>mcp__&#123;serverId&#125;__&#123;toolName&#125;</code>; beyond 64
+        characters a stable hash suffix is used, with collision detection.
+      </li>
+      <li>
+        stdio inherits only an allowlisted env; explicit <code>env</code> overrides last. The
+        renderer <strong>never</strong> holds an MCP client or child process.
+      </li>
+      <li>
+        Rich output has aggregate bounds on text / images / summaries; audio, resource blobs, and
+        unknown payloads are not dumped into model context.
+      </li>
+    </ul>
+    <h3 class="subhead">Config lifecycle</h3>
+    <p>
+      Workspace <code>mcp.json</code> uses a shared <code>mcpServers</code> map; a full normalized
+      fingerprint drives reconcile — only changed servers move. Written config ≠ authorized ≠
+      connected: setup templates land disabled until the user completes setup and enables them.
+      After config changes or <code>notifications/tools/list_changed</code>, reconcile first, then
+      invalidate backend caches; the active turn is not force-killed — the old backend releases after
+      the last active run, and the next turn sees the new tool snapshot. Connected MCP tools join the
+      visible schema and therefore affect <a href="#tool-economy">#tool-economy</a>’s
+      <code>toolSchemaHash</code>.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">V1 vs V2</p>
+      <p>
+        V1 (shipped): stdio / Streamable HTTP / SSE, paginated list, list_changed, timeouts/abort,
+        Desktop “Extensions &gt; MCP” CRUD. V2 backlog: OAuth 2.1 + PKCE, resources UI, loopback
+        proxy, finer trusted-server policy — do not read backlog as Current.
+      </p>
+    </div>
+    <p>
+      Desktop Computer Use is an orthogonal contract (observation frames / cua-driver) — see
+      <a href={localePath("en", "guides/computer-use")}>/guides/computer-use</a>.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        <code>packages/mcp/src/__tests__/manager.test.ts</code> ·
+        <code>packages/runtime/src/__tests__/mcp-tools.test.ts</code>. Outline:
+        <code>docs/research/mcp-runtime-deep-outline.md</code>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="invariants"
     label="§01 · Invariants"
     title="Invariants that must be protected"
@@ -864,14 +1354,16 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       <li>Permission/usage/artifact travel as actions, not chat masquerade.</li>
       <li>Tool call/result pairing remains reconstructible.</li>
       <li>Partial stream facts are replaceable; durable facts are not silent deltas forever.</li>
-      <li>Recovery repairs projections from durable facts; it does not invent success.</li>
+      <li>Recovery repairs projections from durable facts; it does not invent success; unknown tool combinations fail closed.</li>
+      <li>Sandbox selection does not grant approval; required-but-missing backend fails closed — never silent host.</li>
       <li>Request materialization may evolve; message facts stay stable (this cost spine).</li>
     </ol>
     <p>
       Intellectual lineage (coarse): ADK-style “Session history is fact, working context is
       projection,” plus log-first / event-sourcing intuition from distributed systems — never treat
       every downstream view as an independent truth. §02 builds Tool Result evidence layers; §03
-      keeps Compaction as projection-only; §04 wraps cross-Attempt Task envelopes.
+      keeps Compaction as projection-only; §04 wraps cross-Attempt TaskRun envelopes and distinguishes
+      them from the session task ledger.
     </p>
   </Section>
 
@@ -902,25 +1394,35 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         <a href={localePath("en", "history/pr/41")}>41</a>
       </li>
       <li>
-        Secondary / advanced:
-        <a href={localePath("en", "history/pr/768")}>768</a> (docs) ·
-        <a href={localePath("en", "history/pr/1223")}>1223</a> (resume phases)
+        Recovery / resume:
+        <a href={localePath("en", "history/pr/1223")}>1223</a> (safe-boundary phases) ·
+        tests <code>runtime-resume*.test.ts</code> / <code>recovery-resolver.test.ts</code>
+      </li>
+      <li>
+        Sandbox: tests <code>sandbox-manager.test.ts</code> /
+        <code>sandbox-escalation.test.ts</code> · maka #843 (remaining enforcement)
+      </li>
+      <li>
+        Secondary:
+        <a href={localePath("en", "history/pr/768")}>768</a> (docs)
       </li>
     </ul>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>Keystone + produce/consume + identities + exec spine / dual stream / loop / permission / terminal race</li>
-      <li>Three-store authority + recovery = state repair</li>
-      <li>Three replay layers → #request-shape cost spine (prefixHash / attribution ladder / tool economy)</li>
+      <li>Keystone + spine / dual stream / loop / permission / sandbox / terminal race</li>
+      <li>Three-store authority + recovery layers (repair / Phase0 / Phase1) + Resolver</li>
+      <li>Three replay layers → #request-shape cost spine</li>
+      <li>#skills catalog budget + #mcp same ToolRuntime (not a second loop)</li>
       <li>
         Mechanism asides
         <a href={localePath("en", "history/pr/9")}>9</a> /
         <a href={localePath("en", "history/pr/410")}>410</a> /
-        <a href={localePath("en", "history/pr/21")}>21</a> (not only 768)
+        <a href={localePath("en", "history/pr/21")}>21</a> /
+        <a href={localePath("en", "history/pr/1223")}>1223</a>
       </li>
-      <li>Reader quiz: late complete after abort; shorter but more expensive</li>
+      <li>Reader quiz: late complete after abort; shorter but more expensive; why after_function_call blocks</li>
     </ul>
   </div>
 </ChapterShell>

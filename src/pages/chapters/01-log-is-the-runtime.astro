@@ -10,6 +10,8 @@ import ExecSpineFlow from "../../components/diagrams/ExecSpineFlow.astro";
 import DualStreamBridge from "../../components/diagrams/DualStreamBridge.astro";
 import ModelToolLoop from "../../components/diagrams/ModelToolLoop.astro";
 import PermissionControlFlow from "../../components/diagrams/PermissionControlFlow.astro";
+import SandboxOwnershipFlow from "../../components/diagrams/SandboxOwnershipFlow.astro";
+import RecoveryLayersFlow from "../../components/diagrams/RecoveryLayersFlow.astro";
 import TerminalRace from "../../components/diagrams/TerminalRace.astro";
 import PrefixVsShape from "../../components/diagrams/PrefixVsShape.astro";
 import AttributionLadder from "../../components/diagrams/AttributionLadder.astro";
@@ -377,7 +379,152 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     <p>
       路由：<code>RuntimeKernel.respondToPermission()</code> → Backend → ToolRuntime 写入决策 →
       continue 或 deny。回放/诊断必须能回答：为何停住、控制权如何回到循环。与 §02
-      配对：synthetic error result 保 call/result pairing（完整协议见 §02）。
+      配对：synthetic error result 保 call/result pairing（完整协议见 §02）。批准之后是否还要包一层 OS
+      沙箱，是下一节的正交问题——不要把二者混成「用户点了允许就等于不安全执行」。
+    </p>
+  </Section>
+
+  <Section
+    id="sandbox"
+    label="§01 · Sandbox"
+    title="沙箱是执行变换，不是批准"
+    lede="PermissionProfile → SandboxManager.transform → 平台 argv 包装。缺后端就 fail-closed，绝不悄悄落回 host。"
+  >
+    <DiagramFigure
+      caption="图 7b · 批准与沙箱正交：Engine 判 allow/prompt/block；SandboxManager 只做 select/transform；spawn 归 shell/PTY/executor；提权 grant 一次性消费。"
+      alt="PermissionEngine 到 PermissionProfile 到 SandboxManager 再到 spawn owner；旁注 escalation one-shot。"
+    >
+      <SandboxOwnershipFlow />
+    </DiagramFigure>
+
+    <p>
+      <code>@maka/core</code> 拥有平台无关的 <code>PermissionProfile</code> 语言（managed / disabled /
+      external，以及 FS/network 策略）。<code>@maka/runtime</code> 的
+      <code>SandboxManager</code> 只回答：这个 profile 要不要沙箱、选哪个后端、如何改写
+      argv。<strong>它不 spawn、不重试无沙箱、不发 UI、不拥有 telemetry。</strong> 调用方拥有
+      canonical cwd 与 <code>SandboxPathContext</code>（workspaceRoots / tmp / runtimeReadable /
+      executable）；后端不得猜工作区根。
+    </p>
+
+    <h3 class="subhead">选择矩阵（fail-closed）</h3>
+    <div class="table-wrap" role="region" aria-label="沙箱选择矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">情形</th>
+            <th scope="col">结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">managed + restricted + <code>auto</code> + darwin</th>
+            <td><code>macos-seatbelt</code>：<code>/usr/bin/sandbox-exec</code> + SBPL</td>
+          </tr>
+          <tr>
+            <th scope="row">同上但 Seatbelt 未注册/不可用</th>
+            <td><code>backend_not_available</code> —— 禁止静默 host</td>
+          </tr>
+          <tr>
+            <th scope="row">managed + restricted + <code>auto</code> + linux + bwrap 可用</th>
+            <td><code>linux</code>：bubblewrap argv（Current；default manager 已注册）</td>
+          </tr>
+          <tr>
+            <th scope="row">linux 但 bwrap/能力缺失，或 deny 条目无法执行</th>
+            <td>typed failure（<code>backend_not_available</code> / <code>invalid_request</code>）</td>
+          </tr>
+          <tr>
+            <th scope="row">unrestricted / disabled / external + <code>auto</code></th>
+            <td><code>sandboxType: none</code>（External = 环境已提供 FS 隔离）</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>require</code> 于不支持平台（如 win32）</th>
+            <td><code>unsupported_platform</code></td>
+          </tr>
+          <tr>
+            <th scope="row"><code>forbid</code></th>
+            <td>走 host 路径；<strong>仍须</strong> Engine 批准，forbid ≠ 已授权</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      标准 profile：<code>read-only</code> / <code>workspace-write</code>（含
+      <code>.git</code> / <code>.agents</code> / <code>.codex</code> 的 deny_write 元数据）/
+      <code>danger-full-access</code>。<code>additionalPermissions</code> 只合并进<strong>这一次</strong>
+      transform，不改写 base profile。
+    </p>
+
+    <h3 class="subhead">Escalation one-shot</h3>
+    <p>
+      Bash 可声明 <code>sandbox_permissions.mode = require_escalated</code>（须带 justification）。规划层在
+      explore 模式直接 block，bypass 可跳过；否则进入 PermissionEngine 的
+      <code>sandbox_escalation</code> prompt（<code>rememberForTurnAllowed: false</code>）。批准后的
+      grant 绑定精确 command / cwd / intentHash，默认 TTL 内<strong>只能消费一次</strong>——命令变更、二次消费或过期分别得到
+      <code>command_mismatch</code> / <code>grant_consumed</code> / <code>grant_expired</code>。这是一次性提权，不是常驻
+      unsandboxed 模式；proposal 的 risk 摘要诚实标出 unrestricted FS/network 与 protected metadata 暴露。
+    </p>
+
+    <h3 class="subhead">三个「sandbox」不要混</h3>
+    <ul class="plain-list">
+      <li>
+        <strong>OS 平台沙箱</strong>（本节）— Seatbelt / bubblewrap 对进程 argv 的变换。
+      </li>
+      <li>
+        <strong>§04 throwaway workspace</strong> — 隔离 fixture mutation 的目录，不是安全沙箱；见
+        <a href={`${import.meta.env.BASE_URL}chapters/04-the-durable-task-loop/#workspace`}>§04</a>。
+      </li>
+      <li>
+        <strong>§05 hygiene「sandbox root」</strong> — Heavy-task 执行卫生报告字段，不是 Seatbelt。
+      </li>
+    </ul>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 验证</p>
+      <p>
+        合同以代码与测试为准：<code>sandbox-manager.test.ts</code>、<code>macos-seatbelt*.test.ts</code>、
+        <code>sandbox-escalation.test.ts</code>。剩余 enforcement 跟踪 maka #843；本地 sandbox README
+        若仍写 Linux <code>backend_not_implemented</code>，以 default manager 注册的
+        <code>LinuxBubblewrapBackend</code> 为准。Managed Bash 经
+        <code>transformCommand</code> 插入沙箱；PTY 与强制沙箱 argv 互斥——spawn 细节见研究大纲
+        <code>shell-pty-executor-deep-outline.md</code>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="trust"
+    label="§01 · Trust"
+    title="信任边界：OS 账户，不是 PermissionEngine"
+    lede="对抗性 LLM 的唯一 load-bearing 边界是操作系统用户账户。进程内筛查是 UX 安全网，不是 containment。"
+  >
+    <p>
+      Maka 是单租户个人桌面助手，工具以用户 OS 身份运行。<code>SECURITY.md</code> 的诚实原则与 hermes
+      同类：PermissionEngine、输出 redact、URL allowlist、WebSearch fail-closed
+      <strong>有价值</strong>，但都在攻击者可影响的字符串上做启发式——报告它们的极限应走普通
+      issue，不是「突破沙箱」叙事。
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>Load-bearing：</strong>OS 账户；凭据
+        <code>credentials.json</code>（目录 0o700 / 文件 0o600）；Renderer ↔ Main 的 preload IPC（明文
+        secret 永不 main→renderer）。
+      </li>
+      <li>
+        <strong>Seatbelt / bubblewrap：</strong>代码与测试存在；在产品 composition 尚未把命令执行统一路由进
+        transform 之前，<strong>不是</strong>已交付的产品边界（与上一节「机制已就绪」分开诚实）。
+      </li>
+      <li>
+        <strong>Workspace privacy：</strong
+        ><code>WorkspacePrivacyContext = &#123; incognitoActive &#125;</code> 由 main
+        解析；renderer 不可自证。畸形输入 fail-closed，从不默认成
+        <code>false</code>。<code>incognitoActive: false</code> 只表示隐身未拦截——仍须各自的
+        settings / permission / retention。
+      </li>
+    </ul>
+    <p>
+      IM / bot 通道是输入面之一（见 bot onboarding 合同）：credential 落盘与 bridge 长连接分离；取消路径做
+      CAS rollback，不假装 Keychain 已落地。
     </p>
   </Section>
 
@@ -474,16 +621,74 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       </table>
     </div>
 
-    <pre class="code-block" aria-label="文件背板目录草图">sessions/&lt;sessionId&gt;/
-  ... session projection ...
-  runs/&lt;runId&gt;/
-    run.json
-    events.jsonl
-    runtime-events.jsonl
-    runtime-partials/</pre>
+    <pre class="code-block" aria-label="文件背板目录草图">{workspaceRoot}/
+  .maka-storage-root.json
+  runtime.sqlite                 # optional canonical RuntimeEvent
+  sessions/&lt;sessionId&gt;/
+    session.jsonl                # header + StoredMessage
+    task-events.jsonl + tasks.json
+    runs/&lt;runId&gt;/
+      run.json
+      events.jsonl
+      runtime-events.jsonl
+      runtime-partials/
+    shell-runs/&lt;id&gt;/state.jsonl
+  artifacts/…</pre>
     <p>
       Partial 流是有界、可替换的快照；最终 non-partial 覆盖同一语义槽。不要把直播 delta
       永远当成 durable 真相。
+    </p>
+
+    <h3 id="durability" class="subhead">什么真正 durable</h3>
+    <p>
+      <code>appendJsonl(..., &#123; durable: true &#125;)</code> 会
+      <code>fsync</code> 文件并沿 <code>durabilityRoot</code> 同步目录链；失败包装为
+      <code>DurableStoreWriteError</code>。Terminal RuntimeEvent 与 root-turn admission 走这条路径。Session
+      消息追加、task ledger、shell-run 检查点、artifact blob
+      <strong>默认不是</strong>目录链 fsync——它们可以是原子 rename 或 best-effort append。把「落盘了」说成「崩溃安全」是经典串味。
+    </p>
+    <div class="table-wrap" role="region" aria-label="durable 对照" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">写入</th>
+            <th scope="col">Current 耐久</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">RuntimeEvent terminal / root-turn admission</th>
+            <td><code>durable: true</code>（file + dir chain）</td>
+          </tr>
+          <tr>
+            <th scope="row">Session JSONL messages</th>
+            <td>Best-effort append（无默认 fsync）</td>
+          </tr>
+          <tr>
+            <th scope="row">Task / ShellRun / Artifact</th>
+            <td>投影或检查点；无目录链 sync</td>
+          </tr>
+          <tr>
+            <th scope="row">SQLite RuntimeEvent（若启用）</th>
+            <td><code>synchronous=FULL</code> + WAL</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      JSONL 尾修复：追加前若缺换行，按 <code>classifyJsonRecord</code> 截断
+      <code>incomplete-prefix</code>；<code>invalid</code> 则拒绝追加。普通 Session 读可软降级为
+      <code>system_note</code>；recovery / RuntimeEvent 读<strong>严格抛错</strong>。撕裂的 JSON
+      行是存储 corruption，不是 Phase0 合法前缀。
+    </p>
+
+    <h3 id="runtime-host" class="subhead">Runtime-host：薄网关，不是全量 RPC</h3>
+    <p>
+      Desktop 可选路径：<code>@maka/runtime-host</code> 在本地 unix socket 上选举单写者 Host，只暴露
+      <code>host.status</code> / <code>turn.start</code> / <code>turn.query</code> /
+      <code>turn.stop</code>。<code>turn.start</code> 在创建 Run 前做 durable root-turn
+      admission；client/protocol 不得 import <code>@maka/runtime</code>。Headless/CLI
+      可完全绕过 Host。不要把它教成「远程 Runtime 的全部 API」。
     </p>
   </Section>
 
@@ -491,31 +696,129 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
     id="recovery"
     label="§01 · Recovery"
     title="崩溃后修复什么"
-    lede="State repair ≠ warm resume。Recovery 不猜模型「正要做什么」。"
+    lede="State repair ≠ Phase0 prefix plan ≠ Phase1 safe continuation。三层不要塌成「warm resume」。"
   >
-    <p>启动 recovery <strong>会</strong>：</p>
-    <ul class="plain-list">
-      <li>扫描非终态 Runs 与 ledgers；</li>
-      <li>检测陈旧 model stream / tool 尾巴 / permission 等待 / 损坏的 ops 事件；</li>
-      <li>保守地提交 failed/cancelled，并修复 Session / Turn 投影。</li>
-    </ul>
-    <p>启动 recovery <strong>不会</strong>：</p>
-    <ul class="plain-list">
-      <li>在工具中途重新调用模型；</li>
-      <li>从副作用的下一行 warm-resume；</li>
-      <li>在没有 durable 事实时臆造「模型正要做的事」。</li>
-    </ul>
+    <DiagramFigure
+      caption="图 8b · 三层 recovery：启动投影修理（默认）· Phase0 对已提交前缀判决 · Phase1 旗标门控的安全续跑（新身份）。"
+      alt="三列：Startup repair、Phase0 plan、Phase1 continue。"
+    >
+      <RecoveryLayersFlow />
+    </DiagramFigure>
+
+    <h3 class="subhead">A. 启动 state repair（默认崩溃路径）</h3>
+    <p><strong>会</strong>：扫描非终态 Runs 与 ledgers；检测陈旧 model stream / tool 尾巴 / permission 等待 / 损坏 ops；保守提交 failed/cancelled 并修复 Session / Turn 投影。</p>
+    <p><strong>不会</strong>：在工具中途重新调用模型；从副作用下一行 warm-resume；在没有 durable 事实时臆造「模型正要做的事」。</p>
+
+    <h3 class="subhead">B. Phase0 failpoint 矩阵</h3>
     <p>
-      标签：<strong>state repair</strong>——未来 checkpoint resume 的地基，不是今日的 mid-tool warm
-      resume。跨进程 Attempt 耐久见 §04 TaskRun / park-grant。
+      生产 API 是纯函数：已提交 <code>RuntimeEvent</code> 前缀 → ToolOperation 投影 →
+      <code>ResumePlan</code> → <code>safe_replay</code> 或 <code>blocked</code>。机器可读目录是
+      <code>RUNTIME_RESUME_FAILPOINTS</code>（P0–P11）。它<strong>故意不假装</strong>未来 T1/T2 journal
+      已存在——只谈崩溃后仍完整的 RuntimeEvent 前缀。撕裂的 JSON 行是存储 corruption，不是合法前缀。
     </p>
+    <div class="table-wrap" role="region" aria-label="Phase0 failpoint 矩阵" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">IDs</th>
+            <th scope="col">已提交前缀</th>
+            <th scope="col">判决</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">P0</th>
+            <td><code>before_function_call</code></td>
+            <td><code>safe_replay</code>（尚无 tool op）</td>
+          </tr>
+          <tr>
+            <th scope="row">P1–P4</th>
+            <td><code>after_function_call</code></td>
+            <td>
+              <code>blocked</code> · <code>dangling_tool_state</code> · operation indeterminate；未配对
+              call 不进 provider replay
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">P5–P8</th>
+            <td><code>after_function_response</code></td>
+            <td><code>safe_replay</code>（call/response 已配对）</td>
+          </tr>
+          <tr>
+            <th scope="row">P9–P11</th>
+            <td><code>after_terminal_event</code></td>
+            <td>工具判决同前一前缀；terminal fact 留在 canonical ledger</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      期望 high-water 与重开前缀不一致 → 一律 <code>runtime_offset_mismatch</code>。SIGKILL 进程崩溃 harness
+      钉住上述十二点；不宣称掉电 / fsync 耐久。
+    </p>
+
+    <h3 class="subhead">C. Phase1 safe-boundary continuation</h3>
+    <p>
+      仅当 <code>MAKA_RUNTIME_SAFE_BOUNDARY_RESUME=1</code> 时，host 才暴露 Safe resume /
+      <code>/resume</code>。续跑<strong>从不</strong>复活旧 provider stream / JS 栈 / OS
+      进程；它创建新的 Invocation / Run / Turn，先 durable 写入 continuation-start RuntimeEvent，再向
+      provider 投递已校验的 replay（不重复 user message）。Planner 任一事实缺失或矛盾即
+      <code>park</code>；执行前再校验一次。这是单进程所有权，不是分布式 fencing。
+    </p>
+
+    <h3 class="subhead">RecoveryResolver：唯一判定权威</h3>
+    <p>
+      Planner / CLI / UI 不得各自拼装 call / dispatch / response。它们只消费
+      <code>resolveRuntimeRecovery()</code> 的稳定 decision。RuntimeEvent 是唯一 canonical recovery
+      fact；Tool Journal 是可重建投影（见 RecoveryResolver ADR）——冲突以 RuntimeEvent 为准。
+    </p>
+    <div class="table-wrap" role="region" aria-label="RecoveryResolver 决策表" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">事实组合</th>
+            <th scope="col">判定</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">call + matching response（可无 dispatch）</th>
+            <td><code>completed</code></td>
+          </tr>
+          <tr>
+            <th scope="row">call + dispatch，无 response</th>
+            <td><code>indeterminate</code> / reconcile_required —— <strong>不得</strong>自动重跑</td>
+          </tr>
+          <tr>
+            <th scope="row">call，无 dispatch/response，新协议 marker</th>
+            <td><code>definitely_not_dispatched</code></td>
+          </tr>
+          <tr>
+            <th scope="row">同上但 legacy / unknown protocol</th>
+            <td><code>indeterminate</code>（缺事件 ≠ 证明未执行）</td>
+          </tr>
+          <tr>
+            <th scope="row">orphan / duplicate / identity conflict</th>
+            <td><code>corruption</code> · fail-closed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      T1 是独立、非模型可见的 <code>actions.toolDispatch</code> RuntimeEvent：含义是「已越过不可安全假定
+      implementation 未执行的边界」，不是「副作用已发生」。协议 marker
+      <code>toolBoundary: t1_after_preflight_v1</code> 只在首个 canonical 事件、且 durable commit sink
+      真正接线时写入——不能按软件版本臆造。
+    </p>
+
     <div class="stub">
       <p class="stub__tag">Current vs Target</p>
       <p>
-        Warm mid-tool resume = Target / 非 Current 启动 recovery。高级旁注：durable safe-boundary
-        resume phases 见
-        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>maka:pr:1223</a>
-        ——教学以 Current 诚实为准，不把演进阶段写成已默认开启。
+        默认启动路径仍是 state repair。Warm mid-tool resume = Target。Phase1 是旗标门控的 Current
+        能力，不是默认开启。跨进程 Attempt 耐久见
+        <a href={`${import.meta.env.BASE_URL}chapters/04-the-durable-task-loop/#crash`}>§04 crash</a>。机制旁注：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>maka:pr:1223</a>；测试钉：
+        <code>runtime-resume*.test.ts</code>、<code>recovery-resolver.test.ts</code>。
       </p>
     </div>
   </Section>
@@ -777,6 +1080,33 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       </li>
     </ul>
 
+    <h3 id="usage-stores" class="subhead">Usage 双存储与定价诚实</h3>
+    <p>
+      Hit/miss/write 诊断之上，还有两条<strong>不同问题</strong>的存储路径，不要混成「账单真相」：
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong><code>telemetry.json</code>（TelemetryRepo）</strong> —
+        <code>recordLlmCall</code> / <code>recordToolInvocation</code> 写入；含 pricing
+        overrides；定价键是 <code>providerId:modelId</code>，查不到单价则成本记
+        <strong>$0</strong>（不是抛错）。
+      </li>
+      <li>
+        <strong>Session JSONL 聚合（usage-stats-store）</strong> — Settings
+        <code>usageStats()</code> 扫描各 session 的 <code>token_usage</code> /
+        tool 行；<strong>不读</strong> telemetry.json。
+      </li>
+      <li>
+        <strong>Provider request capture</strong> — 完整序列化请求进 artifact + ledger 事件
+        <code>provider_request_captured</code>，供 debug/replay；桌面 UI 默认隐藏；<strong>不是</strong>
+        计费 telemetry。不要把它当成 provider cache key。
+      </li>
+    </ul>
+    <p>
+      WebSearch 的查询字符串在 <code>recordToolInvocation</code> 边界被 scrub（隐私承诺）。Builtin
+      pricing 是有日期的快照；特殊套餐靠 overrides——不要假装永远最新。
+    </p>
+
     <h3 id="cost-fail-open" class="subhead">不为 cache 删除事实</h3>
     <ul class="plain-list">
       <li>§02：archive 失败 → 保留完整 tool result message。</li>
@@ -803,6 +1133,137 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
   </Section>
 
   <Section
+    id="skills"
+    label="§01 · Skills"
+    title="技能目录是预算内广告，不是永远在线的说明书"
+    lede="Catalog 进 system prompt；body 走懒加载。allowed-tools 从不授权。"
+  >
+    <p>
+      Maka 把技能正文留在 <code>SKILL.md</code> 里，不塞进每轮 always-on system prompt。Prompt 只携带有界
+      <strong>catalog</strong>；匹配任务时，只读 <code>Skill</code> 工具（或显式
+      <code>/skill:</code> / 调用芯片）再加载完整说明。纪律写在
+      <code>docs/skill-catalog-policy.md</code>，并由 <code>packages/runtime/src/skills.ts</code> /
+      <code>skill-invocation.ts</code> 钉住。
+    </p>
+    <h3 class="subhead">发现 → 门禁 → 预算</h3>
+    <ol class="plain-list numbered">
+      <li>
+        按源优先级扫描：project → workspace 兼容路径 → user；同 id
+        <strong>先发现者胜</strong>；同目录内按 display name 排序。
+      </li>
+      <li>排除 disabled。</li>
+      <li>
+        若 host 提供 capabilities：缺少显式 <code>required-tools</code> /
+        <code>required-capabilities</code> 的技能直接隐藏。<code>allowed-tools</code> /
+        <code>declaredTools</code> 只是声明，<strong>永不 grant</strong>。
+      </li>
+      <li>
+        再按预算填充 catalog：模型 context window 的 2%，钳制在约 4 000–8 000
+        estimated tokens（四字符一 token）；窗口未知时回退
+        <code>MAX_SKILLS_PROMPT_CHARS = 18000</code>。窗口是<strong>显式 prompt 输入</strong>，不是 scanner
+        里的隐式 provider 查询。
+      </li>
+    </ol>
+    <p>
+      预算裁掉的条目仍会列出 id：省略只影响广告，不禁用加载——enabled 且 host 兼容的技能仍可按 id/name
+      懒加载。Host gate <strong>先于</strong>预算截断，避免广告出主机根本没有的技能。
+    </p>
+    <h3 class="subhead">显式调用与信任帧</h3>
+    <p>
+      <code>composeSkillInvocationMessage</code> 在用户文本前注入
+      <code>&lt;invoked-skill&gt;</code> 块，并声明：技能内容低于 system / developer / safety /
+      permission；不能授权工具、削弱 prompt、泄露秘密或覆盖更高优先级指令；本轮已加载的技能不要再调
+      <code>Skill</code>。单条加载失败不阻断其他调用或发送本身。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Runtime vs Desktop</p>
+      <p>
+        Runtime 拥有扫描、catalog、懒加载与调用合成。Desktop 的 lock / provenance / managed-source /
+        bundled catalog 是产品治理面，不是第二套 runtime 真相。29 份 bundled
+        <code>SKILL.md</code> 正文是产品内容——本站只教<strong>机制</strong>，不把它们读成 Destination。
+      </p>
+    </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        合同测试：<code>packages/runtime/src/__tests__/skills.test.ts</code>、
+        <code>skill-invocation.test.ts</code>。研究提纲：
+        <code>docs/research/skill-catalog-policy-deep-outline.md</code>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="mcp"
+    label="§01 · MCP"
+    title="MCP 投影进同一条 ToolRuntime，不是第二套 Agent Loop"
+    lede="Manager 连远端；adapter 变成 MakaTool；permission / log / abort 全部复用。"
+  >
+    <p>
+      MCP 接入的目标是复用现有 <code>MakaTool</code> 执行边界：
+      <code>McpClientManager</code>（<code>@maka/mcp</code>）负责连接、发现与调用；
+      <code>buildMcpTools</code> 把远端 tool 投影成动态 <code>MakaTool[]</code>。于是 MCP 自动进入
+      PermissionEngine、Runtime event log、telemetry、result persistence、abort 与 loop gate——没有并行的
+      「MCP agent」。
+    </p>
+    <pre class="code-block" aria-label="MCP 数据流">Desktop IPC → McpConfigStore (mcp.json)
+  → McpClientManager (stdio | Streamable HTTP | SSE)
+  → buildMcpTools → AiSdkBackend
+  → ToolRuntime (permission + events + telemetry)
+  → Manager.callTool</pre>
+    <h3 class="subhead">信任与命名</h3>
+    <ul class="plain-list">
+      <li>
+        所有 MCP tool 的 <code>categoryHint</code> 固定为 <code>network_send</code>。服务器
+        <code>readOnlyHint</code> 是<strong>不可信 advisory</strong>，不能降低 permission policy；explore
+        模式对此 fail closed。
+      </li>
+      <li>
+        代理名 <code>mcp__&#123;serverId&#125;__&#123;toolName&#125;</code>；超过 64 字符用稳定 hash
+        后缀，并检测 collision。
+      </li>
+      <li>
+        stdio 默认只继承 allowlist 环境变量；显式 <code>env</code> 最后覆盖。Renderer
+        <strong>永不</strong>持有 MCP client 或 child process。
+      </li>
+      <li>
+        Rich output 对 text / image / summary 有聚合上限；audio、resource blob、unknown payload
+        不直接灌进 model context。
+      </li>
+    </ul>
+    <h3 class="subhead">配置生命周期</h3>
+    <p>
+      Workspace <code>mcp.json</code> 使用通用 <code>mcpServers</code> map；完整 normalized fingerprint
+      做 reconcile——改谁动谁。写入配置 ≠ 已授权 ≠ 已连接：需要 setup 的模板以 disabled
+      落盘，用户补齐并主动启用后才参与连接。配置变更或
+      <code>notifications/tools/list_changed</code> 后先 reconcile，再失效 backend
+      cache；正在跑的 turn 不强杀，旧 backend 在最后一个 active run 结束后释放，下一 turn
+      才看见新 tool snapshot。连上的 MCP tools 进入可见 schema，因此也会影响
+      <a href="#tool-economy">#tool-economy</a> 的 <code>toolSchemaHash</code>。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">V1 vs V2</p>
+      <p>
+        V1（已实现）：stdio / Streamable HTTP / SSE、分页 list、list_changed、超时/abort、桌面「扩展 &gt;
+        MCP」CRUD。V2 backlog：OAuth 2.1 + PKCE、resources UI、loopback proxy、更细粒度 trusted-server
+        policy——不要把 backlog 读成 Current。
+      </p>
+    </div>
+    <p>
+      Desktop 侧 Computer Use 是另一条正交合同（观察帧 / cua-driver），见
+      <a href={`${import.meta.env.BASE_URL}guides/computer-use`}>/guides/computer-use</a>。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        <code>packages/mcp/src/__tests__/manager.test.ts</code> ·
+        <code>packages/runtime/src/__tests__/mcp-tools.test.ts</code>。提纲：
+        <code>docs/research/mcp-runtime-deep-outline.md</code>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
     id="invariants"
     label="§01 · Invariants"
     title="必须保护的不变量"
@@ -817,13 +1278,15 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       <li>Permission / usage / artifact 以 actions 旅行，不伪装成聊天。</li>
       <li>Tool call/result pairing 必须可重建。</li>
       <li>Partial 流可替换；durable 事实不是永远沉默的 delta。</li>
-      <li>Recovery 从 durable 事实修投影；它不发明成功。</li>
+      <li>Recovery 从 durable 事实修投影；它不发明成功；unknown tool 组合 fail-closed。</li>
+      <li>Sandbox 选择不授予批准；required 却无后端 → fail-closed，从不静默 host。</li>
       <li>Request materialization 可变；message facts 保持稳定（本 cost spine）。</li>
     </ol>
     <p>
       思想来源可粗读为：ADK 式「Session history 是事实，working context 是投影」；以及分布式系统
       log-first / event sourcing 的直觉——不要把每个下游视图当成独立真相。§02 在此之上谈 Tool
-      Result 证据层；§03 谈 Compaction 只改投影；§04 谈跨 Attempt 的 Task envelope。
+      Result 证据层；§03 谈 Compaction 只改投影；§04 谈跨 Attempt 的 TaskRun envelope，并与
+      session task ledger 区分。
     </p>
   </Section>
 
@@ -854,25 +1317,35 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         <a href={`${import.meta.env.BASE_URL}history/pr/41`}>41</a>
       </li>
       <li>
-        次要 / 高级：
-        <a href={`${import.meta.env.BASE_URL}history/pr/768`}>768</a>（docs）·
-        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>1223</a>（resume phases）
+        Recovery / resume：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>1223</a>（safe-boundary phases）·
+        测试 <code>runtime-resume*.test.ts</code> / <code>recovery-resolver.test.ts</code>
+      </li>
+      <li>
+        Sandbox：测试 <code>sandbox-manager.test.ts</code> /
+        <code>sandbox-escalation.test.ts</code> · maka #843（剩余 enforcement）
+      </li>
+      <li>
+        次要：
+        <a href={`${import.meta.env.BASE_URL}history/pr/768`}>768</a>（docs）
       </li>
     </ul>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + produce/consume + 身份层 + 执行主链 / 双流 / 循环 / 权限 / 终态竞态</li>
-      <li>三套存储权威 + recovery = state repair</li>
-      <li>三层回放 → #request-shape cost spine（prefixHash / 归因梯 / tool economy）</li>
+      <li>关键图 + 主链 / 双流 / 循环 / 权限 / 沙箱 / 终态竞态</li>
+      <li>三套存储 + recovery 三层（repair / Phase0 / Phase1）+ Resolver</li>
+      <li>三层回放 → #request-shape cost spine</li>
+      <li>#skills catalog 预算 + #mcp 同一 ToolRuntime（非第二 loop）</li>
       <li>
         机制旁注
         <a href={`${import.meta.env.BASE_URL}history/pr/9`}>9</a> /
         <a href={`${import.meta.env.BASE_URL}history/pr/410`}>410</a> /
-        <a href={`${import.meta.env.BASE_URL}history/pr/21`}>21</a>（非仅 768）
+        <a href={`${import.meta.env.BASE_URL}history/pr/21`}>21</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/1223`}>1223</a>
       </li>
-      <li>读者测验：迟到 complete after abort；更短却更贵</li>
+      <li>读者测验：迟到 complete after abort；更短却更贵；after_function_call 为何 block</li>
     </ul>
   </div>
 </ChapterShell>

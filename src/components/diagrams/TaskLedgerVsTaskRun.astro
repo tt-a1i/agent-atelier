@@ -1,0 +1,99 @@
+---
+/**
+ * §04 protocol — session task ledger vs headless TaskRun (two “tasks”).
+ */
+---
+
+<svg
+  class="tl-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="tl-kicker tl-stage tl-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · TWO TASK OBJECTS · DO NOT COLLAPSE
+  </text>
+  <line
+    class="tl-stage tl-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="tl-stage tl-stage--1" transform="translate(8,52)">
+    <rect width="420" height="196" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="420" height="2" fill="var(--accent)"></rect>
+    <text class="tl-idx" x="14" y="30" fill="var(--accent)">SESSION TASK LEDGER</text>
+    <text class="tl-line" x="14" y="62" fill="var(--ink)">Interactive work items in a Session</text>
+    <text class="tl-line" x="14" y="88" fill="var(--ink)">id (UUID) + key (T1 / T1.1)</text>
+    <text class="tl-line" x="14" y="114" fill="var(--ink)">Advisory status · compact evidence</text>
+    <text class="tl-line" x="14" y="148" fill="var(--mute)">task_create / update / list / get</text>
+    <text class="tl-line" x="14" y="174" fill="var(--mute)">Never overrides FS/git/test truth</text>
+  </g>
+
+  <g class="tl-stage tl-stage--2" transform="translate(448,52)">
+    <rect width="412" height="196" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="412" height="2" fill="var(--accent)" opacity="0.45"></rect>
+    <text class="tl-idx" x="14" y="30" fill="var(--accent)">HEADLESS TASKRUN</text>
+    <text class="tl-line" x="14" y="62" fill="var(--ink)">Durable execution envelope</text>
+    <text class="tl-line" x="14" y="88" fill="var(--ink)">taskRunId · Attempts · budgets</text>
+    <text class="tl-line" x="14" y="114" fill="var(--ink)">Park / grant / continue loop</text>
+    <text class="tl-line" x="14" y="148" fill="var(--mute)">Task Event Log · projectTaskRun()</text>
+    <text class="tl-line" x="14" y="174" fill="var(--mute)">Refs Session / AgentRun / RuntimeEvents</text>
+  </g>
+</svg>
+
+<style>
+  .tl-flow {
+    font-family: var(--sans);
+  }
+  .tl-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .tl-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .tl-line {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tl-stage {
+      opacity: 0;
+      animation: tl-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .tl-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .tl-stage--1 {
+      animation-delay: 0.2s;
+    }
+    .tl-stage--2 {
+      animation-delay: 0.36s;
+    }
+    @keyframes tl-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tl-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

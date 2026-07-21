@@ -1,0 +1,378 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/computer-use");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+---
+
+<ReportLayout
+  title="Computer Use 六合同 · Agent Atelier"
+  description="Maka Desktop Computer Use：观察权威、绑定校验、cua-driver 所有权、证据类与 host 事件——配套研报，不是第七世界观章。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Computer Use 六合同</span>
+        <span class="masthead__title-en">Computer-use contract suite</span>
+      </h1>
+      <p class="masthead__sub">
+        Desktop foundation 的 stacked 合同：观察帧权威、动作绑定、唯一 native executor、证据资格边界。正交于 §01–§06
+        世界观——从 <a href={`${ch01}#mcp`}>§01 · MCP</a> /
+        <a href={`${ch01}#permission`}>#permission</a> 进入，再读本页。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/computer-use</span>
+        <span>Research · #47</span>
+        <span>
+          <a href={localePath("en", "guides/computer-use")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="CU · Scene"
+      title="为什么需要合同，而不是一段 demo"
+      lede="坐标、焦点、遮挡与进程代际让「点一下」变成 TOCTOU 问题。"
+    >
+      <p>
+        Computer Use 把模型意图变成真实窗口上的输入。若允许「重新选当前最顶层窗口」、在未知 outcome
+        下自动重放、或把 approval 当成 observation 新鲜度证明，就会在错误目标上产生不可撤销副作用。Maka
+        用六份当前合同 + <code>packages/computer-use</code> + Runtime
+        <code>openai-computer-*</code> 测试把这条边界钉死；权威冲突时
+        <strong>code + contract tests 胜出</strong>。
+      </p>
+      <blockquote class="pull">
+        Observation owns coordinates; cua-driver owns dispatch; approval never proves freshness.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="six"
+      label="CU · Six docs"
+      title="六份合同怎么叠"
+      lede="Foundation 是不可破坏底线；其余层分别钉模型路径、证据资格、host 事件与产物完整性。"
+    >
+      <ol class="plain-list numbered">
+        <li>
+          <code>computer-use-foundation-contract.md</code> — 观察 / 绑定 / 校验 / 执行所有权 / 后置条件 /
+          服务生命周期 / 批准与隐私 / presentation 隔离。
+        </li>
+        <li>
+          <code>computer-use-model-loop-foundation.md</code> — 主路径 <code>maka_computer</code>；原生
+          OpenAI <code>computer_call</code> 默认 observation-only。
+        </li>
+        <li><code>computer-use-evidence-classes.md</code> — 四类证据资格。</li>
+        <li><code>computer-use-provider-evidence.md</code> — provider 矩阵与 sanitizer。</li>
+        <li><code>computer-use-host-events-contract.md</code> — 可归因 typed producers + 故意缺口。</li>
+        <li><code>cua-driver-artifact-integrity.md</code> — pin/hash；非 notarization。</li>
+      </ol>
+      <p>
+        Headless 暂不纳入 foundation 范围。CLI 仅实验性 opt-in。坐标/像素/CGEvent 路径描述为 disabled 且
+        fail closed。
+      </p>
+    </Section>
+
+    <Section
+      id="observation"
+      label="CU · Observation"
+      title="Observation authority 与动作绑定"
+      lede="坐标只在产生它的 frame 内有意义；mutation 在首个异步边界前完成 claim。"
+    >
+      <ul class="plain-list">
+        <li>
+          每个可执行 observation：唯一 <code>frameId + epoch</code>、截图尺寸、<code>pid + windowId</code>、capture-local
+          坐标；适用时含 Electron page identity。
+        </li>
+        <li>Dispatch <strong>禁止</strong>重新选择当前全局最高 z-order 窗口。</li>
+        <li>
+          新 observation、turn/session 结束、abort、user stop、service loss、明确 intervention 使旧 action
+          claim 与 keyboard ownership 失效。
+        </li>
+        <li>
+          Mutation 在第一次异步边界前完成参数快照、规范化、fingerprint、claim，并绑定 active
+          observation；有顺序依赖的动作按 session 串行。
+        </li>
+        <li>stale / replay / unclaimed / malformed / targetless → fail closed；无裸像素或抢焦点回退。</li>
+      </ul>
+      <h3 class="subhead">Exact target validation</h3>
+      <p>
+        Coordinate action 校验同一 window identity、geometry、screenshot scale、page identity 与 occlusion。Semantic
+        action 优先按稳定 token refetch；否则仅唯一且 identity-preserving 匹配。无关 AX/DOM 内容变化不能合成
+        <code>user_intervened</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="executor"
+      label="CU · Executor"
+      title="cua-driver 是唯一 native executor"
+      lede="Agent 不得移动真实鼠标、抢前台，或做无窗口桌面输入。"
+    >
+      <p>
+        Window/page discovery、semantic preparation、input dispatch、effect readback 都留在 cua-driver
+        边界内。Keyboard ownership 绑定
+        <code>session + turn + generation + pid + windowId + page/frame</code>，并在失败、stale、新
+        observation、intervention、service generation 变化、turn/session 结束时撤销。Child process
+        在未知 action outcome 下退出 → <strong>re-observe</strong>，禁止自动重放。
+      </p>
+      <h3 class="subhead">Postcondition</h3>
+      <ul class="plain-list">
+        <li>Mutation 成功后旧 observation 被消费并返回 fresh full observation。</li>
+        <li>Transport success ≠ business success；<code>verified:true</code> 需 action-specific effect/readback。</li>
+        <li><code>supported:true, ok:false</code> 为本次 terminal failure。</li>
+        <li>Retry 基于 fresh observation 与新 claim——禁止重试旧 coordinate/fingerprint。</li>
+      </ul>
+    </Section>
+
+    <Section
+      id="approval"
+      label="CU · Approval"
+      title="分级 lease：批准 ≠ 新鲜度"
+      lede="PermissionEngine 与 CU lease 都是门；不要混成一句「已批准」。"
+    >
+      <p>
+        Approval 是 app capability gate（metadata / screenshot / pointer / keyboard / semantic 分级短
+        lease），不是 active observation 或 action freshness 证明。目标、action class、observation 或
+        session generation 变化时重新授权。敏感应用、secure/password field、不支持目的地 fail closed。截图、键入文本、坐标、原始
+        AX、窗口标题、secret、raw page content 默认不进持久 session log / telemetry / evaluation report。
+      </p>
+      <p>
+        Presentation（cursor/PiP）位于 targeting <strong>下游</strong>：不能选择、转换、授权或改写执行坐标。
+        <code>readyForInteraction</code> 最多以有界 fail-open 影响时机；<code>finished</code> 不阻塞
+        native dispatch。详见 <a href={`${ch01}#permission`}>§01 · PermissionEngine</a> 的控制流 park/grant——那是另一扇门。
+      </p>
+    </Section>
+
+    <Section
+      id="model-loop"
+      label="CU · Model loop"
+      title="主路径 maka_computer；原生 computer 默认只观察"
+      lede="AX / semantic 优先；整批 native action 先校验再执行。"
+    >
+      <pre class="code-block" aria-label="模型路径">model function/tool call
+  → Computer Use facade
+  → observed AX element identity
+  → stale-element refetch + uniqueness
+  → element executor (AXPick / AXPress / AXValue…)
+  → synthetic event fallback only inside native executor</pre>
+      <p>
+        Provider adapter 不得推断缺失的 observation ID，也不得静默绑定到「当前 frame」。OpenAI strict
+        schema 下 adapter 投影 action 允许键；core <code>maka_computer</code> parser 保持 provider-neutral
+        严格。真实 provider 证据见 provider-evidence 合同；缺凭证时用 hermetic-protocol，不得升级为
+        real-runtime。
+      </p>
+    </Section>
+
+    <Section
+      id="evidence"
+      label="CU · Evidence"
+      title="四类证据是资格边界"
+      lede="Missing evidence 是 invalid/inconclusive——永不从 fixture 状态推断。"
+    >
+      <div class="table-wrap" role="region" aria-label="证据类" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Class</th>
+              <th scope="col">含义</th>
+              <th scope="col">能否填 real 矩阵格</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>real-runtime</code></td>
+              <td>真人 provider + 生产 Runtime + owned fixture + cua-driver</td>
+              <td>可以（且必须满足报告合同）</td>
+            </tr>
+            <tr>
+              <td><code>fault-injection</code></td>
+              <td>注入命名失败（如 wrapper 注入 intervention）</td>
+              <td>否——回归有用，不能 qualify</td>
+            </tr>
+            <tr>
+              <td><code>hermetic-protocol</code></td>
+              <td>本地协议服务器；无 live credential 声称</td>
+              <td>否</td>
+            </tr>
+            <tr>
+              <td><code>static-contract</code></td>
+              <td>源码/schema/确定性 harness</td>
+              <td>否</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        与 <a href={ch02}>§02</a> 的 tool-result 证据层词汇不同：这里谈的是 <strong>provider
+        qualification</strong>。Sanitizer 保留 action 类型/时序/结果码，剥离坐标、键入文本、原始 UI、凭证与
+        provider payload。
+      </p>
+    </Section>
+
+    <Section
+      id="host-events"
+      label="CU · Host events"
+      title="只连接可归因的 typed 事件"
+      lede="AX/DOM 内容抖动 ≠ 物理介入。"
+    >
+      <ul class="plain-list">
+        <li>
+          Typed outcomes：<code>user_intervened</code> → re-observe；<code>screen_locked</code> →
+          locked；<code>blocked_url</code> → terminal；unknown/unavailable/mismatch → re-observe。
+        </li>
+        <li>cua-driver service release 清理 executor-local observation / keyboard ownership，并推进 Runtime session。</li>
+        <li>
+          <strong>故意缺口</strong>：尚无可靠全局 macOS physical-input producer 时不做声称；不用 raw error
+          string matching 当 producer；不强行套用 Codex 的 signed turn-ended helper。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="artifact"
+      label="CU · Artifact"
+      title="完整性检查 ≠ 可分发"
+      lede="check:cua-driver-artifact 钉住本地/预打包输入；distributionReady 仍为 false。"
+    >
+      <p>
+        仓库 pin 一份 macOS universal cua-driver：archive/binary SHA-256、版本、arm64+x86_64、结构签名、license/source-claim
+        hashes。它<strong>不</strong>证明可复现构建、可信 attestation、完整 SBOM、Developer ID 嵌套签名 /
+        notarization / Gatekeeper。故完整性检查故意不进 <code>check:release</code>，直到 release pipeline
+        补齐 provenance。
+      </p>
+    </Section>
+
+    <Section
+      id="failures"
+      label="CU · Failures"
+      title="Fail-closed 矩阵（教学用）"
+      lede="宁可停，也不要猜目标。"
+    >
+      <div class="table-wrap" role="region" aria-label="失败矩阵" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">情形</th>
+              <th scope="col">结果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>旧 frame 上的 claim</td>
+              <td>stale → fail closed</td>
+            </tr>
+            <tr>
+              <td>缺失 / 歧义 semantic target</td>
+              <td>拒绝；不猜测</td>
+            </tr>
+            <tr>
+              <td>遮挡 / geometry / scale / page 变化</td>
+              <td>拒绝</td>
+            </tr>
+            <tr>
+              <td>模型省略 <code>observation_id</code></td>
+              <td>typed tool error；要求再观察</td>
+            </tr>
+            <tr>
+              <td>transport OK 但 effect 失败</td>
+              <td><code>supported:true, ok:false</code></td>
+            </tr>
+            <tr>
+              <td>未知 child outcome</td>
+              <td>re-observe；禁止自动重放</td>
+            </tr>
+            <tr>
+              <td>fault-injected intervention</td>
+              <td>可作回归；不可填 real 格</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="history-aside">
+        <p class="history-aside__tag">验证</p>
+        <p>
+          <code>packages/computer-use/src/__tests__/*</code> ·
+          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · 操作命令
+          <code>e2e:computer-use-real</code> / <code>process-restart</code> /
+          <code>real-model</code>。Archive hardening（tombstone、per-session queue、generation
+          release）只取 durable 政策，不复盘 PR 流水账。提纲：
+          <code>docs/research/computer-use-six-contracts-deep-outline.md</code>。
+        </p>
+      </aside>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

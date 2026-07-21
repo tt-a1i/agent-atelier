@@ -9,6 +9,7 @@ import BudgetLayersFlow from "../../components/diagrams/BudgetLayersFlow.astro";
 import ColdStartResumeFlow from "../../components/diagrams/ColdStartResumeFlow.astro";
 import ParkGrantResumeFlow from "../../components/diagrams/ParkGrantResumeFlow.astro";
 import DurableCheckpointFlow from "../../components/diagrams/DurableCheckpointFlow.astro";
+import TaskLedgerVsTaskRun from "../../components/diagrams/TaskLedgerVsTaskRun.astro";
 ---
 
 <ChapterShell chapterId="04">
@@ -16,7 +17,8 @@ import DurableCheckpointFlow from "../../components/diagrams/DurableCheckpointFl
     <p>
       当任务长于单次 Turn、Run，甚至长于一个进程的存活时间时，系统必须为它保留稳定身份、进度、预算与中断边界。Headless
       引入 <code>TaskRun</code>：每次 Agent 执行成为 bounded Attempt，跨 Attempt 事实写入 append-only Task Event
-      Log，再投影出下一步工作状态——不重写 §01–§03 Runtime，而是在外面加一层 durable envelope。关键句：
+      Log，再投影出下一步工作状态——不重写 §01–§03 Runtime，而是在外面加一层 durable envelope。交互式 Session
+      另有一套 <strong>task ledger</strong>（短键待办），切勿与 TaskRun 塌成同一个「task」。关键句：
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -108,10 +110,117 @@ Long task progress
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Task ledger / Headless orchestration 相关机制演进可对照
+        Headless TaskRun orchestration：
         <a href={`${import.meta.env.BASE_URL}history/pr/567`}>maka:pr:567</a>。架构章合入：
         <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a>
-        （docs: durable task loop chapter）。
+        （docs: durable task loop chapter）。交互式 session task ledger 见下一节
+        <a href="#ledger">#ledger</a>——不要与 TaskRun 混称。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="ledger"
+    label="§04 · Session ledger"
+    title="Session task ledger ≠ TaskRun"
+    lede="交互式短键待办是 advisory 控制态；Headless TaskRun 才是跨 Attempt 的 durable envelope。"
+  >
+    <DiagramFigure
+      caption="图 1b · 两个「task」对象：Session ledger（id+key、四工具、advisory status）vs TaskRun（Attempts、budget、park/grant）。"
+      alt="左右对照：Session task ledger 与 Headless TaskRun。"
+    >
+      <TaskLedgerVsTaskRun />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="ledger 与 TaskRun 对照" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">轴</th>
+            <th scope="col">Session task ledger</th>
+            <th scope="col">Headless TaskRun</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">范围</th>
+            <td>交互 Session 内的工作项</td>
+            <td>benchmark / 自动化执行信封</td>
+          </tr>
+          <tr>
+            <th scope="row">身份</th>
+            <td>durable UUID <code>id</code> + 短键 <code>key</code>（<code>T1</code> / <code>T1.1</code>）</td>
+            <td><code>taskRunId</code> + Attempt ids</td>
+          </tr>
+          <tr>
+            <th scope="row">存储</th>
+            <td><code>task-events.jsonl</code> + <code>tasks.json</code> 投影</td>
+            <td>按 TaskRun 分文件的 Task Event Log</td>
+          </tr>
+          <tr>
+            <th scope="row">状态含义</th>
+            <td>Advisory（pending…cancelled）</td>
+            <td>编排生命周期（queued/started/parked/terminal）</td>
+          </tr>
+          <tr>
+            <th scope="row">模型面</th>
+            <td>turn-tail 注入 + <code>task_*</code> 四工具</td>
+            <td>Headless continue / budget 循环——不是聊天 todo</td>
+          </tr>
+          <tr>
+            <th scope="row">证据权威</th>
+            <td>compact reason/evidence；<strong>永不</strong>覆盖 FS/git/test/tool 真相</td>
+            <td>progress/evidence 服务 loop 决策；仍引用 RuntimeEvent</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">身份与层级</h3>
+    <p>
+      读写接受 UUID 或短键。短键在 per-session 串行写队列内分配；子任务把父 UUID 存
+      <code>parentId</code>，短键在父键下延伸。父子边必须刚好加深一层（<code>T1</code> →
+      <code>T1.1</code>）；跳级（直接 <code>T1</code> → <code>T1.1.1</code>）使投影失效并 fail-closed。终态父下不可再开子任务；任一后代非终态时父不能
+      <code>completed</code>。
+    </p>
+
+    <h3 class="subhead">状态、证据与 resumeTrust</h3>
+    <pre class="code-block" aria-label="ledger 状态转移">pending → in_progress | cancelled
+in_progress → blocked | completed | failed | cancelled
+blocked → in_progress | cancelled | failed
+failed → pending | cancelled
+completed → in_progress   only explicitReopen
+cancelled → pending       only explicitReopen</pre>
+    <p>
+      进入 blocked / failed / completed 分别需要 <code>blockedReason</code> /
+      <code>failureReason</code> / <code>completionEvidence</code>。<code>resumeTrust</code>（trusted /
+      needs_revalidation / stale / repaired / untrusted）是系统诊断：模型可见的 turn-tail 与
+      <code>task_list</code> / <code>task_get</code> <strong>不注入</strong>该字段；debug/export 可读。
+    </p>
+
+    <h3 class="subhead">工具与子 Agent</h3>
+    <p>
+      <code>task_create</code> / <code>task_update</code> / <code>task_list</code> /
+      <code>task_get</code> 只读写本地 session 状态，不派发工作。<code>MAKA_TASK_LEDGER_TOOLS=false</code>
+      可关闭注册。<code>agent_spawn(task_id=…)</code> 在子 turn 分配后认领任务（
+      <code>in_progress</code> + child_agent owner）；子成功<strong>不会</strong>自动完成父任务——父须核对并写
+      <code>completionEvidence</code>。活跃任务不可被另一子 turn 偷走。
+    </p>
+
+    <p>
+      Prompt 尾预算约 8 000 字符，优先 in_progress / pending / blocked 分支；终态任务七天后逻辑归档（存储仍
+      append-only）。Goal 外部 evaluator 仍先裁决；仅当 Goal 继续且仍有 actionable keys 时注入一次 reminder——ledger
+      不是 Goal 真相，也不是 §05 verifier。
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        权威：<code>docs/session-task-ledger-lifecycle.md</code> ·
+        <code>packages/core/src/task-ledger.ts</code> ·
+        <code>task-ledger-store.ts</code> · <code>task-ledger-tools.ts</code> 与对应
+        <code>__tests__</code>。提纲：
+        <code>docs/research/session-task-ledger-deep-outline.md</code>。
       </p>
     </aside>
   </Section>
@@ -350,8 +459,160 @@ Long task progress
       workspace，但 TaskRunStore 不拥有该外部 workspace 的 snapshot、lease renewal 或 fencing
       protocol。Throwaway directory 只隔离 fixture mutation，不是 OS security sandbox；真实
       model-backed backend 必须提供 <code>RealBackendIsolation</code>。Headless 验证 isolation record 的
-      shape 与非空 label——真正的 filesystem / network / process / secret 隔离由外部 executor 兑现。
+      shape 与非空 label——真正的 filesystem / network / process / secret 隔离由外部 executor 兑现。详见
+      <a href="#harbor-trust">#harbor-trust</a>。
     </p>
+  </Section>
+
+  <Section
+    id="harbor-trust"
+    label="§04 · Harbor trust"
+    title="Eval 默认不信任：隔离是断言，不是猜测"
+    lede="测量对象可能对抗；没有边界就 fail closed。Harbor 是 executor 载体，不是第二套 Task 真相。"
+  >
+    <p>
+      <code>@maka/headless</code> 的 eval 姿态写得很硬：被测 config
+      <strong>在构造上不可信</strong>，不得碰到 host 凭证。没有 OS 级隔离时，唯一安全执行是默认 fail
+      closed——CLI 仍只接线惰性 <code>fake</code> backend；JSON spec 里的 model-backed backend 会非零退出，除非走
+      programmatic API 并显式提供隔离。
+    </p>
+    <h3 class="subhead">RealBackendIsolation</h3>
+    <p>
+      真实模型 eval 必须传入 <code>realBackendIsolation</code>（Current：<code>kind: 'external'</code>）与
+      <code>registerBackends</code>。记录本身是<strong>断言</strong>：工具执行已在 host credential
+      process 之外（Harbor / Terminal-Bench / Docker workspace executor 等），且
+      <code>label</code> 非空——真值对象不能意外打开实后端。需要标准工具面时用
+      <code>buildIsolatedHeadlessTools(executor)</code>：Bash 与
+      Read/Write/Edit/Glob/Grep 经隔离边界；绝对路径、<code>..</code> 逃逸、绝对 glob 在分发前拒绝。Read
+      的行号/二进制护栏与 Edit 的匹配逻辑仍由 headless 拥有，即使字节读写在远端 executor 上。
+    </p>
+    <h3 class="subhead">三种「sandbox」不要混</h3>
+    <ul class="plain-list">
+      <li><strong>Throwaway workspace</strong> — Attempt 级 fixture copy，防污染宿主目录（见上节）。</li>
+      <li>
+        <strong>OS Seatbelt / PermissionProfile</strong> — Desktop Runtime 的平台执行变换（见
+        <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime/#sandbox`}>§01 #sandbox</a>）；与 Harbor 无关。
+      </li>
+      <li>
+        <strong>Harbor / 外部 container</strong> — 把 agent-visible shell/fs 放到任务容器；A/B
+        姿态下容器只拿 per-cell host proxy capability，永不拿 access token / refresh token / key
+        file path。
+      </li>
+    </ul>
+    <h3 class="subhead">Harbor 模式与失败分类</h3>
+    <p>
+      Cell 模式在容器侧跑有界 cell；task-run host-bridge（<code>MAKA_HARBOR_MODE=task-run</code>）在
+      host 跑完整 TaskRun 控制器，把工具执行桥进任务容器，容器不安装 agent。续跑语义仍见
+      <a href="#continue">#continue</a>——信任边界 ≠ resume 协议。
+    </p>
+    <p>
+      <code>classifyExternalHarborBenchmarkFailure</code> 区分：infra（应抛 / 非零）·
+      agent_incomplete（计分数据，不抛）· budget_exhausted（预算耗尽，不抛）。Agent 验证失败是合法
+      benchmark 数据（进程可 exit 0）；invalid spec / 崩溃在出结果前才是 infra。Grading 要求
+      <code>verification.protectedPaths</code>：agent 结束后、命令前从 pristine fixture
+      恢复——模型改写自己的测试不能作弊。
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        <code>packages/headless/README.md</code> · <code>isolation.ts</code> ·
+        <code>harbor-failure-policy.ts</code> 与 <code>__tests__/harbor-*.test.ts</code>。提纲：
+        <code>docs/research/headless-harbor-trust-deep-outline.md</code>。
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="swarm"
+    label="§04 · Swarm / Team"
+    title="有界扇出与 Expert Team：子 Agent 不是第二套 Durable Loop"
+    lede="Swarm 是结构化并发便利设施；Team 加邮箱与认领。两者都建立在普通 child AgentRun 上。"
+  >
+    <p>
+      <strong>Agent Swarm</strong>（<code>agent_swarm</code>）让主 Agent 一次提交 1..32
+      个独立子项，本地 worker-pool 默认并发 3、上限 5，全部校验后再启动；结果按输入顺序投影。它不是
+      workflow runtime：没有 <code>SwarmRun</code>、第二套 event ledger、checkpoint 或后台 owner。每个已启动项都是普通
+      child <code>AgentRun</code>；子工具集排除 <code>agent_swarm</code>，禁止嵌套批。部分失败不擦掉成功兄弟；父级
+      cancel 会信号活跃子项、阻止队列项启动、join 后为未启动项返回显式 cancelled 行。
+    </p>
+    <h3 class="subhead">何时用哪种模型</h3>
+    <div class="table-wrap" role="region" aria-label="扇出模型选择" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">需要</th>
+            <th scope="col">优先</th>
+            <th scope="col">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>小任务或紧耦合推理</td>
+            <td>主 Agent 直接做</td>
+            <td>委托开销超过并行收益</td>
+          </tr>
+          <tr>
+            <td>单专家结果，或下一步依赖上一步</td>
+            <td>顺序 <code>agent_spawn</code></td>
+            <td>依赖显式，可 refinement prompt</td>
+          </tr>
+          <tr>
+            <td>多个有限、独立项 + 一次综合</td>
+            <td><code>agent_swarm</code></td>
+            <td>有界池、稳定顺序、隔离失败</td>
+          </tr>
+          <tr>
+            <td>角色协作、邮箱、任务认领</td>
+            <td>Expert Team</td>
+            <td>lead 裁决 + mailbox + Task Ledger claim</td>
+          </tr>
+          <tr>
+            <td>DAG / 重试 / 分布式编排</td>
+            <td>Rive（非本 Runtime 默认）</td>
+            <td>需要独立 durable orchestration 权威</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="subhead">三道并发边界</h3>
+    <ol class="plain-list numbered">
+      <li>Subagent tool admission — 一 turn 内可开多少子代理工具调用。</li>
+      <li>Local Swarm concurrency — 单批内 worker 数。</li>
+      <li>
+        Shared child-run permits — 跨 <code>agent_spawn</code> / <code>expert_dispatch</code> /
+        <code>agent_swarm</code> 的真实子执行上限。
+      </li>
+    </ol>
+    <p>
+      UI/CLI/telemetry 只投影有界摘要与 child <code>runId</code>/<code>turnId</code>
+      引用；永不复制子 prompt、工具参数或原始 tool output。Child AgentRun 仍是生命周期与证据权威。
+    </p>
+    <h3 class="subhead">Expert Team</h3>
+    <p>
+      Lead persona 跑在主 session（label <code>mode:expert-team:&lt;teamId&gt;</code>），通过
+      <code>expert_dispatch</code> 扇出成员。成员是 archetype（如 <code>local_read</code>）下的
+      persona，工具集只能<strong>收窄不能放宽</strong>。成员有
+      <code>team_message</code> / <code>team_inbox</code> / <code>team_task_list</code> /
+      <code>team_task_claim</code>；可原子认领当前 parent lead AgentRun 拥有的一条合格 Task Ledger
+      项，但完成与结果裁决仍在 lead。邮箱按 team + lead run 作用域；角色地址共享、调用私有信道不是保证；cursor
+      由调用方持有（<code>after_seq</code>）。成员永不收到 <code>expert_dispatch</code>——无嵌套 team。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">与 TaskRun 的边界</p>
+      <p>
+        Swarm/Team 的 child AgentRun 解决<strong>前台扇出与协作</strong>；Headless
+        <code>TaskRun</code> 解决跨 Attempt 的 durable envelope。二者都不是 session task ledger（见 corpus
+        #49）。不要把一次 <code>agent_swarm</code> 误读成已经获得跨进程 durable checkpoint。
+      </p>
+    </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">验证</p>
+      <p>
+        <code>bounded-swarm.test.ts</code> · <code>agent-swarm-tools.test.ts</code> ·
+        <code>expert-team.test.ts</code>。提纲：
+        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>。
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -437,6 +698,7 @@ Long task progress
       <li><strong>不是 Memory 系统</strong> — 服务一个具体长期目标，不是跨任务用户偏好库。</li>
       <li><strong>不是 Workspace 本身</strong> — Task Event Log 可引用 lease/snapshot，不能替代文件 bytes。</li>
       <li><strong>不是同一 Invocation 的热恢复</strong> — 推荐恢复单元是新的 Turn/Attempt。</li>
+      <li><strong>不是 Session task ledger</strong> — 短键待办是 advisory；见 <a href="#ledger">#ledger</a>。</li>
     </ul>
     <p class="figure-note">
       必须保护的不变量包括：stable <code>taskRunId</code>；bounded attempts；append before
@@ -449,7 +711,9 @@ Long task progress
   <div slot="outline">
     <ul class="outline-list">
       <li>关键图 + durable boundary + Attempt + 三层预算 + park/grant + Target checkpoint</li>
+      <li>#ledger：Session task ledger ≠ TaskRun（身份 / 证据 / 工具）</li>
       <li>三条续跑（Harbor Turn / Autonomous Attempt / parked CLI）已分语义</li>
+      <li>#harbor-trust 隔离断言 + #swarm / Expert Team（≠ TaskRun）</li>
       <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/567`}>maka:pr:567</a> ·
         <a href={`${import.meta.env.BASE_URL}history/pr/773`}>maka:pr:773</a></li>
       <li>Current ledger vs Target 跨进程接管：字段级不变量已写清（中英同船）</li>
@@ -509,5 +773,26 @@ Long task progress
     font-family: var(--serif);
     font-size: 1.02rem;
     max-width: 40em;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
   }
 </style>

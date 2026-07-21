@@ -1,0 +1,151 @@
+---
+/**
+ * §01 protocol — sandbox is argv transform, not approval.
+ */
+---
+
+<svg
+  class="sb-flow"
+  viewBox="0 0 868 300"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="sb-kicker sb-stage sb-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · APPROVAL ≠ SANDBOX TRANSFORM · FAIL CLOSED
+  </text>
+  <line
+    class="sb-stage sb-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="sb-stage sb-stage--1" transform="translate(8,52)">
+    <rect width="200" height="108" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="sb-idx" x="12" y="26" fill="var(--accent)">1 · ENGINE</text>
+    <text class="sb-title" x="12" y="52" fill="var(--ink)">PermissionEngine</text>
+    <text class="sb-line" x="12" y="78" fill="var(--mute)">allow / prompt / block</text>
+    <text class="sb-line" x="12" y="98" fill="var(--mute)">does not wrap argv</text>
+  </g>
+
+  <path
+    class="sb-stage sb-stage--1"
+    d="M216 106 H252"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#sb-arrow)"
+  ></path>
+
+  <g class="sb-stage sb-stage--2" transform="translate(260,52)">
+    <rect width="220" height="108" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="sb-idx" x="12" y="26" fill="var(--accent)">2 · PROFILE</text>
+    <text class="sb-title" x="12" y="52" fill="var(--ink)">PermissionProfile</text>
+    <text class="sb-line" x="12" y="78" fill="var(--mute)">managed · disabled · external</text>
+    <text class="sb-line" x="12" y="98" fill="var(--mute)">+ auto / require / forbid</text>
+  </g>
+
+  <path
+    class="sb-stage sb-stage--2"
+    d="M488 106 H524"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#sb-arrow)"
+  ></path>
+
+  <g class="sb-stage sb-stage--3" transform="translate(532,52)">
+    <rect width="328" height="108" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="sb-idx" x="12" y="26" fill="var(--accent)">3 · SANDBOX MANAGER</text>
+    <text class="sb-title" x="12" y="52" fill="var(--ink)">select → transform</text>
+    <text class="sb-line" x="12" y="78" fill="var(--mute)">Seatbelt / bwrap / none</text>
+    <text class="sb-line" x="12" y="98" fill="var(--mute)">typed fail · never silent host</text>
+  </g>
+
+  <g class="sb-stage sb-stage--4" transform="translate(8,184)">
+    <rect width="420" height="96" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="sb-idx" x="14" y="28" fill="var(--accent)">4 · SPAWN OWNER</text>
+    <text class="sb-line" x="14" y="56" fill="var(--ink)">shell / PTY / executor owns spawn</text>
+    <text class="sb-line" x="14" y="78" fill="var(--mute)">SandboxManager does not execute</text>
+  </g>
+
+  <g class="sb-stage sb-stage--4" transform="translate(448,184)">
+    <rect width="412" height="96" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="sb-idx" x="14" y="28" fill="var(--accent)">ESCALATION · ONE-SHOT</text>
+    <text class="sb-line" x="14" y="56" fill="var(--ink)">require_escalated → grant → consume once</text>
+    <text class="sb-line" x="14" y="78" fill="var(--mute)">command / cwd / intent bound · TTL</text>
+  </g>
+
+  <defs>
+    <marker id="sb-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .sb-flow {
+    font-family: var(--sans);
+  }
+  .sb-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .sb-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .sb-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .sb-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sb-stage {
+      opacity: 0;
+      animation: sb-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .sb-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .sb-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .sb-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .sb-stage--3 {
+      animation-delay: 0.4s;
+    }
+    .sb-stage--4 {
+      animation-delay: 0.52s;
+    }
+    @keyframes sb-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sb-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

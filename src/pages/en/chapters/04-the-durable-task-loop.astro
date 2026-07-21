@@ -10,6 +10,7 @@ import BudgetLayersFlow from "../../../components/diagrams/BudgetLayersFlow.astr
 import ColdStartResumeFlow from "../../../components/diagrams/ColdStartResumeFlow.astro";
 import ParkGrantResumeFlow from "../../../components/diagrams/ParkGrantResumeFlow.astro";
 import DurableCheckpointFlow from "../../../components/diagrams/DurableCheckpointFlow.astro";
+import TaskLedgerVsTaskRun from "../../../components/diagrams/TaskLedgerVsTaskRun.astro";
 ---
 
 <ChapterShell chapterId="04" locale="en">
@@ -19,7 +20,8 @@ import DurableCheckpointFlow from "../../../components/diagrams/DurableCheckpoin
       progress, budgets, and interrupt boundaries. Headless introduces <code>TaskRun</code>: each Agent
       execution becomes a bounded Attempt; cross-Attempt facts append to a Task Event Log and project
       into the next-work view — without rewriting the §01–§03 Runtime; it wraps execution in a durable
-      envelope. Key line:
+      envelope. Interactive Sessions also have a separate <strong>task ledger</strong> (short-key todos)
+      — never collapse it with TaskRun. Key line:
       <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
@@ -118,11 +120,123 @@ Long task progress
     <aside class="history-aside">
       <p class="history-aside__tag">History aside</p>
       <p>
-        Task ledger / Headless orchestration mechanisms:
+        Headless TaskRun orchestration:
         <a href={localePath("en", "history/pr/567")}>maka:pr:567</a>. Architecture chapter
         land:
         <a href={localePath("en", "history/pr/773")}>maka:pr:773</a>
-        (docs: durable task loop chapter).
+        (docs: durable task loop chapter). Interactive session task ledger is the next section —
+        <a href="#ledger">#ledger</a> — do not conflate the two.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="ledger"
+    label="§04 · Session ledger"
+    title="Session task ledger ≠ TaskRun"
+    lede="Interactive short-key todos are advisory control state; Headless TaskRun is the cross-Attempt durable envelope."
+  >
+    <DiagramFigure
+      caption="Fig. 1b · Two “task” objects: Session ledger (id+key, four tools, advisory status) vs TaskRun (Attempts, budget, park/grant)."
+      alt="Side-by-side contrast of Session task ledger and Headless TaskRun."
+    >
+      <TaskLedgerVsTaskRun />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="Ledger vs TaskRun contrast" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Axis</th>
+            <th scope="col">Session task ledger</th>
+            <th scope="col">Headless TaskRun</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Scope</th>
+            <td>Work items inside an interactive Session</td>
+            <td>Benchmark / automation execution envelope</td>
+          </tr>
+          <tr>
+            <th scope="row">Identity</th>
+            <td>Durable UUID <code>id</code> + short <code>key</code> (<code>T1</code> / <code>T1.1</code>)</td>
+            <td><code>taskRunId</code> + Attempt ids</td>
+          </tr>
+          <tr>
+            <th scope="row">Storage</th>
+            <td><code>task-events.jsonl</code> + <code>tasks.json</code> projection</td>
+            <td>Per-TaskRun Task Event Log JSONL</td>
+          </tr>
+          <tr>
+            <th scope="row">Status meaning</th>
+            <td>Advisory (<code>pending</code>…<code>cancelled</code>)</td>
+            <td>Orchestration lifecycle (queued/started/parked/terminal)</td>
+          </tr>
+          <tr>
+            <th scope="row">Model surface</th>
+            <td>Turn-tail injection + four <code>task_*</code> tools</td>
+            <td>Headless continue / budget loop — not a chat todo list</td>
+          </tr>
+          <tr>
+            <th scope="row">Evidence authority</th>
+            <td>Compact reason/evidence; <strong>never</strong> overrides FS/git/test/tool truth</td>
+            <td>Progress/evidence for loop decisions; still references RuntimeEvents</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Identity and hierarchy</h3>
+    <p>
+      Reads/updates accept UUID or short key. Keys allocate inside a per-session serialized write
+      queue; a child stores the parent UUID in <code>parentId</code> and extends under the parent key.
+      Parent/child edges must deepen by exactly one segment (<code>T1</code> → <code>T1.1</code>);
+      skipped levels invalidate the projection and fail closed. No children under terminal parents; a
+      parent cannot become <code>completed</code> while any descendant is non-terminal.
+    </p>
+
+    <h3 class="subhead">Status, evidence, and resumeTrust</h3>
+    <pre class="code-block" aria-label="Ledger status transitions">pending → in_progress | cancelled
+in_progress → blocked | completed | failed | cancelled
+blocked → in_progress | cancelled | failed
+failed → pending | cancelled
+completed → in_progress   only explicitReopen
+cancelled → pending       only explicitReopen</pre>
+    <p>
+      Entering blocked / failed / completed requires <code>blockedReason</code> /
+      <code>failureReason</code> / <code>completionEvidence</code>. <code>resumeTrust</code> (trusted /
+      needs_revalidation / stale / repaired / untrusted) is a system diagnostic: model-visible turn-tail
+      and <code>task_list</code> / <code>task_get</code> <strong>do not inject</strong> it; debug/export
+      may.
+    </p>
+
+    <h3 class="subhead">Tools and child agents</h3>
+    <p>
+      <code>task_create</code> / <code>task_update</code> / <code>task_list</code> /
+      <code>task_get</code> only mutate/read local session state — they do not dispatch work.
+      <code>MAKA_TASK_LEDGER_TOOLS=false</code> disables registration.
+      <code>agent_spawn(task_id=…)</code> claims the task after the child turn is allocated
+      (<code>in_progress</code> + child_agent owner); a successful child <strong>does not</strong>
+      auto-complete the parent — the parent must verify and supply <code>completionEvidence</code>. An
+      active task cannot be stolen by another child turn.
+    </p>
+
+    <p>
+      Prompt-tail budget is ~8 000 characters, prioritizing in_progress / pending / blocked branches;
+      terminal tasks logically archive after seven days (storage stays append-only). An external Goal
+      evaluator still decides first; a one-shot reminder fires only when the Goal continues with
+      actionable keys — the ledger is neither Goal truth nor a §05 verifier.
+    </p>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        Authority: <code>docs/session-task-ledger-lifecycle.md</code> ·
+        <code>packages/core/src/task-ledger.ts</code> ·
+        <code>task-ledger-store.ts</code> · <code>task-ledger-tools.ts</code> and matching
+        <code>__tests__</code>. Outline:
+        <code>docs/research/session-task-ledger-deep-outline.md</code>.
       </p>
     </aside>
   </Section>
@@ -374,8 +488,170 @@ Long task progress
       snapshot, lease renewal, or fencing protocol. A throwaway directory isolates fixture mutation — it
       is not an OS security sandbox; real model-backed backends must supply
       <code>RealBackendIsolation</code>. Headless validates isolation-record shape and non-empty labels —
-      filesystem / network / process / secret isolation is fulfilled by the external executor.
+      filesystem / network / process / secret isolation is fulfilled by the external executor. See
+      <a href="#harbor-trust">#harbor-trust</a>.
     </p>
+  </Section>
+
+  <Section
+    id="harbor-trust"
+    label="§04 · Harbor trust"
+    title="Eval distrusts by default: isolation is an assertion, not a guess"
+    lede="The measured config may be adversarial; without a boundary, fail closed. Harbor is an executor carrier — not a second Task truth."
+  >
+    <p>
+      <code>@maka/headless</code> eval posture is hard: the config under test is
+      <strong>untrusted by construction</strong> and must not reach host credentials. Without OS-level
+      isolation, the only safe enforcement is fail closed by default — the CLI still wires only the
+      inert <code>fake</code> backend; a model-backed backend in a JSON spec exits non-zero unless the
+      programmatic API supplies an explicit isolation record.
+    </p>
+    <h3 class="subhead">RealBackendIsolation</h3>
+    <p>
+      Real-model eval must pass <code>realBackendIsolation</code> (Current:
+      <code>kind: 'external'</code>) plus <code>registerBackends</code>. The record is an
+      <strong>assertion</strong> that tool execution already sits outside the host credential process
+      (Harbor / Terminal-Bench / Docker workspace executor, …) with a non-empty <code>label</code> —
+      an accidental truthy object must not enable a real backend. For the standard tool surface, use
+      <code>buildIsolatedHeadlessTools(executor)</code>: Bash plus Read/Write/Edit/Glob/Grep route
+      through the boundary; absolute paths, <code>..</code> escapes, and absolute globs are rejected
+      before dispatch. Read’s line-number/binary guards and Edit’s matcher stay headless-owned even
+      when bytes are read/written on a remote executor.
+    </p>
+    <h3 class="subhead">Three “sandboxes” that must not merge</h3>
+    <ul class="plain-list">
+      <li><strong>Throwaway workspace</strong> — per-Attempt fixture copy (section above).</li>
+      <li>
+        <strong>OS Seatbelt / PermissionProfile</strong> — Desktop Runtime platform transform (see
+        <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#sandbox"}>§01 #sandbox</a>);
+        orthogonal to Harbor.
+      </li>
+      <li>
+        <strong>Harbor / external container</strong> — agent-visible shell/fs in the task container; A/B
+        posture gives containers only a per-cell host proxy capability — never access/refresh tokens or
+        key-file paths.
+      </li>
+    </ul>
+    <h3 class="subhead">Harbor modes and failure classes</h3>
+    <p>
+      Cell mode runs a bounded cell on the container side; task-run host-bridge
+      (<code>MAKA_HARBOR_MODE=task-run</code>) runs the full TaskRun controller on the host and bridges
+      tool execution into the task container (container installs nothing). Resume semantics remain in
+      <a href="#continue">#continue</a> — trust boundary ≠ resume protocol.
+    </p>
+    <p>
+      <code>classifyExternalHarborBenchmarkFailure</code> separates infra (should throw / non-zero),
+      agent_incomplete (scored data, no throw), and budget_exhausted (no throw). Failed verification is
+      valid benchmark data (process may exit 0); invalid specs / crashes before a result are infra.
+      Grading requires <code>verification.protectedPaths</code>: restore from the pristine fixture after
+      the agent and before the command — rewriting tests must not cheat.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        <code>packages/headless/README.md</code> · <code>isolation.ts</code> ·
+        <code>harbor-failure-policy.ts</code> and <code>__tests__/harbor-*.test.ts</code>. Outline:
+        <code>docs/research/headless-harbor-trust-deep-outline.md</code>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="swarm"
+    label="§04 · Swarm / Team"
+    title="Bounded fan-out and Expert Teams: child agents are not a second durable loop"
+    lede="Swarm is structured-concurrency convenience; Team adds mailbox and claim. Both sit on ordinary child AgentRuns."
+  >
+    <p>
+      <strong>Agent Swarm</strong> (<code>agent_swarm</code>) lets the main Agent submit 1..32
+      independent items once; the local worker pool defaults to concurrency 3 (cap 5); the whole input
+      validates before any child starts; results project in input order. It is not a workflow runtime:
+      no <code>SwarmRun</code>, second event ledger, checkpoint, or background owner. Every started item
+      is an ordinary child <code>AgentRun</code>; child toolsets exclude <code>agent_swarm</code> (no
+      nested batches). Partial failure keeps successful siblings; parent cancel signals active children,
+      prevents queued starts, joins, and returns explicit cancelled rows for never-started items.
+    </p>
+    <h3 class="subhead">Choosing an execution model</h3>
+    <div class="table-wrap" role="region" aria-label="Fan-out model choice" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Need</th>
+            <th scope="col">Prefer</th>
+            <th scope="col">Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Small or tightly coupled work</td>
+            <td>Main Agent directly</td>
+            <td>Delegation overhead exceeds parallelism</td>
+          </tr>
+          <tr>
+            <td>One specialist result, or next depends on prior</td>
+            <td>Sequential <code>agent_spawn</code></td>
+            <td>Explicit dependency; refine prompts</td>
+          </tr>
+          <tr>
+            <td>Several finite independent items + one synthesis</td>
+            <td><code>agent_swarm</code></td>
+            <td>Bounded pool, stable order, isolated failures</td>
+          </tr>
+          <tr>
+            <td>Roles, mailbox, task claiming</td>
+            <td>Expert Team</td>
+            <td>Lead adjudication + mailbox + Task Ledger claim</td>
+          </tr>
+          <tr>
+            <td>DAG / retries / distributed orchestration</td>
+            <td>Rive (not this Runtime default)</td>
+            <td>Needs a separate durable orchestration authority</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="subhead">Three concurrency boundaries</h3>
+    <ol class="plain-list numbered">
+      <li>Subagent tool admission — how many subagent tool calls one turn may open.</li>
+      <li>Local Swarm concurrency — workers inside one batch.</li>
+      <li>
+        Shared child-run permits — real child executions across <code>agent_spawn</code> /
+        <code>expert_dispatch</code> / <code>agent_swarm</code>.
+      </li>
+    </ol>
+    <p>
+      UI/CLI/telemetry project only bounded summaries plus child <code>runId</code>/<code>turnId</code>
+      refs — never raw child prompts, tool args, or tool output. Child AgentRuns remain lifecycle and
+      evidence authority.
+    </p>
+    <h3 class="subhead">Expert Team</h3>
+    <p>
+      A lead persona runs in the main session (label <code>mode:expert-team:&lt;teamId&gt;</code>) and
+      fans out via <code>expert_dispatch</code>. Members are personas under archetypes (e.g.
+      <code>local_read</code>) that may <strong>narrow, never widen</strong> tools. Members get
+      <code>team_message</code> / <code>team_inbox</code> / <code>team_task_list</code> /
+      <code>team_task_claim</code>; they may atomically claim one eligible Task Ledger item owned by the
+      current parent lead AgentRun, but completion and adjudication stay with the lead. Mailboxes scope
+      by team + lead run; role addresses are shared (not invocation-private); cursors are caller-owned
+      (<code>after_seq</code>). Members never receive <code>expert_dispatch</code> — no nested teams.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Boundary vs TaskRun</p>
+      <p>
+        Swarm/Team child AgentRuns solve <strong>foreground fan-out and collaboration</strong>; Headless
+        <code>TaskRun</code> solves the cross-Attempt durable envelope. Neither is the session task
+        ledger (corpus #49). Do not read one <code>agent_swarm</code> call as a cross-process durable
+        checkpoint.
+      </p>
+    </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Verification</p>
+      <p>
+        <code>bounded-swarm.test.ts</code> · <code>agent-swarm-tools.test.ts</code> ·
+        <code>expert-team.test.ts</code>. Outline:
+        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>.
+      </p>
+    </aside>
   </Section>
 
   <Section
@@ -464,6 +740,7 @@ Long task progress
       <li><strong>Not a Memory system</strong> — serves one concrete long goal, not a cross-task preference store.</li>
       <li><strong>Not the workspace itself</strong> — the Task Event Log may cite a lease/snapshot; it does not replace file bytes.</li>
       <li><strong>Not hot recovery of the same Invocation</strong> — the recommended recovery unit is a new Turn/Attempt.</li>
+      <li><strong>Not the Session task ledger</strong> — short-key todos are advisory; see <a href="#ledger">#ledger</a>.</li>
     </ul>
     <p class="figure-note">
       Invariants to protect: stable <code>taskRunId</code>; bounded attempts; append before project;
@@ -476,7 +753,9 @@ Long task progress
   <div slot="outline">
     <ul class="outline-list">
       <li>Keystone + durable boundary + Attempt + three budgets + park/grant + Target checkpoint</li>
+      <li>#ledger: Session task ledger ≠ TaskRun (identity / evidence / tools)</li>
       <li>Three continuations (Harbor Turn / Autonomous Attempt / parked CLI) kept semantically distinct</li>
+      <li>#harbor-trust isolation assertion + #swarm / Expert Team (≠ TaskRun)</li>
       <li>History asides <a href={localePath("en", "history/pr/567")}>maka:pr:567</a> ·
         <a href={localePath("en", "history/pr/773")}>maka:pr:773</a></li>
       <li>Current ledger vs Target cross-process takeover: field-level invariants written (CN+EN ship together)</li>
@@ -536,5 +815,26 @@ Long task progress
     font-family: var(--serif);
     font-size: 1.02rem;
     max-width: 40em;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
   }
 </style>

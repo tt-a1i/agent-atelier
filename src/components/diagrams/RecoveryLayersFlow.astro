@@ -1,0 +1,113 @@
+---
+/**
+ * §01 protocol — three recovery layers that must not collapse.
+ */
+---
+
+<svg
+  class="rl-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="rl-kicker rl-stage rl-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · STATE REPAIR ≠ PREFIX PLAN ≠ SAFE CONTINUATION
+  </text>
+  <line
+    class="rl-stage rl-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="rl-stage rl-stage--1" transform="translate(8,52)">
+    <rect width="276" height="196" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="276" height="2" fill="var(--accent)"></rect>
+    <text class="rl-idx" x="14" y="30" fill="var(--accent)">A · STARTUP REPAIR</text>
+    <text class="rl-line" x="14" y="62" fill="var(--ink)">Scan non-terminal Runs</text>
+    <text class="rl-line" x="14" y="88" fill="var(--ink)">Conservative fail/cancel</text>
+    <text class="rl-line" x="14" y="114" fill="var(--ink)">Repair Session / Turn views</text>
+    <text class="rl-line" x="14" y="148" fill="var(--mute)">Does not re-enter tools</text>
+    <text class="rl-line" x="14" y="174" fill="var(--mute)">Default crash path</text>
+  </g>
+
+  <g class="rl-stage rl-stage--2" transform="translate(300,52)">
+    <rect width="276" height="196" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="276" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="rl-idx" x="14" y="30" fill="var(--accent)">B · PHASE 0 PLAN</text>
+    <text class="rl-line" x="14" y="62" fill="var(--ink)">Committed RuntimeEvent prefix</text>
+    <text class="rl-line" x="14" y="88" fill="var(--ink)">P0–P11 failpoints</text>
+    <text class="rl-line" x="14" y="114" fill="var(--ink)">safe_replay | blocked</text>
+    <text class="rl-line" x="14" y="148" fill="var(--mute)">after_function_call → block</text>
+    <text class="rl-line" x="14" y="174" fill="var(--mute)">No warm side-effect resume</text>
+  </g>
+
+  <g class="rl-stage rl-stage--3" transform="translate(592,52)">
+    <rect width="268" height="196" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="268" height="2" fill="var(--accent)" opacity="0.35"></rect>
+    <text class="rl-idx" x="14" y="30" fill="var(--accent)">C · PHASE 1 CONTINUE</text>
+    <text class="rl-line" x="14" y="62" fill="var(--ink)">Flag-gated safe boundary</text>
+    <text class="rl-line" x="14" y="88" fill="var(--ink)">New Invocation / Run</text>
+    <text class="rl-line" x="14" y="114" fill="var(--ink)">continuation-start fact</text>
+    <text class="rl-line" x="14" y="148" fill="var(--mute)">Park on any uncertainty</text>
+    <text class="rl-line" x="14" y="174" fill="var(--mute)">Resolver owns tool verdict</text>
+  </g>
+</svg>
+
+<style>
+  .rl-flow {
+    font-family: var(--sans);
+  }
+  .rl-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .rl-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .rl-line {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rl-stage {
+      opacity: 0;
+      animation: rl-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .rl-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .rl-stage--1 {
+      animation-delay: 0.18s;
+    }
+    .rl-stage--2 {
+      animation-delay: 0.32s;
+    }
+    .rl-stage--3 {
+      animation-delay: 0.46s;
+    }
+    @keyframes rl-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rl-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
