@@ -3,7 +3,8 @@
 **Date:** 2026-07-21  
 **Specimen root:** `/Users/tushaokun/code/maka-agent`  
 **Map:** [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
-**Companion honesty note:** [`depth-gap-audit-pass2.md`](./depth-gap-audit-pass2.md)
+**Companion honesty note:** [`depth-gap-audit-pass2.md`](./depth-gap-audit-pass2.md)  
+**Code-seam ranking (Top 15 + module map):** [`maka-code-seam-inventory.md`](./maka-code-seam-inventory.md) — source+tests dig; does not replace this corpus plan.
 
 ## Verdict (do not fake Destination)
 

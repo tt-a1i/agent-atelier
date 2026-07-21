@@ -1,0 +1,167 @@
+# Maka code-seam inventory (atelier depth map #34)
+
+**Date:** 2026-07-21  
+**Specimen root:** `/Users/tushaokun/code/maka-agent`  
+**Map:** [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
+**Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Do not duplicate the corpus plan’s bucket counts; link it.
+
+## Method
+
+For each seam: read primary `.ts`, paired `__tests__`, and cross-check `docs/architecture/*` / `docs/archive/*` / current contracts. When docs disagree with implementation, **code + contract tests win** (maka `docs/README.md`). PR numbers from `git log --diff-filter=A` / `-S` on the owning paths — not invented from CHANGELOG prose alone.
+
+---
+
+## Top 15 ranked seams
+
+### 1. T1/T2 + RecoveryResolver triad
+
+| | |
+| --- | --- |
+| **Home** | §01 `#recovery` (deepen) |
+| **Atelier depth (pre this pass)** | thin→partial (Phase0/1 layers present; T1/T2 commit boundary under-taught) |
+| **Code** | `packages/runtime/src/tool-runtime.ts` (`prepareDurableToolAttempt`) · `runtime-commit-sink.ts` · `recovery-resolver.ts` · `packages/storage/src/sqlite-runtime-store.ts` (T1/T2 + journal projection) · `@maka/core` `TOOL_BOUNDARY_PROTOCOL_V1` |
+| **Tests** | `recovery-resolver.test.ts` · `tool-runtime-durable-boundary.test.ts` · `tool-runtime-sqlite-boundary.test.ts` · `sqlite-runtime-crash.test.ts` |
+| **Docs** | `docs/architecture/runtime-recovery-resolver-adr.zh-CN.md` · archive Phase0/1 contracts · tool-journal draft |
+| **Mechanism PR** | **#1223** (safe-boundary phases 0–2; adds resolver + sink wiring) |
+
+**Protocol (invariants / failures)**
+
+- T1 = atomic `commitToolPrepared`: provider-visible `function_call` (if needed) + non-model-visible `actions.toolDispatch` (`protocol: t1_after_preflight_v1`) + journal/`tool_operations` projection `prepared`. T1 failure → **zero** `impl` calls (`RuntimeCommitBoundaryError` phase `T1` rethrown — runtime fault, not synthetic tool result).
+- T2 = `commitToolOutcome` with SQLite compare-and-set (`WHERE current_state='prepared' AND result_event_id IS NULL`); order pinned by test: `t1 → impl → t2 → published-result`.
+- RecoveryResolver is sole judgment authority over RuntimeEvent prefixes; Journal is rebuildable projection only.
+- Decision statuses: `completed` · `definitely_not_dispatched` (new protocol, call, no dispatch) · `indeterminate` (dispatch w/o response, or legacy missing facts) · `corruption` (orphan/duplicate/identity/protocol_marker_invalid).
+- Protocol marker only on run’s **first** canonical event, and only when host wired a real `RuntimeCommitSink` — never inferred from “SQLite exists” or software version.
+- Crash harness (`inside_t1` / `after_effect` / `inside_t2` / `after_t2`): kill inside T1 → full rollback; after T1 → unsettled `prepared` (= Resolver `indeterminate`); inside T2 → T1 survives, still `prepared`; after T2 → `outcome_committed`.
+
+---
+
+### 2. Active prune vs Stale prune vs History compact (three lifecycles)
+
+| | Active prune | Stale prune | History compact |
+| --- | --- | --- | --- |
+| **File** | `active-tool-result-prune.ts` | `tool-result-archive.ts` (`pruneStaleToolResultsBeforeCompact`) | `history-compact*.ts` (+ mid-turn variant) |
+| **When** | Same live Turn, `prepareStep` | Just before a compact pass | Turn-boundary / mid-turn projection rewrite |
+| **Mutates** | In-memory ModelMessage[] only | Compact **input projection** (not durable ledger authority) | Model-visible projection via checkpoint block |
+| **Placeholder** | `maka.active_archived_tool_result` | `maka.archived_tool_result` | `maka.history_compact_checkpoint` |
+| **Protect** | `minStepNumber` (default 1) | `minRecentTurnsFull` newest turns | `reserveTailEvents` / safe span |
+| **Fail** | `archiveFailures` → **keep original** | mismatched `archiveRef` → keep + count failures | fail-open (`no_safe_completed_span` / summarizer_failed) |
+
+| | |
+| --- | --- |
+| **Home** | §02 (triad teach) + lean §03 for compact body |
+| **Depth** | active **deep**; stale/history as *third lifecycle* was thin |
+| **Tests** | `active-tool-result-prune.test.ts` · `active-full-compact*.test.ts` · history-compact* · context-budget-*policy* |
+| **Docs** | turn-evidence active-prune draft · llm-compaction projection draft |
+| **PRs** | Active **#316** / discipline **#319** / default-on **#498**; archive split **#1237**; compact checkpoints **#729** |
+
+**Extra invariant:** `activeToolResultLineageIdentity()` hashes **raw** serialized body so prune is a representation change, not a divergent lineage for later stale/compact tracking. Stale hydrate re-checks `sha256(serialized) === placeholder.bodySha256` → `corrupt` on mismatch.
+
+---
+
+### 3. Checkpoint V2 prefix digest + mid_turn headAnchor
+
+| | |
+| --- | --- |
+| **Home** | §03 |
+| **Code** | `history-compact-checkpoint.ts` — `sourceDigest`, `phase: pre_turn\|mid_turn`, `headAnchor`, `matchHistoryCompactCheckpointPrefix`, `canReplaceHistoryCompactCheckpoint` |
+| **Tests** | `history-compact-checkpoint.test.ts` · `history-compact-mid-turn-checkpoint.test.ts` |
+| **Docs** | `docs/execution-evidence-spine.md` Phase 2C |
+| **PRs** | **#729** checkpoint V2; **#996** / **#1014** mid_turn + headAnchor |
+| **Depth** | §03 deep on projection story; mid_turn/headAnchor **thin/missing** |
+
+Fail-closed: empty/mixed-session/partial coverage; head anchor not last covered user event of its turn; replace only forward-progress or exact CAS rewrite.
+
+---
+
+### 4. Mid-turn capacity: shaping ≠ verdict
+
+| | |
+| --- | --- |
+| **Home** | §03 companion (+ lean §01 request-shape) |
+| **Code** | `mid-turn-capacity-compact.ts` (doc-comment is primary authority — **no architecture draft**) |
+| **Tests** | `mid-turn-capacity-compact.test.ts` · `mid-turn-capacity-backend.test.ts` |
+| **PR** | **#996** (title names the invariant); reactive **#1017** |
+| **Depth** | empty/thin |
+
+Shaper only selects safe covered prefix + builds mid_turn checkpoint (fail-open). **Pass/terminate** (`context_budget_exhausted`) owned by backend final-request estimate after all shaping hooks — verdict is about the request that actually goes out.
+
+---
+
+### 5. providerTools ≠ activeTools (request-shape)
+
+| | |
+| --- | --- |
+| **Home** | §01 `#request-shape` / `#tool-economy` |
+| **Code** | `request-shape.ts` (`canonicalizeToolSet`) · `tool-availability.ts` |
+| **Tests** | `request-shape.test.ts` · tool-availability / catalog derive |
+| **Depth** | partial (cost spine deep; split under-stated) |
+
+Dispatch never depends on advertisement visibility. `toolSchemaHash` over **active/visible** subset so unloaded group schema drift does not false-fire `tool_schema_changed`.
+
+---
+
+### 6–15 (shorter)
+
+| Rank | Seam | Home | Key paths | Depth |
+| ---: | --- | --- | --- | --- |
+| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 / `/guides/sandbox` | `permission-profile.ts` · `sandbox/**` | outline → Task #62 |
+| 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | empty |
+| 8 | Execution evidence spine | cross-cut §02/04/05/06 | `execution-evidence.ts` · `execution-evidence-spine.md` | empty |
+| 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | empty |
+| 10 | Computer-use foundation | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | empty |
+| 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | empty |
+| 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | research outline exists |
+| 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | thin→partial |
+| 14 | Skill catalog policy | companion | `skills.ts` · `skill-catalog-policy.md` | empty |
+| 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | thin |
+
+---
+
+## Architecture docs beyond the six chapters
+
+| Doc | Role |
+| --- | --- |
+| `docs/architecture/runtime-recovery-resolver-adr.zh-CN.md` | RuntimeEvent sole fact + Resolver sole authority (zh-CN only) |
+| `docs/archive/runtime-resume-phase0-crash-contract.md` | P0–P11 failpoints — **still live authority**, archive path is naming tension |
+| `docs/archive/runtime-resume-phase1-safe-boundary-contract.md` | Continuation gate + feature flag |
+| `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` (and/or architecture sibling) | Journal as projection |
+| `docs/execution-evidence-spine.md` | Cross-ledger refs (current) |
+| `docs/session-task-ledger-lifecycle.md` | Ledger ≠ TaskRun (current) |
+| Archive teaching manuals | `runtime-mainline-teaching-manual.md` · `runtime-kernel.md` · `runtime-v2-architecture-evolution.md` · cost design — harvest **deltas** vs Current §01 only |
+
+---
+
+## Module → chapter map
+
+| Module | Seam rank | Home |
+| --- | ---: | --- |
+| `tool-runtime.ts` / `recovery-resolver.ts` / `runtime-commit-sink.ts` / sqlite T1–T2 | 1 | §01 `#recovery` |
+| `active-tool-result-prune.ts` | 2 | §02 |
+| `tool-result-archive.ts` | 2 | §02 |
+| `history-compact.ts` / checkpoint / mid-turn | 2–4 | §02 triad + §03 body |
+| `request-shape.ts` / `tool-availability.ts` | 5 | §01 `#request-shape` |
+| `sandbox/**` / `permission-profile.ts` | 6 | §01 / guide |
+| `task-ledger*.ts` | 7 | §04 |
+| `execution-evidence.ts` | 8 | cross-cut |
+| `mcp-tools.ts` | 9 | companion |
+| `computer-use/**` | 10 | guide |
+| swarm / expert / team tools | 11 | companion |
+| `shell-run-manager.ts` / pty | 12 | §01/§02 |
+| storage write-queue / jsonl | 13 | §01 stores |
+| skills / skill-invocation | 14 | companion |
+| `packages/headless/**` | 15 | §04 |
+
+---
+
+## Corrections vs corpus-mine-plan
+
+1. Corpus plan “Recovery Phase0/1 + journal” and inventory **#1** are **one seam family** — do not split teaching across two half-invariants.  
+2. Mid-turn shaping≠verdict and providerTools≠activeTools are **code-primary** (little/no architecture draft).  
+3. Phase0/1 contracts under `docs/archive/` remain authoritative for live resume — classify carefully.  
+4. Several ADRs are zh-CN-only (resolver, journal, MCP, bot) — bilingual atelier may translate while mining.
+
+---
+
+## Ticket mapping (code-seam lane)
+
+Opened under #34 for Top 1–5; corpus lane tickets #46–#62 remain the broader frontier (integrate, do not duplicate).
