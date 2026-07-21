@@ -1,0 +1,68 @@
+---
+/**
+ * §06 protocol — candidate evaluation is per-task transitions, not one aggregate score.
+ */
+---
+
+<svg
+  class="et-flow"
+  viewBox="0 0 868 268"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="et-kicker et-stage et-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · EVAL TRANSITIONS · PREDICTIONS VS REGRESSIONS
+  </text>
+  <line class="et-stage et-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="et-stage et-stage--1" transform="translate(8,52)">
+    <rect width="200" height="88" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="et-idx" x="12" y="24" fill="var(--accent)">WIN</text>
+    <text class="et-line" x="12" y="52" fill="var(--ink)">fail_to_pass</text>
+    <text class="et-line" x="12" y="72" fill="var(--mute)">predicted fix hit</text>
+  </g>
+  <g class="et-stage et-stage--1" transform="translate(224,52)">
+    <rect width="200" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="et-idx" x="12" y="24" fill="var(--accent)">STABLE</text>
+    <text class="et-line" x="12" y="52" fill="var(--ink)">pass_to_pass</text>
+    <text class="et-line" x="12" y="72" fill="var(--mute)">keep capability</text>
+  </g>
+  <g class="et-stage et-stage--1" transform="translate(440,52)">
+    <rect width="200" height="88" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <text class="et-idx" x="12" y="24" fill="var(--accent)">REGRESS</text>
+    <text class="et-line" x="12" y="52" fill="var(--ink)">pass_to_fail</text>
+    <text class="et-line" x="12" y="72" fill="var(--mute)">must stay visible</text>
+  </g>
+  <g class="et-stage et-stage--1" transform="translate(656,52)">
+    <rect width="204" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="et-idx" x="12" y="24" fill="var(--accent)">STUCK</text>
+    <text class="et-line" x="12" y="52" fill="var(--ink)">fail_to_fail</text>
+    <text class="et-line" x="12" y="72" fill="var(--mute)">missed prediction</text>
+  </g>
+
+  <g class="et-stage et-stage--2" transform="translate(8,160)">
+    <rect width="852" height="88" rx="1" fill="var(--soft)" stroke="var(--accent)"></rect>
+    <rect width="852" height="2" fill="var(--accent)"></rect>
+    <text class="et-title" x="16" y="32" fill="var(--ink)">Also track: new_pass / new_fail · infra_or_excluded · predictedFixesObserved / Missed · regressions</text>
+    <text class="et-line" x="16" y="60" fill="var(--mute)">Aggregate score alone cannot answer: did predicted wins happen? did risks fire? did exclusions inflate the score?</text>
+  </g>
+</svg>
+
+<style>
+  .et-flow { font-family: var(--sans); }
+  .et-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .et-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .et-title { font-family: var(--serif); font-size: 14px; font-weight: 600; letter-spacing: -0.015em; }
+  .et-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .et-stage { opacity: 0; animation: et-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .et-stage--0 { animation-delay: 0.04s; }
+    .et-stage--1 { animation-delay: 0.18s; }
+    .et-stage--2 { animation-delay: 0.4s; }
+    @keyframes et-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .et-stage { opacity: 1; animation: none; }
+  }
+</style>

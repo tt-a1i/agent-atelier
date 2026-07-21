@@ -1,0 +1,75 @@
+---
+/**
+ * §06 protocol — result authority buckets before learning.
+ */
+---
+
+<svg
+  class="ab-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="ab-kicker ab-stage ab-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · AUTHORITY BUCKETS · SELF-CHECK CANNOT MINT OFFICIAL PASS
+  </text>
+  <line class="ab-stage ab-stage--0" x1="8" y1="34" x2="860" y2="34" stroke="var(--hair)" stroke-width="1"></line>
+
+  <g class="ab-col ab-stage ab-stage--1" transform="translate(8,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="ab-idx" x="12" y="28" fill="var(--accent)">OFFICIAL</text>
+    <text class="ab-title" x="12" y="56" fill="var(--ink)">pass / fail</text>
+    <text class="ab-line" x="12" y="90" fill="var(--mute)">verifier / scorer</text>
+    <text class="ab-line" x="12" y="114" fill="var(--mute)">changes formal</text>
+    <text class="ab-line" x="12" y="148" fill="var(--ink)">success counts</text>
+  </g>
+  <g class="ab-col ab-stage ab-stage--2" transform="translate(224,52)">
+    <rect width="200" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="ab-idx" x="12" y="28" fill="var(--accent)">NON-PRODUCT</text>
+    <text class="ab-title" x="12" y="56" fill="var(--ink)">infra / excluded</text>
+    <text class="ab-line" x="12" y="90" fill="var(--mute)">infra_failed</text>
+    <text class="ab-line" x="12" y="114" fill="var(--mute)">excluded cells</text>
+    <text class="ab-line" x="12" y="148" fill="var(--ink)">≠ capability proof</text>
+  </g>
+  <g class="ab-col ab-stage ab-stage--3" transform="translate(440,52)">
+    <rect width="200" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ab-idx" x="12" y="28" fill="var(--accent)">FEEDBACK</text>
+    <text class="ab-title" x="12" y="56" fill="var(--ink)">self_check_only</text>
+    <text class="ab-line" x="12" y="90" fill="var(--mute)">advisory signal</text>
+    <text class="ab-line" x="12" y="114" fill="var(--mute)">hypothesis fuel</text>
+    <text class="ab-line" x="12" y="148" fill="var(--ink)">≠ official reward</text>
+  </g>
+  <g class="ab-col ab-stage ab-stage--4" transform="translate(656,52)">
+    <rect width="204" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="204" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="ab-idx" x="12" y="28" fill="var(--accent)">HOLD</text>
+    <text class="ab-title" x="12" y="56" fill="var(--ink)">unscored</text>
+    <text class="ab-line" x="12" y="90" fill="var(--mute)">no formal score</text>
+    <text class="ab-line" x="12" y="114" fill="var(--mute)">keep separate</text>
+    <text class="ab-line" x="12" y="148" fill="var(--ink)">do not invent pass</text>
+  </g>
+</svg>
+
+<style>
+  .ab-flow { font-family: var(--sans); }
+  .ab-kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; }
+  .ab-idx { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+  .ab-title { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .ab-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ab-stage { opacity: 0; animation: ab-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .ab-stage--0 { animation-delay: 0.04s; }
+    .ab-stage--1 { animation-delay: 0.14s; }
+    .ab-stage--2 { animation-delay: 0.26s; }
+    .ab-stage--3 { animation-delay: 0.38s; }
+    .ab-stage--4 { animation-delay: 0.5s; }
+    @keyframes ab-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ab-stage { opacity: 1; animation: none; }
+  }
+</style>

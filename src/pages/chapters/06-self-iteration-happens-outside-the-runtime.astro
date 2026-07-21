@@ -6,13 +6,16 @@ import AheBoundaryKeystone from "../../components/diagrams/AheBoundaryKeystone.a
 import EvidenceExportFlow from "../../components/diagrams/EvidenceExportFlow.astro";
 import ManifestEvaluateFlow from "../../components/diagrams/ManifestEvaluateFlow.astro";
 import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidencePlaneFlow.astro";
+import AuthorityBucketFlow from "../../components/diagrams/AuthorityBucketFlow.astro";
+import EvalTransitionFlow from "../../components/diagrams/EvalTransitionFlow.astro";
 ---
 
 <ChapterShell chapterId="06">
   <div slot="thesis">
     <p>
-      系统改进若发生在交互 Runtime 内部且不可证伪，就会把一次跑通的偶然性固化成「进化」。AHE
-      把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。关键句：
+      Maka 如何从多次真实运行中学习，并把经验转化为下一版系统的改进，又不让正在执行任务的 Agent
+      随意改写自身？答案是把自迭代放在交互 Runtime 之外：Runtime 产生不可混淆的运行事实，AHE
+      消费带身份的 target snapshot 与 evidence，提出受限且可证伪的 change manifest，再由独立评估决定是否保留。关键句：
       <strong>Event Log makes experience replayable; the AHE boundary makes change falsifiable.</strong>
     </p>
   </div>
@@ -30,8 +33,7 @@ import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidenc
       policy 或 Headless policy 本身需要改变？
     </p>
     <p>
-      若直接把全部 trace 交给另一个模型并允许改仓库，立刻会问：改的是哪一版？哪些文件是控制面、哪些是证据面？「修复了」是叙述还是有失败案例与预测？候选是否只记住已见案例？如何回到上一条稳定
-      lineage？
+      若直接把全部 trace 交给另一个模型并允许改仓库，立刻会问：改的是哪一版？哪些文件是控制面、哪些是证据面？「修复了」是叙述还是有失败案例与预测？候选是否只记住已见案例？失败是产品行为、评估基础设施故障，还是没有权威分数？改动无效或回归时如何回到上一条稳定 lineage？
     </p>
   </Section>
 
@@ -59,6 +61,9 @@ import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidenc
         candidate；不服务当前 Turn。
       </li>
     </ul>
+    <p>
+      AHE 不参与正在进行的用户对话，也不拥有 Runtime 的工具权限。Maka 可以让系统改进自己，但不需要让正在被改进的系统同时担任事实记录者、改动提出者和最终裁判。
+    </p>
   </Section>
 
   <Section
@@ -77,84 +82,308 @@ import ReadonlyEvidencePlaneFlow from "../../components/diagrams/ReadonlyEvidenc
         ↓ project
 TaskRunProjection
         ↓ normalize and classify
-Harness Results + Lineage + Trace Index + Failure Digest
+Harness Results + Execution Lineage + Trace Index + Failure Digest
         ↓ bind to
 Target Snapshot</pre>
     <p>
       Projection 提供稳定任务语义（最终状态、artifact、Self-check、workspace observation、score
-      authority），不是替代原始事实。索引层帮助 controller 定位失败类别与 lineage
-      gaps；原始追踪层（显式请求时）回到 canonical Runtime Events 验证投影是否遗漏因果链——这是前五章
+      authority），不是替代原始事实。索引层帮助 controller 定位失败类别、Self-check
+      分歧、最终 workspace、source coverage 与 lineage gaps；原始追踪层（显式
+      <code>--include-events</code> 时）回到 canonical Runtime Events 验证投影是否遗漏因果链——这是前五章
       log-first 架构的第三种回报：历史可被新的 projection 重新解释。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        AHE self-iteration 架构章合入：
-        <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a>
-        （docs: add AHE self-iteration architecture chapter）。Target protocol / evidence export 实现对照
+        Target protocol / evidence export 机制：
         <a href={`${import.meta.env.BASE_URL}history/pr/411`}>maka:pr:411</a>、
-        <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a>。
+        <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a>。架构章合入：
+        <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a>。
       </p>
     </aside>
   </Section>
 
   <Section
     id="target"
-    label="§06 · Target"
+    label="§06 · Target Snapshot"
     title="先声明「什么可以被改进」"
     lede="最危险的默认值是「整个仓库都可以改」。"
   >
     <DiagramFigure
-      caption="图 4 · 可改表面 vs 只读证据面：maka-runtime-evidence 绝不能成为 patch 目标。"
+      caption="图 3 · 可改表面 vs 只读证据面：maka-runtime-evidence 绝不能成为 patch 目标。"
       alt="左列 allowed target surface，右列 forbidden maka-runtime-evidence。"
     >
       <ReadonlyEvidencePlaneFlow />
     </DiagramFigure>
     <p>
-      <code>MakaAheTargetSnapshot</code> 显式列出可理解的 component（system prompt、heavy-task
-      policy、tool contracts、context management、permission policy、headless evaluation
-      等），每个带 <code>sourceRefs</code>。最精妙的是只读的
+      <code>MakaAheTargetSnapshot</code>（当前导出为 <code>maka.ahe-target.v2</code>）显式列出 component
+      map：
+    </p>
+    <ul class="plain-list">
+      <li><code>maka-system-prompt</code> — 可编辑</li>
+      <li><code>maka-heavy-task-policy</code> — 可编辑</li>
+      <li><code>maka-tool-contracts</code> — 可编辑</li>
+      <li><code>maka-context-management</code> — 可编辑</li>
+      <li><code>maka-permission-policy</code> — 可编辑</li>
+      <li><code>maka-headless-evaluation</code> — 可编辑</li>
+      <li><code>maka-runtime-evidence</code> — <strong>只读</strong></li>
+    </ul>
+    <p>
+      每个 component 带 <code>sourceRefs</code>。最精妙的是只读的
       <code>maka-runtime-evidence</code>：
       <strong>产生判断依据的 ledger 不能同时成为候选 patch 的目标</strong>——否则最容易的「提升」是改记分、删失败或让证据对候选更有利。
     </p>
     <p>
-      Snapshot identity 绑定受管源码字节与 component topology（内容身份），而不是某次导出动作的时间戳。相同源码与拓扑得到相同
-      <code>snapshotId</code>；任一已登记源码变化则 id 变化。
+      Snapshot identity 绑定受管源码字节与 component topology（内容身份），而不是某次导出动作的时间戳。
+      <code>buildMakaAheTargetSnapshot</code> 验证每个 source ref 解析到仓库内普通文件，拒绝符号链接逃逸，并为每个源码记录
+      SHA-256 digest 与字节数；manifest 自身也被哈希，<code>snapshotId</code> 绑定 manifest 与规范化
+      topology。相同源码与拓扑得到相同 id；任一已登记源码变化则 id 变化。旧 v1 仍可作 legacy
+      读取，不会被升级或冒充为 content-bound evidence。
+    </p>
+  </Section>
+
+  <Section
+    id="export"
+    label="§06 · Evidence Export"
+    title="把运行结果转换为保守证据"
+    lede="只读边界：读取已有 TaskRun store，不重新执行任务。"
+  >
+    <pre class="code-block" aria-label="AHE export CLI">maka eval ahe export &lt;taskRunId...&gt; \
+  --store &lt;out&gt;/runs \
+  --repo &lt;maka-repo-root&gt; \
+  --out &lt;evidence-dir&gt; \
+  [--include-events]</pre>
+    <p>写出的关键文件（教学必须能说出职责）：</p>
+    <ul class="plain-list">
+      <li><code>target-snapshot.json</code> — 本轮证据属于哪一个 Maka target</li>
+      <li><code>harness-results.json</code> — 标准化状态与 score authority</li>
+      <li><code>trace-index.json</code> — task → messages / events / transcript / tool results / artifacts</li>
+      <li><code>traces/&lt;taskRunId&gt;/task-run.json</code> · <code>task-events.jsonl</code>（payload-safe；绝不再误标成 Runtime Events）</li>
+      <li><code>execution-lineage.json</code> — Target、TaskRun、Attempt、AgentRun 与 Runtime/Task coverage 绑定</li>
+      <li><code>messages.json</code> · AgentRun <code>inspect.json</code>（payload-safe）</li>
+      <li><code>runtime-events.jsonl</code> — Canonical Runtime Events，仅 <code>--include-events</code></li>
+      <li><code>failure-digest.json</code> — 确定性失败摘要、Self-check 分歧、hygiene、digest-bound debug refs</li>
+    </ul>
+    <p>
+      导出是确定性的：snapshot、projection、source ledgers、run id 与 export time
+      相同时，稳定 JSON 可重复生成。物化文件引用带 SHA-256 digest 与字节数。未启用
+      <code>--include-events</code> 时，原始 Runtime Event payload 被明确标记为 policy omission，而不是被悄悄宣称存在。
+      <code>failure-digest.json</code> 不是另一段模型总结——它由确定性代码从 TaskRun projection 组织。
+    </p>
+  </Section>
+
+  <Section
+    id="authority"
+    label="§06 · Authority"
+    title="Authority 必须在学习之前分桶"
+    lede="Feedback 可提出假设；只有被允许的 authority 才能改变正式成功计数。"
+  >
+    <DiagramFigure
+      caption="图 4 · Authority 分桶：official pass/fail · infra/excluded · self_check_only · unscored；Self-check 不得铸造 official。"
+      alt="四列：official、non-product、feedback self_check_only、unscored。"
+    >
+      <AuthorityBucketFlow />
+    </DiagramFigure>
+    <p>
+      结果分桶包括：
+      <code>official_pass</code> / <code>official_fail</code>、
+      <code>infra_failed</code>、<code>excluded</code>、
+      <code>self_check_only</code>、<code>unscored</code>。同时记录
+      <code>official_verifier</code> / <code>official_scorer</code> / <code>self_check</code> /
+      <code>analysis_only</code> 等 authority。协议明确禁止 Self-check 把结果声明为 official
+      pass/fail——与 §05「Self-check 永远 advisory」完全一致。
+    </p>
+  </Section>
+
+  <Section
+    id="manifest"
+    label="§06 · Change Manifest"
+    title="改动必须先成为可证伪假设"
+    lede="AHE 不能只提交一个 diff；必须提交机器可检查的实验卡。"
+  >
+    <DiagramFigure
+      caption="图 5 · Manifest → 独立评估 → Accept/Rollback；演化在 Runtime 外形成 lineage。"
+      alt="五步：Target snap、Manifest、Independent eval、Accept?、Lineage。"
+    >
+      <ManifestEvaluateFlow />
+    </DiagramFigure>
+    <pre class="code-block" aria-label="可证伪候选">Observed failure
+    + root-cause hypothesis
+    + bounded source change
+    + predicted wins
+    + predicted risks
+    + validation set
+    + rollback criteria
+    = falsifiable candidate</pre>
+    <p>
+      <code>MakaAheChangeManifest</code> 要求声明：改动了哪些已登记 components；哪些 baseline failure
+      evidence 支持；root cause；targeted fix；预计修复哪些 task；哪些 task 可能产生风险；validation
+      dataset；满足什么条件必须 rollback。Patch 目前只允许
+      <code>applyMode: "staged_patch"</code>。当 <code>changedFiles</code> 存在时，每个 path 必须是
+      repo-relative POSIX、不越出仓库、不指向 <code>.git</code> / dependency / generated
+      <code>dist</code>，且属于已声明可编辑 component 的 <code>sourceRefs</code>。验证器拒绝改写
+      <code>maka-runtime-evidence</code>、未知 component，并要求至少一个 failure case、predicted
+      fix、risk case、validation task 与 rollback criterion。
+    </p>
+    <p>
+      这仍然只是 admission validation，不是 patch executor。当前 Maka 不会因为 manifest
+      合法就自动应用它，也不会证明 diff 内容本身安全——协议把任意自修改请求缩小为可被下一层审查的候选。
+    </p>
+  </Section>
+
+  <Section
+    id="evaluation"
+    label="§06 · Evaluation"
+    title="不要只问总分是否上涨"
+    lede="核心是 per-task transition，不是单个 aggregate score。"
+  >
+    <DiagramFigure
+      caption="图 6 · Evaluation transitions：fail_to_pass / pass_to_pass / pass_to_fail / fail_to_fail；回归与 missed prediction 必须可见。"
+      alt="四格 transition 加底部说明 predictedFixes 与 regressions。"
+    >
+      <EvalTransitionFlow />
+    </DiagramFigure>
+    <p>
+      <code>MakaAheChangeEvaluation</code> 区分
+      <code>fail_to_pass</code>、<code>fail_to_fail</code>、<code>pass_to_pass</code>、
+      <code>pass_to_fail</code>、<code>new_pass</code> / <code>new_fail</code>、
+      <code>infra_or_excluded</code>，并跟踪
+      <code>predictedFixesObserved</code> / <code>predictedFixesMissed</code> /
+      <code>regressions</code>。这样 controller 能回答：预测修复真的发生了吗？风险预测被验证了吗？是否为了一个目标案例牺牲了原本通过的案例？分数变化是否只是因为更多
+      cell 被排除？
+    </p>
+    <p>
+      Current 协议定义了 evaluation 数据结构，但还没有在同一模块中提供完整的 change-evaluation
+      validator、自动 keep/discard controller 或 AHE runner——完整闭环仍属 Target / 外部 controller。
+    </p>
+  </Section>
+
+  <Section
+    id="adjacent"
+    label="§06 · Adjacent"
+    title="Prompt Optimization Loop：相邻但未接通的实现"
+    lede="专项 system-prompt 优化器 ≠ 通用 AHE 闭环已完成。"
+  >
+    <p>
+      仓库中的 <code>prompt-optimization-loop.ts</code> 展示更窄但已可执行的自迭代：多次 baseline
+      估计噪声带；held-in / held-out 分割；Meta-agent 只能看见 held-in；每个 prompt candidate 先成为
+      Git commit；held-in 未超过噪声或不触发 reward-hack quarantine 时不浪费 held-out；acceptance
+      只能 keep/discard；discard 回滚 candidate commit；WAL 可 replay/resume；cost / infra failure /
+      round 硬边界。
+    </p>
+    <ul class="plain-list">
+      <li><strong>AHE target protocol</strong> — 通用演化边界：components、evidence、manifest、evaluation；当前依赖外部 controller 闭环。</li>
+      <li><strong>Prompt Optimization Loop</strong> — 强制只改 system prompt；已有内部 controller 与 WAL。</li>
+    </ul>
+    <p>未来可能共享 snapshot identity、evidence taxonomy、candidate lineage 与 acceptance primitives，但当前不应描述成一条已经接通的调用链。</p>
+  </Section>
+
+  <Section
+    id="invariants"
+    label="§06 · Invariants"
+    title="三条必须保持的不变量"
+    lede="Immutable evidence + versioned target + falsifiable prediction + independent comparison + reversible lineage。"
+  >
+    <ol class="plain-list numbered">
+      <li>
+        <strong>Evidence plane 不能被 candidate 改写</strong> — 候选可改 prompt / tool contract /
+        context policy，不能通过同一 patch 改写作为比较依据的 Runtime evidence ledger。
+      </li>
+      <li>
+        <strong>每个结果必须绑定 target identity</strong> —
+        <code>MakaAheRunResult</code> 同时带 batch <code>runId</code>、<code>snapshotId</code>、
+        <code>taskRunId</code>、<code>taskId</code> 与带 digest 的
+        <code>executionLineageRef</code>。没有 target identity 与 lineage 的分数不能安全进入跨版本比较。
+      </li>
+      <li>
+        <strong>没有反例集合，就没有可接受的自迭代</strong> — manifest 必须含 risk cases 与 rollback
+        criteria；evaluation 必须保留 <code>pass_to_fail</code>。只证明目标失败变好而不观察已有能力，是定向过拟合。
+      </li>
+    </ol>
+    <pre class="code-block" aria-label="受控自迭代">Immutable evidence
+  + versioned target
+  + bounded editable surface
+  + falsifiable prediction
+  + independent comparison
+  + reversible lineage
+  = controlled self-iteration</pre>
+  </Section>
+
+  <Section
+    id="why-not"
+    label="§06 · Boundary"
+    title="为什么不把 AHE 直接做成 Runtime Tool"
+    lede="improve_yourself 会混合本应分开的权限与时间尺度。"
+  >
+    <ul class="plain-list">
+      <li>当前任务 Agent 会同时接触用户 workspace 与 Maka source workspace</li>
+      <li>正在运行的版本会决定怎样修改自己的评估与 evidence</li>
+      <li>一个 Turn 的 token / timeout / 取消语义要承担跨任务实验</li>
+      <li>用户任务失败可能直接触发 repository mutation</li>
+      <li>恢复一次 Session 将不得不恢复一条代码版本 lineage</li>
+    </ul>
+    <p>
+      外循环增加协议与 artifact 成本，却换来更清晰的 authority、隔离与时间尺度。只有当 Maka
+      能证明 in-Runtime mutation 具有同等隔离与可恢复性时，才值得重新考虑这个边界。
     </p>
   </Section>
 
   <Section
     id="current"
-    label="§06 · Current"
+    label="§06 · Current vs Target"
     title="Current 能做什么，Target 还缺什么"
     lede="不声称 Maka 已无人监管地自行改代码。"
   >
-    <DiagramFigure
-      caption="图 3 · Manifest → 独立评估 → Accept/Rollback；演化在 Runtime 外形成 lineage。"
-      alt="五步：Target snap、Manifest、Independent eval、Accept?、Lineage。"
-    >
-      <ManifestEvaluateFlow />
-    </DiagramFigure>
-    <p>
-      Current：可声明 source-backed target surface；从 TaskRun projection 导出带 authority
-      的结果、trace index、messages 与 failure digest；验证受限 change manifest。Evidence export
-      CLI 是只读边界——读取已有 store，不重新执行任务。
-    </p>
+    <p><strong>Current 已可依赖：</strong></p>
+    <ul class="plain-list">
+      <li>内容寻址的 <code>maka.ahe-target.v2</code>（保留 legacy v1 读取）</li>
+      <li>source-backed component map，区分 editable 与 evidence-only</li>
+      <li>只读 evidence export；结果按 authority / accounting status 保守分桶</li>
+      <li>versioned run result 绑定 digest-bearing execution-lineage</li>
+      <li>trace index 区分 Task Events 与可选 canonical Runtime Events</li>
+      <li>failure digest 暴露 Self-check divergence / hygiene / 最终状态</li>
+      <li>change manifest validator 限制 component、path 与最小实验声明</li>
+      <li>CLI 可导出 baseline evidence，但不会运行 AHE 或应用 patch</li>
+    </ul>
     <div class="stub">
-      <p class="stub__tag">Current vs Target</p>
+      <p class="stub__tag">Target 闭环仍需</p>
       <p>
-        Target：外部 AHE controller 完整执行 snapshot → 分析 → 候选 patch → 评估 → 接受或回滚，并形成可恢复
-        lineage。仓库中 Prompt Optimization Loop 等是相邻实现模式，不是通用无人演化系统已完成的证明。
+        强制 Git commit 或更强 content binding；manifest 与实际 diff 的完整 hash binding；通用
+        candidate workspace / patch executor / sandbox；change-evaluation validator 与明确
+        keep/discard；iteration WAL / resume fingerprint / lineage；dataset partition 与防泄漏；cost /
+        round / concurrency / regression budget；把 candidate decision 写回演化 ledger——更成熟的自迭代反而应有更小
+        change surface、更强证据绑定与更明确停止条件。
       </p>
     </div>
   </Section>
 
+  <Section
+    id="failure"
+    label="§06 · Failure"
+    title="外循环也必须是 Durable Loop"
+    lede="导出失败不改 TaskRun；不完整评估不得自动提升 lineage。"
+  >
+    <ul class="plain-list">
+      <li>Source ref 缺失/越界/component map 非法 → snapshot 构建失败；TaskRun 不被修改。</li>
+      <li>只有 Self-check、没有正式结果 → <code>self_check_only</code> / <code>unscored</code>，不伪装成功。</li>
+      <li>Manifest 不满足 → validator 拒绝；不产生半应用状态。</li>
+      <li>Candidate 执行中断 → 通用 AHE runner 尚未在协议模块实现；Target 应有 append-only iteration WAL。</li>
+      <li>Evaluation 不完整 → infra / excluded / unscored / missing 保持独立；「没观察到回归」≠「证明没有回归」。</li>
+    </ul>
+    <p class="figure-note">
+      结语：自迭代不是自我相信，而是可重复的反驳过程。Maka preserves experience as evidence, then lets
+      a separate evolution loop earn every change.
+    </p>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + 只读证据面 + export + manifest/evaluate/rollback 流</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a> · Hybrid lean、清单完整</li>
-      <li>AHE 在 Runtime 外；Target 完整控制器未伪装为 Current</li>
-      <li>Hybrid：本章 lean、清单完整；更深演进见 /history 旁注</li>
+      <li>关键图 + export 文件清单 + authority 分桶 + manifest + eval transitions</li>
+      <li>Prompt Optimization Loop 相邻诚实边界；三条不变量</li>
+      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/411`}>maka:pr:411</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/413`}>maka:pr:413</a> ·
+        <a href={`${import.meta.env.BASE_URL}history/pr/776`}>maka:pr:776</a></li>
+      <li>Current 只读协议 vs Target 完整控制器：已写清（中英同船）</li>
     </ul>
   </div>
 </ChapterShell>
@@ -174,7 +403,10 @@ Target Snapshot</pre>
   .plain-list {
     margin: 0.75rem 0 1.1rem;
     padding-left: 1.2rem;
-    max-width: 40em;
+    max-width: 42em;
+  }
+  .plain-list.numbered {
+    list-style: decimal;
   }
   .plain-list li {
     margin-bottom: 0.45rem;
@@ -186,5 +418,11 @@ Target Snapshot</pre>
   }
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+  .figure-note {
+    margin: 0.5rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 40em;
   }
 </style>
