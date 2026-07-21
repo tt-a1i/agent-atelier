@@ -1,4 +1,4 @@
-name: CI build
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -7,27 +7,35 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Allow this job to clone the repo and create a page deployment
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: ci-build-${{ github.ref }}
+  group: pages-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout your repository using git
+        uses: actions/checkout@v4
+      - name: Install, build, and upload your site
+        uses: withastro/action@v6
         with:
           node-version: "22"
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - name: Upload dist (optional host handoff)
-        uses: actions/upload-artifact@v4
-        with:
-          name: site-dist
-          path: dist
-          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

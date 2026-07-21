@@ -2,47 +2,40 @@
 
 **Ticket:** [Lock static hosting / CDN deploy pipeline](https://github.com/tt-a1i/agent-atelier/issues/25)  
 **Date:** 2026-07-21  
-**Status:** Decision recorded — **HITL** to attach a public host (Pages blocked on current private plan)
+**Status:** Decision recorded — **GitHub Pages** (repo publicized)
 
 ## Constraints
 
 - Astro static output (`astro build` → `dist/`)
 - zh default (no prefix) + `/en/…`
 - Thousands of `/history/pr|c/…` pages — pure static OK
-- Absolute site paths today are rooted at `/` — **avoid** GitHub project-page `base: /repo/` unless the whole link surface moves to `import.meta.env.BASE_URL`
-- Repo is **private**; GitHub API returns: *current plan does not support GitHub Pages for this repository*
+- Project Pages URL requires `base: '/agent-atelier/'` and `import.meta.env.BASE_URL` / `withBase()` for root-absolute links
 
 ## Decision
 
-**Primary host: Cloudflare Pages** (or equivalent) with root path `/`:
+**Primary host: GitHub Pages** via GitHub Actions (`dist` → Pages):
 
-1. Connect this GitHub repo in Cloudflare Pages (production branch `main`, build `npm run build`, output `dist`, Node 22).
-2. Keep trailing-slash directory indexes (Astro default).
-3. Record the `*.pages.dev` (or custom domain) URL on map #1 Decisions when live.
+1. Repository visibility: **public** (required for Pages on current plan).
+2. Production URL: `https://tt-a1i.github.io/agent-atelier/`
+3. Astro config: `site: 'https://tt-a1i.github.io'`, `base: '/agent-atelier/'`
+4. Workflow: `.github/workflows/deploy-pages.yml` — `withastro/action` build + `actions/deploy-pages`
+5. Trailing-slash directory indexes (Astro default); no SPA fallback
 
-**Why not GitHub Pages first:** private-repo Pages is unavailable on the current plan (422 from REST). Making the repo public or upgrading GitHub would unblock Pages with root/`custom domain` — still valid alternate once policy allows.
-
-**Why not `username.github.io/agent-atelier/` project path:** would require `base: '/agent-atelier/'` and rewriting every absolute `/…` href.
+**Why not Cloudflare Pages first (earlier draft):** User chose option 2 — publicize + GitHub Pages. Cloudflare remains a valid alternate if root-path hosting (`/`) is preferred later without a `base` prefix.
 
 ## Pipeline shipped in repo
 
-- `.github/workflows/deploy-pages.yml` (named CI build): on PR/`main` push → `npm ci` + `npm run build`, upload `dist` artifact for 7 days (handoff to any host).
+- `.github/workflows/deploy-pages.yml`: push/`workflow_dispatch` on `main` → build + deploy to Pages; PRs build only
 - Local publish check: `npm run build && npm run preview`
 
 ## Locale / slash notes
 
-- Emitted as directory `index.html` (`/chapters/01-…/`, `/en/chapters/01-…/`)
+- Emitted as directory `index.html` (`/agent-atelier/chapters/01-…/`, `/agent-atelier/en/chapters/01-…/`)
 - No SPA fallback required
-- Locale switcher + `hreflang` already in `ReportLayout`
-- History detail remains zh-canonical `/history/pr|c/…` until `/en/history/…` detail routes exist
-
-## HITL remaining
-
-- Create Cloudflare Pages project (or publicize repo / upgrade for GitHub Pages)
-- Paste preview URL into map #1 Decisions
-- Optional: add `CLOUDFLARE_API_TOKEN` + deploy action later — not required if dashboard Git integration is used
+- Locale switcher + `hreflang` already in `ReportLayout` (base-aware via `stripBase` / `localePath`)
+- History detail remains zh-canonical `/history/pr|c/…` (under base) until `/en/history/…` detail routes exist
 
 ## Out of scope
 
-- Refactoring all absolute paths for project-page subpath hosting
+- Custom domain / root-path hosting without `base`
 - SSR adapters

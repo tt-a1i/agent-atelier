@@ -9,7 +9,27 @@ export function isLocale(value: string | undefined): value is Locale {
   return value === "zh" || value === "en";
 }
 
-/** Locale-aware internal path (respects prefixDefaultLocale: false). */
+/** Strip Astro `base` so locale helpers see site-root paths. */
+export function stripBase(pathname: string): string {
+  const base = import.meta.env.BASE_URL || "/";
+  if (base === "/") return pathname || "/";
+  const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
+  if (pathname === normalized || pathname === `${normalized}/`) return "/";
+  if (pathname.startsWith(`${normalized}/`)) {
+    return pathname.slice(normalized.length) || "/";
+  }
+  return pathname || "/";
+}
+
+/** Prefix a site-root path with `import.meta.env.BASE_URL`. */
+export function withBase(path = ""): string {
+  const base = import.meta.env.BASE_URL || "/";
+  const clean = path.replace(/^\/+/, "");
+  if (!clean) return base.endsWith("/") ? base : `${base}/`;
+  return `${base.endsWith("/") ? base : `${base}/`}${clean}`;
+}
+
+/** Locale-aware internal path (respects prefixDefaultLocale: false + base). */
 export function localePath(locale: Locale, path = ""): string {
   const clean = path.replace(/^\/+/, "");
   return getRelativeLocaleUrl(locale, clean);
@@ -25,7 +45,7 @@ export function alternateLocalePath(
   pathname: string,
   search = "",
 ): string {
-  let path = pathname || "/";
+  let path = stripBase(pathname || "/");
   if (path !== "/" && path.endsWith("/")) path = path.slice(0, -1);
 
   if (locale === "zh") {
@@ -45,7 +65,8 @@ export function alternateLocalePath(
 }
 
 export function detectLocaleFromPath(pathname: string): Locale {
-  return pathname === "/en" || pathname.startsWith("/en/") ? "en" : "zh";
+  const path = stripBase(pathname);
+  return path === "/en" || path.startsWith("/en/") ? "en" : "zh";
 }
 
 export function htmlLang(locale: Locale): string {

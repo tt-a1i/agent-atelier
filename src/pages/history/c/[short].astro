@@ -1,6 +1,7 @@
 ---
 import ReportLayout from "../../../layouts/ReportLayout.astro";
 import { chapterNavItems } from "../../../lib/chapters";
+import { localePath, withBase } from "../../../lib/i18n";
 import {
   getCommitByShort,
   githubCommitUrl,
@@ -43,7 +44,7 @@ function fmtDate(iso: string): string {
   description={`Maka commit ${commit.short}: ${commit.subject}`}
   nav={nav}
   locale="zh"
-  activeHref="/history"
+  activeHref={localePath("zh", "history")}
 >
   <article class="report">
     <header class="masthead">
@@ -72,7 +73,7 @@ function fmtDate(iso: string): string {
           <ul class="pr-list">
             {commit.prNumbers.map((num) => (
               <li>
-                <a href={`/history/pr/${num}`}>#{num}</a>
+                <a href={withBase(`history/pr/${num}`)}>#{num}</a>
               </li>
             ))}
           </ul>

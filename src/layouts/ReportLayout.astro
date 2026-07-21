@@ -7,6 +7,8 @@ import {
   detectLocaleFromPath,
   htmlLang,
   localePath,
+  stripBase,
+  withBase,
   type Locale,
 } from "../lib/i18n";
 
@@ -34,16 +36,22 @@ const {
 const locale: Locale = localeProp ?? detectLocaleFromPath(Astro.url.pathname);
 const t = chrome(locale);
 const nav = Astro.props.nav ?? chapterNavItems(locale);
-const currentPath = activeHref ?? Astro.url.pathname;
+const currentPath = stripBase(activeHref ?? Astro.url.pathname);
 const alternateHref = alternateLocalePath(locale, Astro.url.pathname, Astro.url.search);
 const switchLabel = locale === "zh" ? t.localeSwitchToEn : t.localeSwitchToZh;
+const homeZh = localePath("zh", "");
+const homeEn = localePath("en", "");
 
 function barePath(pathname: string): string {
-  let path = pathname || "/";
+  let path = stripBase(pathname || "/");
   if (path !== "/" && path.endsWith("/")) path = path.slice(0, -1);
   if (path === "/en") return "";
   if (path.startsWith("/en/")) return path.slice(4);
   return path.replace(/^\//, "");
+}
+
+function navPath(href: string): string {
+  return stripBase(href);
 }
 
 const bare = barePath(Astro.url.pathname);
@@ -55,8 +63,8 @@ const hrefEn = localePath("en", bare);
 <html lang={htmlLang(locale)}>
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href={withBase("favicon.svg")} />
+    <link rel="icon" href={withBase("favicon.ico")} />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
@@ -84,10 +92,11 @@ const hrefEn = localePath("en", bare);
         <ul class="site-nav__links">
           {
             nav.map((item) => {
+              const itemPath = navPath(item.href);
               const active =
-                item.href === "/" || item.href === "/en" || item.href === "/en/"
+                item.href === homeZh || item.href === homeEn
                   ? currentPath === "/" || currentPath === "/en" || currentPath === "/en/"
-                  : currentPath === item.href || currentPath.startsWith(`${item.href}/`);
+                  : currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
               return (
                 <li>
                   <a href={item.href} aria-current={active ? "page" : undefined}>

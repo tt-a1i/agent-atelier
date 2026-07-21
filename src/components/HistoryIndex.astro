@@ -1,7 +1,7 @@
 ---
 import ReportLayout from "../layouts/ReportLayout.astro";
 import { chapterNavItems } from "../lib/chapters";
-import { localePath, type Locale } from "../lib/i18n";
+import { localePath, withBase, type Locale } from "../lib/i18n";
 import {
   HISTORY_PAGE_SIZE,
   buildHistoryCommitIndex,
@@ -158,7 +158,7 @@ const copy =
         <div
           id="history-app"
           data-base={base}
-          data-detail-base="/history"
+          data-detail-base={withBase("history")}
           data-page-size={String(HISTORY_PAGE_SIZE)}
           data-date-locale={dateLocale}
           data-i18n={JSON.stringify({
