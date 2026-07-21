@@ -1,0 +1,119 @@
+---
+/**
+ * §05 flow — model reports vs Runtime admits / audits / bounds.
+ */
+---
+
+<svg
+  class="as-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="as-kicker as-stage as-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · MODEL REPORTS · RUNTIME ADMITS · LOGS DECIDE
+  </text>
+  <line
+    class="as-stage as-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="as-col as-stage as-stage--1" transform="translate(8,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="as-col__idx" x="14" y="28" fill="var(--accent)">MODEL · ADVISORY</text>
+    <text class="as-col__title" x="14" y="54" fill="var(--ink)">Reports</text>
+    <text class="as-col__line" x="14" y="90" fill="var(--mute)">plan submit</text>
+    <text class="as-col__line" x="14" y="110" fill="var(--mute)">pass / fail / inconclusive</text>
+    <text class="as-col__line" x="14" y="130" fill="var(--mute)">publicReason + evidence</text>
+    <text class="as-col__line" x="14" y="154" fill="var(--ink)">≠ final authority</text>
+  </g>
+
+  <g class="as-col as-stage as-stage--2" transform="translate(298,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="as-col__idx" x="14" y="28" fill="var(--accent)">RUNTIME · GATES</text>
+    <text class="as-col__title" x="14" y="54" fill="var(--ink)">Admits · audits</text>
+    <text class="as-col__line" x="14" y="90" fill="var(--mute)">schema bounds</text>
+    <text class="as-col__line" x="14" y="110" fill="var(--mute)">source guard</text>
+    <text class="as-col__line" x="14" y="130" fill="var(--mute)">hygiene · repair cap</text>
+    <text class="as-col__line" x="14" y="154" fill="var(--ink)">strong pass optional</text>
+  </g>
+
+  <g class="as-col as-stage as-stage--3" transform="translate(588,52)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="as-col__idx" x="14" y="28" fill="var(--accent)">AUTHORITY · ELSEWHERE</text>
+    <text class="as-col__title" x="14" y="54" fill="var(--ink)">Official truth</text>
+    <text class="as-col__line" x="14" y="90" fill="var(--mute)">terminal RuntimeEvent</text>
+    <text class="as-col__line" x="14" y="110" fill="var(--mute)">external acceptance</text>
+    <text class="as-col__line" x="14" y="130" fill="var(--mute)">TaskRun outcome</text>
+    <text class="as-col__line" x="14" y="154" fill="var(--ink)">self-check ≠ trust</text>
+  </g>
+</svg>
+
+<style>
+  .as-flow {
+    font-family: var(--sans);
+  }
+  .as-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .as-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .as-col__title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .as-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .as-stage {
+      opacity: 0;
+      animation: as-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .as-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .as-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .as-stage--2 {
+      animation-delay: 0.3s;
+    }
+    .as-stage--3 {
+      animation-delay: 0.44s;
+    }
+    @keyframes as-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .as-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

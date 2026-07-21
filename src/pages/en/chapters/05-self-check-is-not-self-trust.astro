@@ -3,52 +3,182 @@ import ChapterShell from "../../../components/ChapterShell.astro";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import SelfCheckKeystone from "../../../components/diagrams/SelfCheckKeystone.astro";
+import RepairBudgetFlow from "../../../components/diagrams/RepairBudgetFlow.astro";
+import AuthoritySplitFlow from "../../../components/diagrams/AuthoritySplitFlow.astro";
 ---
 
 <ChapterShell chapterId="05" locale="en">
   <div slot="thesis">
-    <p lang="zh-CN">
-      （正文仍以中文源稿为准）Self-check 是有界反馈环：帮助修复，不接管事实。
-    </p>
     <p>
-      Structural parity with zh: scene → keystone → plan → schema → authority. Full EN prose pending —
-      WIP.
+      An Agent may inspect its own output, but must not write “I think I’m done” as final authority.
+      Self-check is a bounded feedback loop: it helps repair; it does not take over facts. Key line:
+      <strong>Self-check can produce evidence and feedback; it cannot manufacture trust.</strong>
     </p>
   </div>
 
   <Section
+    id="scene"
+    label="§05 · Scene"
+    title="Start from “I’ve already checked”"
+    lede="Free-form reflection restates intent; unbounded check–fix becomes a second Agent loop without budget."
+  >
+    <p>
+      Suppose after a complex migration the Agent replies “done — the code should work.” It has not
+      answered: which final artifacts were checked, which public commands ran, exit codes, whether
+      temporary output stayed in scratch, whether the final workspace was polluted, whether new files
+      are planned deliverables or accidental side effects, whether evidence came only from public task
+      materials, and how many repair rounds failure allows.
+    </p>
+    <blockquote class="pull">
+      How do you give the model a chance to discover its own mistakes while putting self-check inputs,
+      evidence, side effects, and retry counts into a protocol the Runtime can inspect?
+    </blockquote>
+  </Section>
+
+  <Section
     id="keystone"
     label="§05 · Keystone"
-    title="Feedback plane, not authority plane"
+    title="Self-check is a Feedback Plane, not an Authority Plane"
     lede="Model reports; Runtime admits, audits, and bounds."
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · Plan → Evidence → Guard → Gate → bounded repair."
-      alt="Five-step self-check feedback plane ending in bounded repair; invariant: cannot manufacture trust."
+      caption="Fig. 1 · Plan → Evidence → Source Guard → Semantic gate → bounded repair; the model cannot grant infinite self-proof."
+      alt="Five-step feedback plane: Plan, Evidence, Source Guard, Semantic gate, Bounded repair; invariant: Self-check produces evidence and feedback, not trust."
     >
       <SelfCheckKeystone />
     </DiagramFigure>
+
+    <ul class="plain-list">
+      <li>
+        <strong>Self-check Plan</strong> — what to check and where temporary output goes (model
+        submits; Runtime admits)
+      </li>
+      <li><strong>Public Evidence</strong> — what was actually executed or observed (with source refs)</li>
+      <li>
+        <strong>Source Guard</strong> — whether only public task materials are cited (deterministic policy)
+      </li>
+      <li>
+        <strong>Hygiene / Consistency Audit</strong> — whether work left scratch or produced unplanned side effects
+      </li>
+      <li>
+        <strong>Repair Gate</strong> — whether one extra check/repair Turn is allowed (capped)
+      </li>
+    </ul>
+  </Section>
+
+  <Section
+    id="plan"
+    label="§05 · Plan"
+    title="Why a Self-check Plan must come first"
+    lede="Checking itself has side effects; post-hoc rationalization cannot distinguish prior intent."
+  >
+    <p>
+      Compiles may write object files; scripts may overwrite deliverables; “verification output” may
+      change the workspace listing. If the Agent only explains “those files were temporary” after the
+      check, Runtime cannot tell prior plan from post-hoc story. Hence
+      <code>self_check_plan_submit</code> first: declare finalArtifacts, selfCheckScratch,
+      workspaceGuardPlan — a stable baseline for later audit. Without a plan, facts may still enter
+      Task Events, but a strong pass gate can block with <code>missing_self_check_plan</code> — the
+      tool layer may record; the gate layer decides whether semantic completion is supported.
+    </p>
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside</p>
       <p>
-        Architecture chapter: <a href="/history/pr/774">maka:pr:774</a>.
+        Self-check architecture chapter land:
+        <a href="/history/pr/774">maka:pr:774</a>
+        (docs: add self-check architecture chapter). Later evidence-freshness binding:
+        <a href="/history/pr/954">maka:pr:954</a>.
       </p>
     </aside>
   </Section>
 
+  <Section
+    id="schema"
+    label="§05 · Schema"
+    title="Make Self-check a finite object first"
+    lede="Schema solves persistence and prompt safety; it does not alone prove evidence authenticity."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · Model reports · Runtime admits · official truth lives elsewhere."
+      alt="Three columns: Model advisory, Runtime gates, Authority elsewhere."
+    >
+      <AuthoritySplitFlow />
+    </DiagramFigure>
+    <p>
+      <code>self_check_submit</code> is not free text: status is only
+      <code>pass / fail / inconclusive</code>; publicReason is bounded; at least one command or
+      artifact evidence item; character/count caps on fields. Today many fields are model-submitted
+      tool args — schema blocks unbounded payloads but cannot alone prove a command truly ran or a
+      hash truly matches current bytes (Target: upgrade toward executor-owned, high-water-bound
+      evidence).
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current: Heavy-task Self-check is a strictly limited advisory mechanism, not an independent
+        proof of task correctness. Target: promote declarations to executor-owned evidence — do not
+        disguise as already shipped.
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="authority"
+    label="§05 · Authority"
+    title="Chain authority back to facts"
+    lede="Completion must not listen only to self-narration; official conclusions live in logs, external acceptance, and terminal facts."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Gate fails → check repair budget → bounded Repair Turn → re-check; stop when the cap is exhausted."
+      alt="Five steps: Gate fails, Budget check, Repair Turn, Re-check, Stop loop."
+    >
+      <RepairBudgetFlow />
+    </DiagramFigure>
+    <p>
+      Building on §02: evidence must not be pruned away, nor overwritten by a self-narration. Building
+      on §04: Self-check happens inside Attempt / Task loops under a repair budget. “Tests passed”
+      from the model is still a report over public materials; Source Guard rejects private materials
+      from feedback; when gates fail and budget is exhausted the self-check loop stops — it never
+      grants infinite self-authority.
+    </p>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
-      <li>Do not mark checklist complete</li>
+      <li>Present: keystone + authority split + repair budget flow</li>
+      <li>
+        Aside: <a href="/history/pr/774">maka:pr:774</a>
+      </li>
+      <li>Still open: a11y pass — do not mark checklist complete</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
     max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
   }
 </style>

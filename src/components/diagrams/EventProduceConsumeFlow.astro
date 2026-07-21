@@ -1,0 +1,161 @@
+---
+/**
+ * §01 flow — produce → durable append → project / consume responsibilities.
+ */
+---
+
+<svg
+  class="epc-flow"
+  viewBox="0 0 868 220"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="epc-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="epc-kicker epc-stage epc-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · PRODUCE → APPEND → PROJECT → CONSUME
+  </text>
+  <line
+    class="epc-stage epc-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="epc-connectors epc-stage epc-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="198" y1="110" x2="226" y2="110" marker-end="url(#epc-arrow)"></line>
+    <line x1="414" y1="110" x2="442" y2="110" marker-end="url(#epc-arrow)"></line>
+    <line x1="630" y1="110" x2="658" y2="110" marker-end="url(#epc-arrow)"></line>
+  </g>
+
+  <g class="epc-node epc-stage epc-stage--1" transform="translate(8,58)">
+    <rect width="190" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="190" height="2" fill="var(--accent)"></rect>
+    <text class="epc-node__idx" x="12" y="26" fill="var(--accent)">01</text>
+    <text class="epc-node__name" x="12" y="50" fill="var(--ink)">Produce facts</text>
+    <text class="epc-node__hint" x="12" y="74" fill="var(--mute)">Runner · Tools</text>
+    <text class="epc-node__hint" x="12" y="92" fill="var(--mute)">stream + side effects</text>
+  </g>
+
+  <g class="epc-node epc-stage epc-stage--2" transform="translate(226,58)">
+    <rect width="188" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="188" height="2" fill="var(--accent)"></rect>
+    <text class="epc-node__idx" x="12" y="26" fill="var(--accent)">02</text>
+    <text class="epc-node__name" x="12" y="50" fill="var(--ink)">Durable append</text>
+    <text class="epc-node__hint" x="12" y="74" fill="var(--mute)">SessionManager</text>
+    <text class="epc-node__hint" x="12" y="92" fill="var(--mute)">ledger order</text>
+  </g>
+
+  <g class="epc-node epc-stage epc-stage--3" transform="translate(442,58)">
+    <rect width="188" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="188" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="epc-node__idx" x="12" y="26" fill="var(--accent)">03</text>
+    <text class="epc-node__name" x="12" y="50" fill="var(--ink)">Project</text>
+    <text class="epc-node__hint" x="12" y="74" fill="var(--mute)">policy + config</text>
+    <text class="epc-node__hint" x="12" y="92" fill="var(--mute)">State(t) = Project(…)</text>
+  </g>
+
+  <g class="epc-node epc-stage epc-stage--4" transform="translate(658,58)">
+    <rect
+      width="202"
+      height="104"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="202" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="epc-node__idx" x="12" y="26" fill="var(--accent)">04</text>
+    <text class="epc-node__name" x="12" y="50" fill="var(--ink)">Consume views</text>
+    <text class="epc-node__hint" x="12" y="74" fill="var(--mute)">UI · model · recovery</text>
+    <text class="epc-node__hint" x="12" y="92" fill="var(--mute)">never write-back truth</text>
+  </g>
+
+  <text class="epc-foot epc-stage epc-stage--4" x="8" y="198" fill="var(--mute)">
+    UI transcript and chat messages are consumers — not a second source of truth.
+  </text>
+</svg>
+
+<style>
+  .epc-flow {
+    font-family: var(--sans);
+  }
+  .epc-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .epc-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .epc-node__name {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .epc-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .epc-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .epc-stage {
+      opacity: 0;
+      animation: epc-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .epc-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .epc-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .epc-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .epc-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .epc-stage--4 {
+      animation-delay: 0.48s;
+    }
+    @keyframes epc-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .epc-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

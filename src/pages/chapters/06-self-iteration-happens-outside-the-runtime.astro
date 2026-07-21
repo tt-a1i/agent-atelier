@@ -3,6 +3,8 @@ import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import AheBoundaryKeystone from "../../components/diagrams/AheBoundaryKeystone.astro";
+import EvidenceExportFlow from "../../components/diagrams/EvidenceExportFlow.astro";
+import ManifestEvaluateFlow from "../../components/diagrams/ManifestEvaluateFlow.astro";
 ---
 
 <ChapterShell chapterId="06">
@@ -64,6 +66,12 @@ import AheBoundaryKeystone from "../../components/diagrams/AheBoundaryKeystone.a
     title="Event Log 从恢复底座变成经验底座"
     lede="AHE 不应直接吞下没有边界的 JSONL；先经 TaskRun projection 规范化。"
   >
+    <DiagramFigure
+      caption="图 2 · 只读导出链：Events → Project → Normalize → Bind target → Export CLI。"
+      alt="五步证据导出流水线，终点为 read-only CLI。"
+    >
+      <EvidenceExportFlow />
+    </DiagramFigure>
     <pre class="code-block" aria-label="证据导出链">Runtime / Task Events
         ↓ project
 TaskRunProjection
@@ -114,6 +122,12 @@ Target Snapshot</pre>
     title="Current 能做什么，Target 还缺什么"
     lede="不声称 Maka 已无人监管地自行改代码。"
   >
+    <DiagramFigure
+      caption="图 3 · Manifest → 独立评估 → Accept/Rollback；演化在 Runtime 外形成 lineage。"
+      alt="五步：Target snap、Manifest、Independent eval、Accept?、Lineage。"
+    >
+      <ManifestEvaluateFlow />
+    </DiagramFigure>
     <p>
       Current：可声明 source-backed target surface；从 TaskRun projection 导出带 authority
       的结果、trace index、messages 与 failure digest；验证受限 change manifest。Evidence export
@@ -130,11 +144,11 @@ Target Snapshot</pre>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：Runtime / Evolution 边界关键图 + 经验底座 / target / Current·Target 叙事</li>
+      <li>已有：关键图 + 证据导出流 + manifest/evaluate/rollback 流</li>
       <li>
         已有：演进旁注 <a href="/history/pr/776">maka:pr:776</a>
       </li>
-      <li>待补：manifest→evaluate→rollback 体量流图；全文 EN 同船</li>
+      <li>待补：全文 EN 同船、a11y 终检</li>
       <li>本页不标 checklist 完成</li>
     </ul>
   </div>

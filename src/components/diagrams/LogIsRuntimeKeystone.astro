@@ -1,0 +1,164 @@
+---
+/**
+ * §01 specimen keystone — Event Log centered; Session / UI / Provider are projections.
+ */
+---
+
+<svg
+  class="log-runtime"
+  viewBox="0 0 868 336"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="lr-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="lr-kicker lr-stage lr-stage--0" x="8" y="22" fill="var(--accent)">
+    SCENE · §01 · LOG IS THE RUNTIME
+  </text>
+  <text class="lr-title lr-stage lr-stage--0" x="8" y="52" fill="var(--ink)">
+    Canonical log → many projections · never the reverse
+  </text>
+  <line
+    class="lr-stage lr-stage--0"
+    x1="8"
+    y1="70"
+    x2="860"
+    y2="70"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="lr-connectors lr-stage lr-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <path d="M 434 168 C 434 120, 300 108, 250 108" marker-end="url(#lr-arrow)"></path>
+    <path d="M 434 168 C 434 140, 560 120, 618 120" marker-end="url(#lr-arrow)"></path>
+    <path d="M 434 188 C 434 230, 300 248, 250 248" marker-end="url(#lr-arrow)"></path>
+    <path d="M 434 188 C 434 230, 560 248, 618 248" marker-end="url(#lr-arrow)"></path>
+  </g>
+
+  <g class="lr-node lr-stage lr-stage--1" transform="translate(318,138)">
+    <rect width="232" height="80" rx="1" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.25"></rect>
+    <rect width="232" height="2" fill="var(--accent)"></rect>
+    <text class="lr-node__idx" x="14" y="26" fill="var(--accent)">SOURCE</text>
+    <text class="lr-node__name" x="14" y="50" fill="var(--ink)">Runtime Events Log</text>
+    <text class="lr-node__hint" x="14" y="70" fill="var(--mute)">append-only · replayable</text>
+  </g>
+
+  <g class="lr-node lr-stage lr-stage--2" transform="translate(8,78)">
+    <rect width="200" height="60" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="lr-node__name" x="12" y="28" fill="var(--ink)">Model History</text>
+    <text class="lr-node__hint" x="12" y="48" fill="var(--mute)">next provider messages</text>
+  </g>
+
+  <g class="lr-node lr-stage lr-stage--2" transform="translate(660,90)">
+    <rect width="200" height="60" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="lr-node__name" x="12" y="28" fill="var(--ink)">UI Read Model</text>
+    <text class="lr-node__hint" x="12" y="48" fill="var(--mute)">transcript · tool activity</text>
+  </g>
+
+  <g class="lr-node lr-stage lr-stage--3" transform="translate(8,218)">
+    <rect width="200" height="60" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="lr-node__name" x="12" y="28" fill="var(--ink)">Terminal Fact</text>
+    <text class="lr-node__hint" x="12" y="48" fill="var(--mute)">Run outcome classifier</text>
+  </g>
+
+  <g class="lr-node lr-stage lr-stage--3" transform="translate(660,218)">
+    <rect width="200" height="60" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="lr-node__name" x="12" y="28" fill="var(--ink)">Recovery / Compact</text>
+    <text class="lr-node__hint" x="12" y="48" fill="var(--mute)">durable prefix · §03</text>
+  </g>
+
+  <text class="lr-foot lr-stage lr-stage--4" x="8" y="312" fill="var(--mute)">
+    Invariant: Log is the source of truth; state is a materialized view.
+  </text>
+</svg>
+
+<style>
+  .log-runtime {
+    font-family: var(--sans);
+  }
+  .lr-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .lr-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .lr-node__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .lr-node__name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .lr-node__hint {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+  }
+  .lr-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lr-stage {
+      opacity: 0;
+      animation: lr-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .lr-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .lr-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .lr-stage--2 {
+      animation-delay: 0.28s;
+    }
+    .lr-stage--3 {
+      animation-delay: 0.4s;
+    }
+    .lr-stage--4 {
+      animation-delay: 0.52s;
+    }
+    @keyframes lr-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lr-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

@@ -1,0 +1,136 @@
+---
+/**
+ * §02 flow — one Tool Result as four non-interchangeable representations.
+ */
+---
+
+<svg
+  class="fr-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="fr-kicker fr-stage fr-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · ONE RESULT · FOUR REPRESENTATIONS
+  </text>
+  <line
+    class="fr-stage fr-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="fr-col fr-stage fr-stage--1" transform="translate(8,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="200" height="2" fill="var(--accent)"></rect>
+    <text class="fr-col__idx" x="12" y="28" fill="var(--accent)">01 · DURABLE</text>
+    <text class="fr-col__title" x="12" y="56" fill="var(--ink)">Runtime Fact</text>
+    <text class="fr-col__line" x="12" y="90" fill="var(--mute)">called / returned</text>
+    <text class="fr-col__line" x="12" y="110" fill="var(--mute)">RuntimeEvent</text>
+    <text class="fr-col__line" x="12" y="140" fill="var(--ink)">never delete</text>
+  </g>
+
+  <g class="fr-col fr-stage fr-stage--2" transform="translate(226,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="fr-col__idx" x="12" y="28" fill="var(--accent)">02 · RAW</text>
+    <text class="fr-col__title" x="12" y="56" fill="var(--ink)">Artifact</text>
+    <text class="fr-col__line" x="12" y="90" fill="var(--mute)">full payload</text>
+    <text class="fr-col__line" x="12" y="110" fill="var(--mute)">own lifecycle</text>
+    <text class="fr-col__line" x="12" y="140" fill="var(--ink)">fetch on demand</text>
+  </g>
+
+  <g class="fr-col fr-stage fr-stage--3" transform="translate(444,52)">
+    <rect width="200" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="200" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="fr-col__idx" x="12" y="28" fill="var(--accent)">03 · TURN</text>
+    <text class="fr-col__title" x="12" y="56" fill="var(--ink)">Turn Evidence</text>
+    <text class="fr-col__line" x="12" y="90" fill="var(--mute)">bounded observe</text>
+    <text class="fr-col__line" x="12" y="110" fill="var(--mute)">source-bearing</text>
+    <text class="fr-col__line" x="12" y="140" fill="var(--ink)">≠ verifier truth</text>
+  </g>
+
+  <g class="fr-col fr-stage fr-stage--4" transform="translate(662,52)">
+    <rect
+      width="198"
+      height="168"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="198" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="fr-col__idx" x="12" y="28" fill="var(--accent)">04 · EPHEMERAL</text>
+    <text class="fr-col__title" x="12" y="56" fill="var(--ink)">Working ctx</text>
+    <text class="fr-col__line" x="12" y="90" fill="var(--mute)">next step min</text>
+    <text class="fr-col__line" x="12" y="110" fill="var(--mute)">may be pruned</text>
+    <text class="fr-col__line" x="12" y="140" fill="var(--ink)">projection only</text>
+  </g>
+</svg>
+
+<style>
+  .fr-flow {
+    font-family: var(--sans);
+  }
+  .fr-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .fr-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .fr-col__title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .fr-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fr-stage {
+      opacity: 0;
+      animation: fr-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .fr-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .fr-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .fr-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .fr-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .fr-stage--4 {
+      animation-delay: 0.5s;
+    }
+    @keyframes fr-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fr-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

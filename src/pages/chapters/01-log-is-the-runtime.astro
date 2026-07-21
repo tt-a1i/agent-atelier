@@ -1,6 +1,10 @@
 ---
 import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import LogIsRuntimeKeystone from "../../components/diagrams/LogIsRuntimeKeystone.astro";
+import EventProduceConsumeFlow from "../../components/diagrams/EventProduceConsumeFlow.astro";
+import ReplayLayersFlow from "../../components/diagrams/ReplayLayersFlow.astro";
 ---
 
 <ChapterShell chapterId="01">
@@ -32,17 +36,39 @@ import Section from "../../components/Section.astro";
   </Section>
 
   <Section
-    id="spine"
-    label="§01 · Spine"
+    id="keystone"
+    label="§01 · Keystone"
     title="状态不是一张表，而是日志的函数"
-    lede="Runtime Event Log 才是交互语义的事实源；某一时刻的状态是有序日志经投影后的结果。"
+    lede="本图只服务本章场景；隐喻可换，NewsLiquid 令牌与手写关键图纪律不变。"
   >
+    <DiagramFigure
+      prototype
+      caption="图 1 · Runtime Events Log 居中；Model History / UI / Terminal / Recovery 皆为投影，不可反向写成真相。"
+      alt="中心为 Runtime Events Log，四向连出 Model History、UI Read Model、Terminal Fact、Recovery/Compact 投影；不变式：Log 是真相源，状态是物化视图。"
+    >
+      <LogIsRuntimeKeystone />
+    </DiagramFigure>
+
     <p>
       Maka 最核心的判断不是选了哪个模型 SDK，而是：
       <strong>Event Log 保存事实；Session、Run、UI、模型上下文和恢复逻辑都是这份日志的消费者或投影。</strong>
     </p>
     <pre class="code-block" aria-label="状态与投影关系">State(t) = Project(RuntimeEvents[0..t], policy, runtime configuration)</pre>
-    <p>同一段日志可被不同消费者解释成不同状态：</p>
+  </Section>
+
+  <Section
+    id="spine"
+    label="§01 · Spine"
+    title="生产、提交、投影、消费"
+    lede="同一段日志可被不同消费者解释成不同状态——但没有消费者可以改写真相。"
+  >
+    <DiagramFigure
+      caption="图 2 · Produce → Durable append → Project → Consume；UI transcript 永远是消费者。"
+      alt="四步流水线：Produce facts、Durable append、Project、Consume views。"
+    >
+      <EventProduceConsumeFlow />
+    </DiagramFigure>
+
     <ul class="plain-list">
       <li>Model History Projector → 下一次模型调用的 messages</li>
       <li>Runtime Read Model → UI 所需的对话、工具活动与 Turn 状态</li>
@@ -92,6 +118,13 @@ import Section from "../../components/Section.astro";
     title="「回放状态空间」的三层含义"
     lede="Current 已成立的是语义回放；不要把 wire-level 确定性偷换成已经兑现的承诺。"
   >
+    <DiagramFigure
+      caption="图 3 · 语义回放（Current）≠ Provider-native（能力门控）≠ Bit-exact wire（Target）。"
+      alt="三列对照：Semantic replay、Provider-native、Bit-exact wire。"
+    >
+      <ReplayLayersFlow />
+    </DiagramFigure>
+
     <ol class="plain-list plain-list--ol">
       <li>
         <strong>语义回放（Current）</strong>
@@ -152,22 +185,14 @@ import Section from "../../components/Section.astro";
       <strong>Run header 不能凭自己宣布完成，它必须得到 terminal RuntimeEvent 的支持。</strong>
       §02 将在此之上讨论 Tool Result 的证据层；§03 讨论 Compaction 如何只改投影不改事实。
     </p>
-    <div class="stub">
-      <p class="stub__tag">Stub · 图表待补</p>
-      <p>
-        计划关键图：Event Log 居中、多投影放射。体量图：执行主链（SessionManager → Runner →
-        ToolRuntime）与「事件生产 / 提交 / 消费」责任划分。未达验收清单前保持 WIP。
-      </p>
-    </div>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：场景 → 脊柱 → Event 维度 → 三层回放 → 身份 → 不变量</li>
+      <li>已有：关键图 + 生产/消费流 + 三层回放对照</li>
       <li>已有：演进旁注 <a href="/history/pr/768">maka:pr:768</a></li>
-      <li>待补：章首关键图 + ≥3 体量流程图 / 动效</li>
-      <li>待补：主链代码地图与 terminal invariant 对照标本</li>
-      <li>待补：全文 EN 同船（#12 仅壳层）</li>
+      <li>待补：更多体量图（身份层细图）与 a11y 终检；全文 EN 同船推进中</li>
+      <li>本页不标 checklist 完成</li>
     </ul>
   </div>
 </ChapterShell>
@@ -206,5 +231,15 @@ import Section from "../../components/Section.astro";
 
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
   }
 </style>

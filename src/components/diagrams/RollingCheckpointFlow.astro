@@ -1,0 +1,161 @@
+---
+/**
+ * §03 flow — rolling checkpoint: prior summary + newly folded → successor coverage.
+ */
+---
+
+<svg
+  class="rc-flow"
+  viewBox="0 0 868 220"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="rc-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="rc-kicker rc-stage rc-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · ROLLING CHECKPOINT · DO NOT RE-SUMMARIZE THE WORLD
+  </text>
+  <line
+    class="rc-stage rc-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="rc-connectors rc-stage rc-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="198" y1="100" x2="226" y2="100" marker-end="url(#rc-arrow)"></line>
+    <line x1="198" y1="140" x2="226" y2="120" marker-end="url(#rc-arrow)"></line>
+    <line x1="414" y1="110" x2="442" y2="110" marker-end="url(#rc-arrow)"></line>
+    <line x1="630" y1="110" x2="658" y2="110" marker-end="url(#rc-arrow)"></line>
+  </g>
+
+  <g class="rc-node rc-stage rc-stage--1" transform="translate(8,58)">
+    <rect width="190" height="52" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="190" height="2" fill="var(--accent)"></rect>
+    <text class="rc-node__idx" x="12" y="22" fill="var(--accent)">N</text>
+    <text class="rc-node__name" x="40" y="28" fill="var(--ink)">Checkpoint N</text>
+    <text class="rc-node__hint" x="12" y="46" fill="var(--mute)">summary · coverage[0..k]</text>
+  </g>
+  <g class="rc-node rc-stage rc-stage--1" transform="translate(8,120)">
+    <rect width="190" height="52" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="190" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="rc-node__idx" x="12" y="22" fill="var(--accent)">Δ</text>
+    <text class="rc-node__name" x="40" y="28" fill="var(--ink)">Newly folded</text>
+    <text class="rc-node__hint" x="12" y="46" fill="var(--mute)">events[k+1..m]</text>
+  </g>
+
+  <g class="rc-node rc-stage rc-stage--2" transform="translate(226,58)">
+    <rect width="188" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="188" height="2" fill="var(--accent)"></rect>
+    <text class="rc-node__idx" x="12" y="26" fill="var(--accent)">01</text>
+    <text class="rc-node__name" x="12" y="50" fill="var(--ink)">Summarizer in</text>
+    <text class="rc-node__hint" x="12" y="74" fill="var(--mute)">prior S + Δ only</text>
+    <text class="rc-node__hint" x="12" y="92" fill="var(--mute)">no re-feed world</text>
+  </g>
+
+  <g class="rc-node rc-stage rc-stage--3" transform="translate(442,58)">
+    <rect width="188" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="188" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="rc-node__idx" x="12" y="26" fill="var(--accent)">02</text>
+    <text class="rc-node__name" x="12" y="50" fill="var(--ink)">Recompute cover</text>
+    <text class="rc-node__hint" x="12" y="74" fill="var(--mute)">prefix [0..m]</text>
+    <text class="rc-node__hint" x="12" y="92" fill="var(--mute)">sourceDigest</text>
+  </g>
+
+  <g class="rc-node rc-stage rc-stage--4" transform="translate(658,58)">
+    <rect width="202" height="104" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="202" height="2" fill="var(--accent)"></rect>
+    <text class="rc-node__idx" x="12" y="26" fill="var(--accent)">N+1</text>
+    <text class="rc-node__name" x="12" y="50" fill="var(--ink)">Checkpoint N+1</text>
+    <text class="rc-node__hint" x="12" y="74" fill="var(--mute)">durable recorded</text>
+    <text class="rc-node__hint" x="12" y="92" fill="var(--mute)">then may replace</text>
+  </g>
+
+  <text class="rc-foot rc-stage rc-stage--4" x="8" y="198" fill="var(--mute)">
+    Prefix / digest failure → reject checkpoint; never invent a lookalike history.
+  </text>
+</svg>
+
+<style>
+  .rc-flow {
+    font-family: var(--sans);
+  }
+  .rc-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .rc-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .rc-node__name {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .rc-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .rc-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rc-stage {
+      opacity: 0;
+      animation: rc-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .rc-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .rc-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .rc-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .rc-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .rc-stage--4 {
+      animation-delay: 0.5s;
+    }
+    @keyframes rc-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rc-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

@@ -5,25 +5,49 @@ import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import CompactionProjectionKeystone from "../../../components/diagrams/CompactionProjectionKeystone.astro";
 import CompactKindsFlow from "../../../components/diagrams/CompactKindsFlow.astro";
 import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactFlow.astro";
+import RollingCheckpointFlow from "../../../components/diagrams/RollingCheckpointFlow.astro";
 ---
 
 <ChapterShell chapterId="03" locale="en">
   <div slot="thesis">
-    <p lang="zh-CN">
-      （正文仍以中文源稿为准）上下文窗口会满；Compaction 让模型合法地忘记旧轮次，同时历史事实仍可从
-      log / 证据层找回——忘记的是投影，不是世界。
-    </p>
     <p>
-      Structural parity with the zh draft: scene → keystone → three layers → high water → rolling →
-      three compact kinds → failure → not-what. Full EN prose is not same-ship yet — chapter remains
-      WIP.
+      Context windows fill; “remember everything” is a fantasy. Compaction lets the model lawfully
+      forget older turns while historical facts remain recoverable from the log / evidence layer —
+      what is forgotten is a projection, not the world. Key line:
+      <strong>compaction is the Events Log's projection.</strong>
     </p>
   </div>
 
   <Section
+    id="scene"
+    label="§03 · Scene"
+    title="Start from a long-running session"
+    lede="Full history still has value; the next call cannot and should not re-stuff thousands of facts into the prompt."
+  >
+    <p>
+      Suppose the user and Maka work for two hours: reading a project, emitting huge test output,
+      editing files, debating a wrong direction and rolling back, finishing a first fix, then asking
+      for the next failing case. The full Runtime Events Log may hold thousands of facts — exact
+      commands, tool results seen at the time, user constraints, a clue that becomes useful again
+      later — all still true history.
+    </p>
+    <p>
+      But the next model call usually needs only: current goal, done vs in-progress, irreversible
+      decisions, current files and run state, next steps, and where to fetch originals when a summary
+      is not enough. The most dangerous implementation conflates “need to keep working” with “need to
+      keep truth”: generate a summary, then delete or overwrite the original events. If the model
+      drops one constraint, the system has no stable source left to correct it.
+    </p>
+    <blockquote class="pull">
+      The question is not “how to make the chat shorter,” but: how do you compute a smaller
+      continuation view for the next model decision while keeping the full event facts?
+    </blockquote>
+  </Section>
+
+  <Section
     id="keystone"
     label="§03 · Keystone"
-    title="Compaction projects the log"
+    title="Compaction is not mutation — it is projection"
     lede="Scene-local metaphor; fixed system is NewsLiquid tokens, hand keystones, and motion discipline."
   >
     <DiagramFigure
@@ -33,13 +57,75 @@ import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactF
     >
       <CompactionProjectionKeystone />
     </DiagramFigure>
+
+    <p class="figure-note">
+      In database terms, a checkpoint is closer to a materialized view than WAL truncation — it can be
+      invalidated and rebuilt; it must not declare that the source log no longer matters.
+    </p>
+
+    <pre class="code-block" aria-label="Projection relation">Canonical history = RuntimeEvents[0..n]
+
+Compact checkpoint = Project(
+  RuntimeEvents[0..k],
+  compaction policy,
+  summarizer
+)
+
+Next model context = Materialize(
+  compact checkpoint,
+  RuntimeEvents[k+1..n],
+  provider capabilities,
+  current context budget
+)</pre>
+  </Section>
+
+  <Section
+    id="three-layers"
+    label="§03 · Layers"
+    title="Three non-interchangeable objects"
+    lede="A summary is only text; a safe compaction projection must also bind coverage."
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>Runtime Events Log</strong> — semantic facts that user, model, tools, and Runtime
+        already produced; the source of facts; details must not be lost to save context.
+      </li>
+      <li>
+        <strong>History Compact Checkpoint</strong> — a continuation summary plus coverage for a
+        verified event prefix; a durable projection, not a second truth.
+      </li>
+      <li>
+        <strong>Provider Request Messages</strong> — the working context this LLM call actually
+        consumes; an ephemeral projection that may be recomputed under budget.
+      </li>
+    </ul>
+    <p>
+      Ordinary “summaries” are only words. A safe checkpoint must also answer: which Session, how many
+      ordered RuntimeEvents / Turns, where the prefix ends
+      (<code>runId / turnId / runtimeEventId</code>), what the source digest is, whether it is a
+      legal successor of the previous checkpoint, and whether it still fits the current token policy.
+      A summary without coverage is a note; a summary without a digest cannot prove it still matches
+      the current log.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        LLM compaction architecture chapter land:
+        <a href="/history/pr/772">maka:pr:772</a>
+        (docs: add LLM compaction architecture chapter). Later V2 checkpoint / rolling / replay
+        tightening:
+        <a href="/history/pr/729">maka:pr:729</a>,
+        <a href="/history/pr/955">maka:pr:955</a>,
+        <a href="/history/pr/1090">maka:pr:1090</a>.
+      </p>
+    </aside>
   </Section>
 
   <Section
     id="high-water"
     label="§03 · Trigger"
-    title="High water → fold → durable → replay"
-    lede="EN captions only; narrative body lives in the zh chapter until bilingual same-ship."
+    title="High water decides whether to project"
+    lede="Stable trigger semantics: cross the water → fold older prefix → keep raw tail → accept only if checkpoint+tail still fit."
   >
     <DiagramFigure
       caption="Fig. 2 · LLM produces summary value; Runtime owns coverage, durability, and replay gates."
@@ -47,41 +133,185 @@ import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactF
     >
       <HighWaterCompactFlow />
     </DiagramFigure>
-    <aside class="history-aside">
-      <p class="history-aside__tag">Evolution aside</p>
-      <p>
-        Architecture chapter land:
-        <a href="/history/pr/772">maka:pr:772</a>.
-      </p>
-    </aside>
+
+    <p>
+      Automatic history compaction is driven by <code>ContextBudgetPolicy</code>: compute a
+      prior-history budget from the model context window; when compactable history crosses high water,
+      fold. By default keep a bounded raw tail (newest complete Turns, never splitting a tool
+      call/result pair). Token numbers are default policy, not protocol constants — what must stay
+      stable is trigger and failure semantics.
+    </p>
+    <p>
+      The LLM here generates a structured continuation summary meant for another LLM (Goal / Done /
+      Key Decisions / Next Steps / Critical Context). Which events belong to the covered prefix, what
+      the digest is, whether it may replace the current log, which raw tail to keep, and whether it is
+      already durable — all decided by deterministic Runtime code.
+      <strong>The LLM is the generator of the projection value, not the projection authority.</strong>
+    </p>
+  </Section>
+
+  <Section
+    id="rolling"
+    label="§03 · Rolling"
+    title="Rolling checkpoint: do not re-summarize the whole world"
+    lede="Long Sessions cross high water many times; re-compressing from zero is expensive and rewrites old facts."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Rolling: feed only prior summary + newly folded into the summarizer; recompute full-prefix coverage."
+      alt="Checkpoint N and Newly folded enter Summarizer, then Recompute cover yields Checkpoint N+1."
+    >
+      <RollingCheckpointFlow />
+    </DiagramFigure>
+    <pre class="code-block" aria-label="Rolling checkpoint">Checkpoint N
+  summary = S(events[0..k])
+
+Newly evicted = events[k+1..m]
+
+Checkpoint N+1
+  summary = S(Checkpoint N.summary, newly evicted)
+  coverage = events[0..m]
+  previousCheckpointId = Checkpoint N.id</pre>
+    <p>
+      The summarizer receives only the previous summary and newly folded events; already-covered raw
+      events are not re-fed to the LLM. The new checkpoint recomputes coverage and
+      <code>sourceDigest</code> over the full covered prefix. The critical commit point is
+      <code>history_compact_checkpoint_recorded</code> — a new summary may enter the same provider
+      request as a replacement only after the durable recorder succeeds.
+    </p>
+    <p>
+      Coverage must be an <strong>ordered prefix</strong>, not a search summary over an arbitrary
+      event set. The prefix constraint makes replay <code>checkpoint + uncovered raw suffix</code>,
+      keeps high water monotonically comparable, and makes newly folded events explicit. Prefix or
+      digest failure → reject the checkpoint, never “looks like the same history.”
+    </p>
   </Section>
 
   <Section
     id="kinds"
     label="§03 · Boundaries"
-    title="Three compacts, not one feature"
-    lede="History LLM compaction ≠ active prune ≠ semanticCompact."
+    title="Do not merge three compacts into one feature"
+    lede="They all shrink provider messages, but source, lifecycle, and durability strength differ."
   >
     <DiagramFigure
-      caption="Fig. 3 · Same direction (do not mutate source), different durability contracts."
+      caption="Fig. 4 · History LLM compaction (this chapter) ≠ Active prune (§02) ≠ semanticCompact (attention shaping)."
       alt="Three columns comparing History LLM compaction, Active Tool Result Prune, and semanticCompact."
     >
       <CompactKindsFlow />
     </DiagramFigure>
+
+    <p>
+      Building on §02: active prune rewrites the provider-visible tool-result representation in the
+      current Turn; raw is archived first; the evidence layer is not deleted. This chapter’s body is
+      prior-history LLM compaction — when building prior history between Turns, a V2 checkpoint
+      replaces an older event prefix. <code>semanticCompact</code> is mid-turn attention shaping with
+      mostly best-effort recording; it is <strong>not</strong> the V2 history checkpoint protocol
+      that only enters replay after a durable append succeeds.
+    </p>
+  </Section>
+
+  <Section
+    id="failure"
+    label="§03 · Failure"
+    title="Prefer seeing less over seeing a fake history"
+    lede="Fail open to a safe source-derived context, not to an invented summary."
+  >
+    <ul class="plain-list">
+      <li>Empty LLM summary → do not record a new checkpoint; first compact keeps a safe raw tail only.</li>
+      <li>
+        Rolling summarizer fails → if the old checkpoint still matches and fits, reuse it and append
+        the newest complete raw Turns that fit; <strong>never</strong> widen the old checkpoint’s
+        coverage claim.
+      </li>
+      <li>
+        Durable append fails → do not use the candidate; an uncommitted projection must not enter the
+        model and then claim recoverability.
+      </li>
+      <li>
+        Prefix / digest mismatch or over budget → reject replay; historically valid ≠ currently usable.
+      </li>
+      <li>
+        Bounded projection corrupt → recover by scanning the canonical AgentRun ledger; cache is not
+        the sole source of truth.
+      </li>
+    </ul>
+    <div class="stub">
+      <p class="stub__tag">Current · V2 preferred</p>
+      <p>
+        V2 ledger-backed <code>HistoryCompactCheckpoint</code> is the preferred main path; V1
+        artifact-backed <code>HistoryCompactBlock</code> remains read-only compatible. Teaching
+        centers the projection invariant; default token numbers are not protocol constants.
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="not"
+    label="§03 · Not"
+    title="What Compaction is not"
+    lede="Draw the line so a summary is not elevated into memory, deletion, or official conclusion."
+  >
+    <ul class="plain-list">
+      <li>
+        <strong>Not Memory</strong> — serves current Session continuation, not a cross-Session knowledge base.
+      </li>
+      <li>
+        <strong>Not deleting history</strong> — covered events leave this working set, not the canonical ledger.
+      </li>
+      <li>
+        <strong>Not semantically lossless</strong> — digest proves which source span is covered, not that the
+        summary has no omissions.
+      </li>
+      <li>
+        <strong>Not bit-exact replay</strong> — rebuilds semantic origin; does not guarantee identical summary text.
+      </li>
+      <li>
+        <strong>Not official conclusion</strong> — “tests passed” inside a summary is still a précis; authority
+        stays with source / verifier / terminal fact (see §05).
+      </li>
+    </ul>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>Structure + figures mirrored from zh; full EN prose pending</li>
+      <li>Present: keystone + high-water + rolling + three-compacts flows</li>
       <li>
-        Aside target: <a href="/history/pr/772">maka:pr:772</a>
+        Aside: <a href="/history/pr/772">maka:pr:772</a>
       </li>
-      <li>Do not mark checklist complete</li>
+      <li>Still open: cold-start recovery figure, a11y pass — do not mark checklist complete</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .figure-note {
+    margin: -0.35rem 0 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    max-width: 38em;
+  }
+
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
@@ -90,5 +320,15 @@ import HighWaterCompactFlow from "../../../components/diagrams/HighWaterCompactF
 
   .outline-list li {
     margin-bottom: 0.45rem;
+  }
+
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
   }
 </style>

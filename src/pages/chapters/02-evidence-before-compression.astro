@@ -3,6 +3,8 @@ import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipelineKeystone.astro";
+import FourRepsFlow from "../../components/diagrams/FourRepsFlow.astro";
+import ActivePruneFlow from "../../components/diagrams/ActivePruneFlow.astro";
 ---
 
 <ChapterShell chapterId="02">
@@ -56,6 +58,12 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
     title="一个 Tool Result，四种表示"
     lede="Evidence compression 可以改变模型以后怎样看见事实，但不能改变事实是否发生过。"
   >
+    <DiagramFigure
+      caption="图 2 · 同一结果拆成 Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context。"
+      alt="四列对照：Runtime Fact、Artifact、Turn Evidence、Working context。"
+    >
+      <FourRepsFlow />
+    </DiagramFigure>
     <ul class="plain-list">
       <li>
         <strong>Canonical Runtime Fact</strong> — 调用了什么、返回了什么（durable RuntimeEvent）
@@ -106,6 +114,12 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
     title="Active prune 只改 Provider messages"
     lede="同一 Turn 内、下一步组装之前；失败时宁可牺牲 token 节省，也不删 ledger。"
   >
+    <DiagramFigure
+      caption="图 3 · Active prune：归档原文 → 有界视图 → 只改写 provider messages；Evidence 不动。"
+      alt="五步：Large result、Archive raw、Bound view、Rewrite msgs、Evidence untouched。"
+    >
+      <ActivePruneFlow />
+    </DiagramFigure>
     <p>
       Current 路径里，ToolRuntime 仍是副作用边界；RuntimeEvent 保存工具交互的 canonical
       semantics。Active Tool Result Prune 跑在 provider step 之间：只处理当前 Turn 已完成的大结果，把
@@ -126,10 +140,10 @@ import EvidencePipelineKeystone from "../../components/diagrams/EvidencePipeline
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：章首关键图（证据流水线）+ 四层表示叙事</li>
+      <li>已有：关键图 + 四层对照流 + active prune 时序流</li>
       <li>已有：演进旁注 <a href="/history/pr/769">maka:pr:769</a></li>
-      <li>待补：≥3 体量流程图（active prune 时序、archive 失败路径、source chain）</li>
-      <li>待补：全文 EN 同船；本页不标 checklist 完成</li>
+      <li>待补：archive 失败路径细图、a11y 终检；全文 EN 同船推进中</li>
+      <li>本页不标 checklist 完成</li>
     </ul>
   </div>
 </ChapterShell>

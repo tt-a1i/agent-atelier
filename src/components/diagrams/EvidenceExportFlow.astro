@@ -1,0 +1,174 @@
+---
+/**
+ * §06 flow — Runtime/Task events → projection → harness evidence bound to target snapshot.
+ */
+---
+
+<svg
+  class="ee-flow"
+  viewBox="0 0 868 220"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="ee-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="ee-kicker ee-stage ee-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · READ-ONLY EXPORT · EXPERIENCE BASE FOR AHE
+  </text>
+  <line
+    class="ee-stage ee-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="ee-connectors ee-stage ee-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="178" y1="110" x2="206" y2="110" marker-end="url(#ee-arrow)"></line>
+    <line x1="354" y1="110" x2="382" y2="110" marker-end="url(#ee-arrow)"></line>
+    <line x1="530" y1="110" x2="558" y2="110" marker-end="url(#ee-arrow)"></line>
+    <line x1="706" y1="110" x2="734" y2="110" marker-end="url(#ee-arrow)"></line>
+  </g>
+
+  <g class="ee-node ee-stage ee-stage--1" transform="translate(8,58)">
+    <rect width="170" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="170" height="2" fill="var(--accent)"></rect>
+    <text class="ee-node__idx" x="12" y="26" fill="var(--accent)">01</text>
+    <text class="ee-node__name" x="12" y="50" fill="var(--ink)">Task / Runtime</text>
+    <text class="ee-node__hint" x="12" y="74" fill="var(--mute)">Events ledger</text>
+    <text class="ee-node__hint" x="12" y="92" fill="var(--mute)">canonical facts</text>
+  </g>
+
+  <g class="ee-node ee-stage ee-stage--2" transform="translate(206,58)">
+    <rect width="148" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ee-node__idx" x="12" y="26" fill="var(--accent)">02</text>
+    <text class="ee-node__name" x="12" y="50" fill="var(--ink)">Project</text>
+    <text class="ee-node__hint" x="12" y="74" fill="var(--mute)">TaskRun view</text>
+    <text class="ee-node__hint" x="12" y="92" fill="var(--mute)">stable semantics</text>
+  </g>
+
+  <g class="ee-node ee-stage ee-stage--3" transform="translate(382,58)">
+    <rect width="148" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="ee-node__idx" x="12" y="26" fill="var(--accent)">03</text>
+    <text class="ee-node__name" x="12" y="50" fill="var(--ink)">Normalize</text>
+    <text class="ee-node__hint" x="12" y="74" fill="var(--mute)">results · digest</text>
+    <text class="ee-node__hint" x="12" y="92" fill="var(--mute)">trace index</text>
+  </g>
+
+  <g class="ee-node ee-stage ee-stage--4" transform="translate(558,58)">
+    <rect width="148" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ee-node__idx" x="12" y="26" fill="var(--accent)">04</text>
+    <text class="ee-node__name" x="12" y="50" fill="var(--ink)">Bind target</text>
+    <text class="ee-node__hint" x="12" y="74" fill="var(--mute)">snapshotId</text>
+    <text class="ee-node__hint" x="12" y="92" fill="var(--mute)">content identity</text>
+  </g>
+
+  <g class="ee-node ee-stage ee-stage--5" transform="translate(734,58)">
+    <rect
+      width="126"
+      height="104"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="126" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ee-node__idx" x="12" y="26" fill="var(--accent)">05</text>
+    <text class="ee-node__name" x="12" y="50" fill="var(--ink)">Export</text>
+    <text class="ee-node__hint" x="12" y="74" fill="var(--mute)">read-only CLI</text>
+    <text class="ee-node__hint" x="12" y="92" fill="var(--mute)">no re-run task</text>
+  </g>
+
+  <text class="ee-foot ee-stage ee-stage--5" x="8" y="198" fill="var(--mute)">
+    Evidence plane is read-only — the ledger that scores candidates must not be a patch target.
+  </text>
+</svg>
+
+<style>
+  .ee-flow {
+    font-family: var(--sans);
+  }
+  .ee-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .ee-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .ee-node__name {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .ee-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .ee-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ee-stage {
+      opacity: 0;
+      animation: ee-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .ee-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .ee-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .ee-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .ee-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .ee-stage--4 {
+      animation-delay: 0.48s;
+    }
+    .ee-stage--5 {
+      animation-delay: 0.6s;
+    }
+    @keyframes ee-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ee-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

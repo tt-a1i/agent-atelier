@@ -1,0 +1,174 @@
+---
+/**
+ * §02 flow — active prune rewrites provider messages between steps; ledger untouched.
+ */
+---
+
+<svg
+  class="ap-flow"
+  viewBox="0 0 868 220"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="ap-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="ap-kicker ap-stage ap-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · ACTIVE PRUNE · SAME TURN · BEFORE NEXT STEP
+  </text>
+  <line
+    class="ap-stage ap-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="ap-connectors ap-stage ap-stage--1" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <line x1="178" y1="110" x2="206" y2="110" marker-end="url(#ap-arrow)"></line>
+    <line x1="354" y1="110" x2="382" y2="110" marker-end="url(#ap-arrow)"></line>
+    <line x1="530" y1="110" x2="558" y2="110" marker-end="url(#ap-arrow)"></line>
+    <line x1="706" y1="110" x2="734" y2="110" marker-end="url(#ap-arrow)"></line>
+  </g>
+
+  <g class="ap-node ap-stage ap-stage--1" transform="translate(8,58)">
+    <rect width="170" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="170" height="2" fill="var(--accent)"></rect>
+    <text class="ap-node__idx" x="12" y="26" fill="var(--accent)">01</text>
+    <text class="ap-node__name" x="12" y="50" fill="var(--ink)">Large result</text>
+    <text class="ap-node__hint" x="12" y="74" fill="var(--mute)">tool finished</text>
+    <text class="ap-node__hint" x="12" y="92" fill="var(--mute)">this Turn</text>
+  </g>
+
+  <g class="ap-node ap-stage ap-stage--2" transform="translate(206,58)">
+    <rect width="148" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)"></rect>
+    <text class="ap-node__idx" x="12" y="26" fill="var(--accent)">02</text>
+    <text class="ap-node__name" x="12" y="50" fill="var(--ink)">Archive raw</text>
+    <text class="ap-node__hint" x="12" y="74" fill="var(--mute)">Artifact store</text>
+    <text class="ap-node__hint" x="12" y="92" fill="var(--mute)">+ RuntimeEvent</text>
+  </g>
+
+  <g class="ap-node ap-stage ap-stage--3" transform="translate(382,58)">
+    <rect width="148" height="104" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="ap-node__idx" x="12" y="26" fill="var(--accent)">03</text>
+    <text class="ap-node__name" x="12" y="50" fill="var(--ink)">Bound view</text>
+    <text class="ap-node__hint" x="12" y="74" fill="var(--mute)">summary / ptr</text>
+    <text class="ap-node__hint" x="12" y="92" fill="var(--mute)">source-bearing</text>
+  </g>
+
+  <g class="ap-node ap-stage ap-stage--4" transform="translate(558,58)">
+    <rect
+      width="148"
+      height="104"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--accent)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="ap-node__idx" x="12" y="26" fill="var(--accent)">04</text>
+    <text class="ap-node__name" x="12" y="50" fill="var(--ink)">Rewrite msgs</text>
+    <text class="ap-node__hint" x="12" y="74" fill="var(--mute)">provider only</text>
+    <text class="ap-node__hint" x="12" y="92" fill="var(--mute)">working set</text>
+  </g>
+
+  <g class="ap-node ap-stage ap-stage--5" transform="translate(734,58)">
+    <rect width="126" height="104" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="126" height="2" fill="var(--accent)"></rect>
+    <text class="ap-node__idx" x="12" y="26" fill="var(--accent)">05</text>
+    <text class="ap-node__name" x="12" y="50" fill="var(--ink)">Evidence</text>
+    <text class="ap-node__hint" x="12" y="74" fill="var(--mute)">untouched</text>
+    <text class="ap-node__hint" x="12" y="92" fill="var(--mute)">never pruned</text>
+  </g>
+
+  <text class="ap-foot ap-stage ap-stage--5" x="8" y="198" fill="var(--mute)">
+    Fail open: keep oversized provider context rather than delete ledger facts.
+  </text>
+</svg>
+
+<style>
+  .ap-flow {
+    font-family: var(--sans);
+  }
+  .ap-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .ap-node__idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .ap-node__name {
+    font-family: var(--serif);
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .ap-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .ap-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ap-stage {
+      opacity: 0;
+      animation: ap-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .ap-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .ap-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .ap-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .ap-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .ap-stage--4 {
+      animation-delay: 0.48s;
+    }
+    .ap-stage--5 {
+      animation-delay: 0.6s;
+    }
+    @keyframes ap-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ap-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

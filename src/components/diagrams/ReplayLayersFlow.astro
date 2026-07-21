@@ -1,0 +1,119 @@
+---
+/**
+ * §01 flow — three replay meanings: semantic (Current) / provider-native / bit-exact (Target).
+ */
+---
+
+<svg
+  class="replay-layers"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="rl-kicker rl-stage rl-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · THREE REPLAY LAYERS · DO NOT CONFLATE
+  </text>
+  <line
+    class="rl-stage rl-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="rl-col rl-stage rl-stage--1" transform="translate(8,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="272" height="2" fill="var(--accent)"></rect>
+    <text class="rl-col__idx" x="14" y="28" fill="var(--accent)">A · CURRENT</text>
+    <text class="rl-col__title" x="14" y="54" fill="var(--ink)">Semantic replay</text>
+    <text class="rl-col__line" x="14" y="86" fill="var(--mute)">Rebuild text / tools</text>
+    <text class="rl-col__line" x="14" y="106" fill="var(--mute)">permissions · usage</text>
+    <text class="rl-col__line" x="14" y="126" fill="var(--mute)">terminal facts</text>
+    <text class="rl-col__line" x="14" y="152" fill="var(--ink)">→ teaching baseline</text>
+  </g>
+
+  <g class="rl-col rl-stage rl-stage--2" transform="translate(298,52)">
+    <rect width="272" height="168" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="rl-col__idx" x="14" y="28" fill="var(--accent)">B · GATED</text>
+    <text class="rl-col__title" x="14" y="54" fill="var(--ink)">Provider-native</text>
+    <text class="rl-col__line" x="14" y="86" fill="var(--mute)">tool history shapes</text>
+    <text class="rl-col__line" x="14" y="106" fill="var(--mute)">signed thinking</text>
+    <text class="rl-col__line" x="14" y="126" fill="var(--mute)">plan then materialize</text>
+    <text class="rl-col__line" x="14" y="152" fill="var(--ink)">≠ dump JSONL raw</text>
+  </g>
+
+  <g class="rl-col rl-stage rl-stage--3" transform="translate(588,52)">
+    <rect width="272" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="272" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="rl-col__idx" x="14" y="28" fill="var(--accent)">C · TARGET</text>
+    <text class="rl-col__title" x="14" y="54" fill="var(--ink)">Bit-exact wire</text>
+    <text class="rl-col__line" x="14" y="86" fill="var(--mute)">HTTP bytes + config</text>
+    <text class="rl-col__line" x="14" y="106" fill="var(--mute)">request shape version</text>
+    <text class="rl-col__line" x="14" y="126" fill="var(--mute)">not claimed shipped</text>
+    <text class="rl-col__line" x="14" y="152" fill="var(--ink)">label wishes clearly</text>
+  </g>
+</svg>
+
+<style>
+  .replay-layers {
+    font-family: var(--sans);
+  }
+  .rl-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .rl-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .rl-col__title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .rl-col__line {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rl-stage {
+      opacity: 0;
+      animation: rl-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .rl-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .rl-stage--1 {
+      animation-delay: 0.16s;
+    }
+    .rl-stage--2 {
+      animation-delay: 0.3s;
+    }
+    .rl-stage--3 {
+      animation-delay: 0.44s;
+    }
+    @keyframes rl-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rl-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

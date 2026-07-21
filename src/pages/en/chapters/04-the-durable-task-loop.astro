@@ -3,52 +3,189 @@ import ChapterShell from "../../../components/ChapterShell.astro";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../../components/diagrams/DurableTaskKeystone.astro";
+import AttemptContinueFlow from "../../../components/diagrams/AttemptContinueFlow.astro";
+import DurableBoundaryFlow from "../../../components/diagrams/DurableBoundaryFlow.astro";
 ---
 
 <ChapterShell chapterId="04" locale="en">
   <div slot="thesis">
-    <p lang="zh-CN">
-      （正文仍以中文源稿为准）交互式 Turn 放不下的工作，需要独立的任务身份与跨进程可恢复的进度。
-    </p>
     <p>
-      Structural parity with zh: scene → keystone → Session≠TaskRun → durable boundary → Attempt.
-      Full EN prose pending — WIP.
+      Work that does not fit an interactive Turn needs its own task identity and progress that can
+      survive process boundaries. Headless Durable Task Loop upgrades “one chat” into “a task that can
+      continue.” Key line:
+      <strong>A task is longer than a turn; durability begins by giving the task its own log.</strong>
     </p>
   </div>
+
+  <Section
+    id="scene"
+    label="§04 · Scene"
+    title="Start from a task that cannot finish in one round"
+    lede="Session chat alone cannot answer Attempt, budget, park, or workspace ownership."
+  >
+    <p>
+      Suppose the task is: read a large codebase, migrate an old API, fix the build step by step, and
+      pause at high-risk permissions for confirmation. It may: do inventory only on the first round;
+      end a Run on a tool-step cap while the task is unfinished; need a second execution that knows
+      which files were checked and which todos are open; park waiting for approval; resume hours later;
+      and survive a process restart that wiped in-memory loop counters and the active backend.
+    </p>
+    <p>
+      Turn expresses one Q&amp;A; Run expresses one concrete execution; the RuntimeEvent ledger can
+      replay model and tool experience. A long task still must answer: stable goal id, attempt count,
+      remaining budget, effective progress, running vs waiting for approval, what to inherit next,
+      whether the workspace is still the one left behind, and who may take the next step.
+    </p>
+  </Section>
 
   <Section
     id="keystone"
     label="§04 · Keystone"
     title="TaskRun is a durable envelope outside the Runtime"
-    lede="Scene-local metaphor; NewsLiquid tokens and hand keystones stay fixed."
+    lede="Headless does not rewrite Agent Runtime; it organizes Runtime execution into a long Task lifecycle."
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · TaskRun wraps bounded Attempts; Task Event Log projects the next-work view."
+      caption="Fig. 1 · TaskRun wraps bounded Attempts; cross-Attempt facts enter the Task Event Log and project as next-work view."
       alt="TaskRun envelope with Attempt 1/2, Task Event Log, dashed TaskRun Projection; invariant: a task is longer than a turn."
     >
       <DurableTaskKeystone />
     </DiagramFigure>
+
+    <ul class="plain-list">
+      <li><strong>TaskRun</strong> — who owns the long goal from start to terminal (across Attempts)</li>
+      <li><strong>Attempt</strong> — one progress slice with budget boundaries</li>
+      <li><strong>Turn</strong> — one input/reply handed to the Agent</li>
+      <li><strong>Run / Invocation</strong> — start/end of one model+tool loop</li>
+    </ul>
+    <pre class="code-block" aria-label="Task projection">TaskRunProjection(t) = Project(TaskEvents[0..t])
+
+Long task progress
+  = sequence of bounded Attempts
+  + durable Task Events between them
+  + explicitly selected continuation state</pre>
+  </Section>
+
+  <Section
+    id="session"
+    label="§04 · Identity"
+    title="Why Session is still not a TaskRun"
+    lede="Dialogue ownership and durable orchestration must not contaminate each other."
+  >
+    <p>
+      A Session can span many Turns and keep model history, but mainly answers “who owns this
+      conversation.” A TaskRun must also express Attempt counts and outcomes, loop budget,
+      permission/budget parks, cross-Attempt progress/evidence, workspace lease,
+      continue/retry/stop/abort, and the effective task policy. Ordinary interactive chat should not
+      be forced to carry these control fields; different Attempts may currently create different
+      Sessions / AgentRuns. Reference direction: Task Events store <code>sessionId</code> /
+      <code>agentRunId</code>; the Session header is not the TaskRun truth.
+    </p>
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside</p>
       <p>
-        Architecture chapter: <a href="/history/pr/773">maka:pr:773</a>.
+        Durable Task Loop architecture chapter land:
+        <a href="/history/pr/773">maka:pr:773</a>
+        (docs: add durable task loop architecture chapter). Related Task ledger lifecycle:
+        <a href="/history/pr/567">maka:pr:567</a>.
       </p>
     </aside>
   </Section>
 
+  <Section
+    id="durable"
+    label="§04 · Current"
+    title="What is actually durable"
+    lede="Durable control-plane facts ≠ the whole execution world is checkpointed."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · TaskRun ledger owns control-plane facts; workspace / live stream / auto-takeover remain Target gaps."
+      alt="Left column Current ledger owns; right column Not guaranteed by ledger alone."
+    >
+      <DurableBoundaryFlow />
+    </DiagramFigure>
+    <p>
+      <code>TaskRunStore</code> appends TaskEvents as JSONL;
+      <code>projectTaskRun()</code> projects status, Attempts, progress, evidence, permission, parked
+      state, and Runtime refs from the start. Explicitly durable today: TaskRun identity, appended
+      Task Events, recorded Attempt / progress / decision / permission / lifecycle, and refs to
+      Session, AgentRun, RuntimeEvents, and artifacts.
+    </p>
+    <p>
+      Not guaranteed by the TaskRun ledger alone: current bytes of a temporary workspace, an in-flight
+      provider stream, live tool process handles, in-memory backends / abort controllers, whether an
+      external executor still holds the same workspace, or whether a scheduler auto-takes over after
+      restart.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current: TaskRun ledger and Attempt wrapping are shipped. Target: a unified cross-process
+        safe-takeover checkpoint protocol (workspace, in-flight Invocation, scheduler ownership) —
+        teaching must label this explicitly; do not pretend it is already guaranteed.
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="attempt"
+    label="§04 · Attempt"
+    title="An Attempt is a progress slice, not a synonym for failure"
+    lede="Outer policy decides continue / retry / stop / abort — not resurrecting an immortal Invocation."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Attempt ends → append TaskEvent → policy gate → project next-work; continue = new Attempt."
+      alt="Five steps: runTaskOnce, Attempt ends, Append TaskEvt, Policy gate, Next view."
+    >
+      <AttemptContinueFlow />
+    </DiagramFigure>
+    <p>
+      An Attempt may end on normal stop, execution failure, incomplete information, permission block,
+      budget exhaustion, cancel, or abort. <code>AutonomousAgentLoop</code> creates a new Attempt on
+      each <code>runTaskOnce()</code> — it does not resume from an old RuntimeRunner instruction
+      pointer, nor revive an exited tool process. Layered budgets (e.g. <code>maxAttempts</code> /
+      <code>maxRuntimeSteps</code>) give unattended loops a provable boundary: there is no infinite
+      license to “continue until done.”
+    </p>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
-      <li>Do not mark checklist complete</li>
+      <li>Present: keystone + durable boundary + Attempt continue flow</li>
+      <li>
+        Aside: <a href="/history/pr/773">maka:pr:773</a>
+      </li>
+      <li>Still open: budget-layer detail figure, a11y pass — do not mark checklist complete</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
     max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
   }
 </style>

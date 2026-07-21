@@ -3,6 +3,8 @@ import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro";
+import RepairBudgetFlow from "../../components/diagrams/RepairBudgetFlow.astro";
+import AuthoritySplitFlow from "../../components/diagrams/AuthoritySplitFlow.astro";
 ---
 
 <ChapterShell chapterId="05">
@@ -85,6 +87,12 @@ import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro
     title="先把 Self-check 变成有限对象"
     lede="Schema 解决可持久化与 prompt safety，不单独证明证据真实性。"
   >
+    <DiagramFigure
+      caption="图 2 · Model reports · Runtime admits · official truth lives elsewhere。"
+      alt="三列：Model advisory、Runtime gates、Authority elsewhere。"
+    >
+      <AuthoritySplitFlow />
+    </DiagramFigure>
     <p>
       <code>self_check_submit</code> 不是自由文本：status 仅
       <code>pass / fail / inconclusive</code>；publicReason 有界；至少一项 command 或 artifact
@@ -107,6 +115,12 @@ import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro
     title="回链事实权威"
     lede="完成条件不能只听自述；官方结论在日志、外部验收与 terminal fact。"
   >
+    <DiagramFigure
+      caption="图 3 · Gate 失败 → 检查 repair 预算 → 有界 Repair Turn → 再检；预算耗尽则停环。"
+      alt="五步：Gate fails、Budget check、Repair Turn、Re-check、Stop loop。"
+    >
+      <RepairBudgetFlow />
+    </DiagramFigure>
     <p>
       承接 §02：证据不可被 prune 删掉，也不该被一段自述覆盖。承接 §04：Self-check
       发生在 Attempt / Task 循环内，受 repair budget 约束。模型写「测试已通过」仍只是对公开材料的报告；Source
@@ -116,11 +130,11 @@ import SelfCheckKeystone from "../../components/diagrams/SelfCheckKeystone.astro
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：反馈平面关键图 + Plan / Schema / Authority 叙事</li>
+      <li>已有：关键图 + 权威分流对照 + repair 预算流</li>
       <li>
         已有：演进旁注 <a href="/history/pr/774">maka:pr:774</a>
       </li>
-      <li>待补：repair 时序体量图、对照表动效；全文 EN 同船</li>
+      <li>待补：全文 EN 同船、a11y 终检</li>
       <li>本页不标 checklist 完成</li>
     </ul>
   </div>

@@ -3,15 +3,37 @@ import ChapterShell from "../../../components/ChapterShell.astro";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipelineKeystone.astro";
+import FourRepsFlow from "../../../components/diagrams/FourRepsFlow.astro";
+import ActivePruneFlow from "../../../components/diagrams/ActivePruneFlow.astro";
 ---
 
 <ChapterShell chapterId="02" locale="en">
   <div slot="thesis">
-    <p lang="zh-CN">
-      （正文仍以中文源稿为准）当一次 Tool 调用既改变世界又产生巨量输出时，如何留下「发生过什么」的证据，同时不拖垮同一
-      Turn 的下一次推理？
+    <p>
+      When a Tool call both changes the world and emits a huge payload, how do you keep evidence of
+      what happened without crushing the next inference in the same Turn? The answer is not blunt
+      truncation — separate fact, raw bytes, evidence, and context, then hold:
+      <strong>Prune the context, never prune the evidence.</strong>
     </p>
   </div>
+
+  <Section
+    id="scene"
+    label="§02 · Scene"
+    title="Start from a gigantic test log"
+    lede="The same Tool Result plays many roles — one JSON blob cannot carry all of them."
+  >
+    <p>
+      Suppose the model calls Bash and tests dump 80,000 lines. The system must simultaneously: show
+      the model the critical errors, leave replayable facts in the Runtime, retrieve the full raw
+      text when needed, and keep the next step of the same Turn from carrying the entire original.
+    </p>
+    <p>
+      Stuffing forever into the prompt wrecks the budget; deleting destroys auditability; letting the
+      model claim “I verified” mixes observation with judgment. The real question: what must be
+      durable, what can be rebuilt, and what should live only briefly in the model’s working set?
+    </p>
+  </Section>
 
   <Section
     id="keystone"
@@ -29,9 +51,111 @@ import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipel
 
     <p class="figure-note">
       Invariant: <strong>Prune the context, never prune the evidence.</strong>
-      Pipeline metaphor is local to §02.
+      The pipeline metaphor is local to §02 — not a site-wide composition rule.
     </p>
   </Section>
+
+  <Section
+    id="four"
+    label="§02 · Four representations"
+    title="One Tool Result, four representations"
+    lede="Evidence compression may change how the model later sees a fact — not whether the fact occurred."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · Same result as Durable Fact / Raw Artifact / Turn Evidence / Ephemeral Working Context."
+      alt="Four columns: Runtime Fact, Artifact, Turn Evidence, Working context."
+    >
+      <FourRepsFlow />
+    </DiagramFigure>
+    <ul class="plain-list">
+      <li>
+        <strong>Canonical Runtime Fact</strong> — what was called and returned (durable RuntimeEvent)
+      </li>
+      <li>
+        <strong>Raw Artifact</strong> — where the full payload lives (own lifecycle and checksum)
+      </li>
+      <li>
+        <strong>Turn Evidence</strong> — bounded, source-bearing observations worth later consumption
+      </li>
+      <li>
+        <strong>Model Working Context</strong> — the minimum the next step must see (ephemeral; may
+        prune)
+      </li>
+    </ul>
+    <pre class="code-block" aria-label="Four-layer pipeline">Tool execution
+  → RuntimeEvent(function_call / function_response)
+  → Artifact(raw payload)
+  → TurnEvidence(source-bearing bounded projection)
+  → Provider Messages(current working set)</pre>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Turn Evidence / active prune architecture chapter land:
+        <a href="/history/pr/769">maka:pr:769</a>.
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="turn"
+    label="§02 · Boundary"
+    title="Why Turn is the natural Evidence boundary"
+    lede="Steps are too fine; Sessions are too wide; Turn is the operable midpoint."
+  >
+    <p>
+      Model/tool events in this round share a turnId; tool call/result, permission, and artifacts can
+      belong to the same round; a Turn terminal fact marks completed / failed / aborted. The next
+      Turn can treat prior Evidence as bounded engineering memory without expanding every raw dump.
+    </p>
+    <p>
+      Evidence describes sourced observations; it does not replace Runtime terminal status, nor claim
+      “an official verifier certainly passed.” Authoritative conclusions live elsewhere (see §05).
+    </p>
+  </Section>
+
+  <Section
+    id="current"
+    label="§02 · Current"
+    title="Active prune rewrites Provider messages only"
+    lede="Inside the same Turn, before the next step is assembled; on failure, prefer token cost over deleting the ledger."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Active prune: archive raw → bound view → rewrite provider messages; Evidence stays."
+      alt="Five steps: Large result, Archive raw, Bound view, Rewrite msgs, Evidence untouched."
+    >
+      <ActivePruneFlow />
+    </DiagramFigure>
+    <p>
+      On the Current path, ToolRuntime remains the side-effect boundary; RuntimeEvents store the
+      canonical semantics of tool interaction. Active Tool Result Prune runs between provider steps:
+      it only handles large finished results in the current Turn, replaces provider-visible messages
+      with bounded summaries/pointers, and <strong>does not rewrite</strong> the committed Event Log
+      / Artifacts.
+    </p>
+    <p>
+      Compact Evidence appears on Headless heavy-task paths, but a general TurnEvidence envelope
+      (full source linkage, shared across surfaces) remains Target — labeled below so proposals are
+      not written as shipped.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Current: active prune + RuntimeEvent/Artifact fact boundary. Target: unified TurnEvidence
+        envelope and full source chain. Teaching and figures center the invariant; Target is not
+        disguised as implemented.
+      </p>
+    </div>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Present: keystone + four-reps flow + active prune timeline</li>
+      <li>
+        Aside: <a href="/history/pr/769">maka:pr:769</a>
+      </li>
+      <li>Still open: archive failure detail figure, a11y pass — do not mark checklist complete</li>
+    </ul>
+  </div>
 </ChapterShell>
 
 <style>
@@ -45,5 +169,37 @@ import EvidencePipelineKeystone from "../../../components/diagrams/EvidencePipel
   .figure-note strong {
     font-weight: 600;
     color: var(--ink);
+  }
+
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
   }
 </style>

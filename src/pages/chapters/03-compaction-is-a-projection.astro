@@ -5,6 +5,7 @@ import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import CompactionProjectionKeystone from "../../components/diagrams/CompactionProjectionKeystone.astro";
 import CompactKindsFlow from "../../components/diagrams/CompactKindsFlow.astro";
 import HighWaterCompactFlow from "../../components/diagrams/HighWaterCompactFlow.astro";
+import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFlow.astro";
 ---
 
 <ChapterShell chapterId="03">
@@ -145,6 +146,12 @@ Next model context = Materialize(
     title="Rolling checkpoint：不要反复总结整个世界"
     lede="长期 Session 会多次越过水位；每次从零重压既贵又会反复改写旧事实。"
   >
+    <DiagramFigure
+      caption="图 3 · Rolling：只把 prior summary 与 newly folded 送给 summarizer；再重算完整前缀 coverage。"
+      alt="Checkpoint N 与 Newly folded 汇入 Summarizer，再经 Recompute cover 得到 Checkpoint N+1。"
+    >
+      <RollingCheckpointFlow />
+    </DiagramFigure>
     <pre class="code-block" aria-label="Rolling checkpoint">Checkpoint N
   summary = S(events[0..k])
 
@@ -175,7 +182,7 @@ Checkpoint N+1
     lede="它们都缩小 provider messages，但 source、生命周期与 durability 强度不同。"
   >
     <DiagramFigure
-      caption="图 3 · History LLM compaction（本章）≠ Active prune（§02）≠ semanticCompact（注意力整形）。"
+      caption="图 4 · History LLM compaction（本章）≠ Active prune（§02）≠ semanticCompact（注意力整形）。"
       alt="三列对照：History LLM compaction、Active Tool Result Prune、semanticCompact attention shaping。"
     >
       <CompactKindsFlow />
@@ -234,14 +241,13 @@ Checkpoint N+1
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：章首关键图（日志→checkpoint→request）+ high-water 流图 + 三种 compact 对照</li>
+      <li>已有：关键图 + high-water + rolling + 三种 compact 对照（≥3 体量流）</li>
       <li>
         已有：演进旁注
         <a href="/history/pr/772">maka:pr:772</a>
         及关联 PR
       </li>
-      <li>待补：更多体量流程（冷启动恢复、manual compact lifecycle）；全文 EN 同船</li>
-      <li>本页不标 checklist 完成</li>
+      <li>待补：冷启动恢复细图、a11y 终检；本页不标 checklist 完成</li>
     </ul>
   </div>
 </ChapterShell>

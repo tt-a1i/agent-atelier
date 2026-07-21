@@ -1,5 +1,262 @@
 ---
 import ChapterShell from "../../../components/ChapterShell.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import LogIsRuntimeKeystone from "../../../components/diagrams/LogIsRuntimeKeystone.astro";
+import EventProduceConsumeFlow from "../../../components/diagrams/EventProduceConsumeFlow.astro";
+import ReplayLayersFlow from "../../../components/diagrams/ReplayLayersFlow.astro";
 ---
 
-<ChapterShell chapterId="01" locale="en" />
+<ChapterShell chapterId="01" locale="en">
+  <div slot="thesis">
+    <p>
+      Without a replayable fact ledger there is no debuggable, projectable, or evolvable Agent. This
+      chapter establishes the Runtime Event Log as the canonical source, and why Session / UI /
+      Provider contexts can only be projections.
+    </p>
+  </div>
+
+  <Section
+    id="scene"
+    label="§01 · Scene"
+    title="Start from a deceptively simple request"
+    lede="An Agent is not “how to call an LLM once”; it is how an open loop becomes replayable history."
+  >
+    <p>
+      Suppose the user says: find the failing tests, fix them, and run again. A chat app only needs
+      “send to model → wait → display.” A real Agent must read the project, call tools, wait on
+      authorization, handle failure/timeouts, feed results back, loop for many rounds, and terminate
+      cleanly as completed / failed / aborted.
+    </p>
+    <p>
+      The UI needs live updates; the next model call needs trustworthy history; a crash must not leave
+      the system stuck “running”; after the user hits stop, late provider events must not rewrite the
+      outcome to “completed.”
+    </p>
+    <blockquote class="pull">
+      Runtime’s real job: turn an open loop of streaming output, tool side effects, human
+      intervention, and process failure into a fact history that can be re-interpreted and replayed.
+    </blockquote>
+  </Section>
+
+  <Section
+    id="keystone"
+    label="§01 · Keystone"
+    title="State is not a table — it is a function of the log"
+    lede="Scene-local metaphor; NewsLiquid tokens and hand keystones stay fixed."
+  >
+    <DiagramFigure
+      prototype
+      caption="Fig. 1 · Runtime Events Log at the center; Model History / UI / Terminal / Recovery are projections — never write-back truth."
+      alt="Centered Runtime Events Log with four projections: Model History, UI Read Model, Terminal Fact, Recovery/Compact; invariant: Log is source of truth; state is a materialized view."
+    >
+      <LogIsRuntimeKeystone />
+    </DiagramFigure>
+
+    <p>
+      Maka’s core judgment is not which model SDK it picked:
+      <strong
+        >the Event Log stores facts; Session, Run, UI, model context, and recovery are consumers or
+        projections of that log.</strong
+      >
+    </p>
+    <pre class="code-block" aria-label="State as projection">State(t) = Project(RuntimeEvents[0..t], policy, runtime configuration)</pre>
+  </Section>
+
+  <Section
+    id="spine"
+    label="§01 · Spine"
+    title="Produce, append, project, consume"
+    lede="The same log can be interpreted into many states — no consumer may rewrite the truth."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · Produce → Durable append → Project → Consume; the UI transcript is always a consumer."
+      alt="Four-step pipeline: Produce facts, Durable append, Project, Consume views."
+    >
+      <EventProduceConsumeFlow />
+    </DiagramFigure>
+
+    <ul class="plain-list">
+      <li>Model History Projector → messages for the next model call</li>
+      <li>Runtime Read Model → dialogue, tool activity, and Turn state for the UI</li>
+      <li>Terminal Fact Classifier → final outcome of a Run</li>
+      <li>Recovery → which facts were durable before process exit</li>
+      <li>Context / Compaction → a smaller working context that keeps key semantics (see §03)</li>
+    </ul>
+    <p>
+      This is not a normal application log that describes “what the code did” after the fact. A
+      RuntimeEvent <em>is</em> business semantics. Delete the log and the system loses any reliable
+      basis to rebuild interaction state.
+    </p>
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside</p>
+      <p>
+        Runtime Event Log architecture chapter land:
+        <a href="/history/pr/768">maka:pr:768</a>
+        (docs: add Runtime Event Log architecture chapter).
+      </p>
+    </aside>
+  </Section>
+
+  <Section
+    id="event"
+    label="§01 · Event"
+    title="What one RuntimeEvent must hold"
+    lede="Not role + text — orthogonal facts that can be projected, paired, and terminated."
+  >
+    <p>A fact should answer at least these orthogonal dimensions:</p>
+    <ul class="plain-list">
+      <li><strong>Identity</strong> — session / invocation / run / turn / branch</li>
+      <li><strong>Ordering</strong> — id, timestamp, and ledger order</li>
+      <li><strong>Source</strong> — role, author</li>
+      <li><strong>Content</strong> — text, thinking, function call/response, error</li>
+      <li><strong>Actions</strong> — state delta, permission, artifact, usage, end invocation</li>
+      <li><strong>Correlation</strong> — tool call, provider event, step, and artifact refs</li>
+      <li><strong>Lifecycle</strong> — partial stream fragments vs durable facts vs terminal facts</li>
+    </ul>
+    <p>
+      Model history therefore need not be reverse-parsed from a UI transcript; the UI is not the
+      source of truth. Projectors select non-partial, model-visible events from RuntimeEvents, then
+      materialize by provider capability.
+    </p>
+  </Section>
+
+  <Section
+    id="replay"
+    label="§01 · Replay"
+    title="Three meanings of “replay the state space”"
+    lede="Current ships semantic replay; do not smuggle wire-level determinism in as a delivered promise."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Semantic replay (Current) ≠ Provider-native (capability-gated) ≠ Bit-exact wire (Target)."
+      alt="Three columns: Semantic replay, Provider-native, Bit-exact wire."
+    >
+      <ReplayLayersFlow />
+    </DiagramFigure>
+
+    <ol class="plain-list plain-list--ol">
+      <li>
+        <strong>Semantic replay (Current)</strong> — given the ledger, rebuild text, thinking, tool
+        pairing, permissions, usage, and terminal facts; next-turn model history and completed
+        Session read models prefer this construction.
+      </li>
+      <li>
+        <strong>Provider-native replay (capability-gated)</strong> — providers differ on tool history
+        / signed thinking; plan first, then choose native, text-only, or explicit degrade. Replayable
+        ≠ dumping JSONL into an arbitrary model.
+      </li>
+      <li>
+        <strong>Bit-exact wire replay (Target / not claimed)</strong> — today’s Event Log stores
+        canonical message semantics, not a full snapshot of every HTTP byte. System prompt, tool
+        schema, options, and projection policy still participate in request generation. Bit-exact
+        would need separate versioning of config and request shape.
+      </li>
+    </ol>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Teaching centers Current semantic replay. Target directions are labeled explicitly so wishes
+        are not written as shipped facts — matching Maka architecture-doc discipline.
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="ids"
+    label="§01 · Identity"
+    title="Four identities that must not collapse"
+    lede="A Turn is not a Run; a chat message is not execution state."
+  >
+    <ul class="plain-list">
+      <li><strong>Session</strong> — long-lived interaction ownership (sessionId)</li>
+      <li><strong>Turn</strong> — one user-visible Q&amp;A round (turnId)</li>
+      <li><strong>Run</strong> — one durable execution attempt (runId / AgentRun)</li>
+      <li><strong>Invocation</strong> — one Runner-spec call boundary (invocationId)</li>
+    </ul>
+    <p>
+      On the default path runId and invocationId often coincide, but they should stay distinct
+      conceptually: future retries and multi-attempt flows should not rewrite the whole event
+      protocol. Without an execution envelope the system only sees “some messages appeared,” and
+      cannot reliably answer whether this execution truly ended.
+    </p>
+  </Section>
+
+  <Section
+    id="invariant"
+    label="§01 · Invariant"
+    title="Boundaries that must hold"
+    lede="Log is the source of truth; state is a materialized view."
+  >
+    <p>
+      Two rough lineages: ADK-style “Session history is fact; working context is projection,” and
+      the distributed-systems intuition of log-first / event sourcing — do not treat every downstream
+      view as an independent truth.
+    </p>
+    <p>
+      That yields a terminal invariant shared by later chapters:
+      <strong
+        >a Run header cannot declare completion by itself; it must be backed by a terminal
+        RuntimeEvent.</strong
+      >
+      §02 builds the Tool Result evidence layer on this; §03 shows how Compaction changes projections
+      without mutating facts.
+    </p>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>Present: keystone + produce/consume flow + three replay layers</li>
+      <li>
+        Aside: <a href="/history/pr/768">maka:pr:768</a>
+      </li>
+      <li>Still open: more volume figures, a11y pass — do not mark checklist complete</li>
+    </ul>
+  </div>
+</ChapterShell>
+
+<style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .plain-list--ol {
+    list-style: decimal;
+  }
+
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+</style>

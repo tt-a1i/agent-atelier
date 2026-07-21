@@ -3,52 +3,200 @@ import ChapterShell from "../../../components/ChapterShell.astro";
 import Section from "../../../components/Section.astro";
 import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
 import AheBoundaryKeystone from "../../../components/diagrams/AheBoundaryKeystone.astro";
+import EvidenceExportFlow from "../../../components/diagrams/EvidenceExportFlow.astro";
+import ManifestEvaluateFlow from "../../../components/diagrams/ManifestEvaluateFlow.astro";
 ---
 
 <ChapterShell chapterId="06" locale="en">
   <div slot="thesis">
-    <p lang="zh-CN">
-      （正文仍以中文源稿为准）AHE 把自迭代放到 Runtime 之外：证据导出、候选评估、可回滚谱系。
-    </p>
     <p>
-      Structural parity with zh: scene → keystone → experience → target → Current/Target. Full EN
-      prose pending — WIP.
+      If system improvement happens inside the interactive Runtime and cannot be falsified, a lucky
+      successful run hardens into “evolution.” AHE places self-iteration outside the Runtime:
+      evidence export, candidate evaluation, rollable lineage. Key line:
+      <strong
+        >Event Log makes experience replayable; the AHE boundary makes change falsifiable.</strong
+      >
     </p>
   </div>
 
   <Section
+    id="scene"
+    label="§06 · Scene"
+    title="From “this task failed” to “the next system should differ”"
+    lede="A single Self-check repairs the current task; systemic failure needs an outer experimental boundary."
+  >
+    <p>
+      Suppose four of ten long tasks fail in similar places: the Agent understands the goal, ends too
+      early after a tool failure, and Self-check marks an incomplete result as acceptable. One Run can
+      only fix the current task; one Self-check can only point at gaps within limited Turns. The real
+      question: do these failures imply the system prompt, tool contract, context policy, or Headless
+      policy itself must change?
+    </p>
+    <p>
+      If you dump the entire trace into another model and let it edit the repo, you immediately ask:
+      which version is being changed? Which files are control plane vs evidence plane? Is “fixed” a
+      narrative or backed by failing cases and predictions? Did the candidate only memorize seen
+      cases? How do you return to the previous stable lineage?
+    </p>
+  </Section>
+
+  <Section
     id="keystone"
     label="§06 · Keystone"
-    title="Evolution outside the interactive Runtime"
-    lede="Event Log makes experience replayable; the AHE boundary makes change falsifiable."
+    title="Self-iteration is an outer loop, not Runtime recursion"
+    lede="The system being improved must not simultaneously be fact recorder, change proposer, and final judge."
   >
     <DiagramFigure
       prototype
-      caption="Fig. 1 · Runtime plane exports evidence; Evolution plane proposes falsifiable change."
-      alt="Runtime plane versus dashed Evolution plane with AHE controller and independent evaluation."
+      caption="Fig. 1 · Runtime plane produces exportable evidence; Evolution plane proposes a restricted manifest; independent evaluation keeps or rolls back."
+      alt="Left Runtime plane (task→events→projection→read-only export), right dashed Evolution plane (AHE Controller, Change Manifest, independent evaluation); invariant: Event Log replays experience; AHE boundary makes change falsifiable."
     >
       <AheBoundaryKeystone />
     </DiagramFigure>
+
+    <ul class="plain-list">
+      <li>
+        <strong>Runtime plane</strong> — executes model/tool interaction; records events, permissions,
+        artifacts, and task state; serves the current user Turn.
+      </li>
+      <li>
+        <strong>Evolution plane</strong> — aggregates evidence across runs, proposes candidate changes,
+        compares baseline vs candidate; does not serve the current Turn.
+      </li>
+    </ul>
+  </Section>
+
+  <Section
+    id="experience"
+    label="§06 · Experience"
+    title="Event Log becomes an experience base, not only a recovery base"
+    lede="AHE should not swallow unbounded JSONL; normalize through TaskRun projection first."
+  >
+    <DiagramFigure
+      caption="Fig. 2 · Read-only export chain: Events → Project → Normalize → Bind target → Export CLI."
+      alt="Five-step evidence export pipeline ending in a read-only CLI."
+    >
+      <EvidenceExportFlow />
+    </DiagramFigure>
+    <pre class="code-block" aria-label="Evidence export chain">Runtime / Task Events
+        ↓ project
+TaskRunProjection
+        ↓ normalize and classify
+Harness Results + Lineage + Trace Index + Failure Digest
+        ↓ bind to
+Target Snapshot</pre>
+    <p>
+      Projection provides stable task semantics (final status, artifacts, Self-check, workspace
+      observation, score authority) without replacing original facts. An index layer helps the
+      controller locate failure classes and lineage gaps; when explicitly requested, a raw-trace layer
+      returns to canonical Runtime Events to verify the projection did not omit causal links — the
+      third payoff of the first five chapters’ log-first architecture: history can be re-interpreted by
+      a new projection.
+    </p>
     <aside class="history-aside">
       <p class="history-aside__tag">Evolution aside</p>
       <p>
-        Architecture chapter: <a href="/history/pr/776">maka:pr:776</a>.
+        AHE self-iteration architecture chapter land:
+        <a href="/history/pr/776">maka:pr:776</a>
+        (docs: add AHE self-iteration architecture chapter). Target protocol / evidence export
+        implementations:
+        <a href="/history/pr/411">maka:pr:411</a>,
+        <a href="/history/pr/413">maka:pr:413</a>.
       </p>
     </aside>
   </Section>
 
+  <Section
+    id="target"
+    label="§06 · Target"
+    title="Declare first what may be improved"
+    lede="The most dangerous default is “the whole repository may be changed.”"
+  >
+    <p>
+      <code>MakaAheTargetSnapshot</code> explicitly lists understandable components (system prompt,
+      heavy-task policy, tool contracts, context management, permission policy, headless evaluation,
+      …), each with <code>sourceRefs</code>. The sharpest read-only surface is
+      <code>maka-runtime-evidence</code>:
+      <strong
+        >the ledger that produces judgment criteria must not simultaneously be a candidate patch
+        target</strong
+      >
+      — otherwise the easiest “improvement” is to rewrite scoring, delete failures, or make evidence
+      friendlier to the candidate.
+    </p>
+    <p>
+      Snapshot identity binds managed source bytes and component topology (content identity), not the
+      timestamp of an export action. Same source and topology → same <code>snapshotId</code>; any
+      registered source change → id change.
+    </p>
+  </Section>
+
+  <Section
+    id="current"
+    label="§06 · Current"
+    title="What Current can do, and what Target still lacks"
+    lede="Do not claim Maka already rewrites its own code unattended."
+  >
+    <DiagramFigure
+      caption="Fig. 3 · Manifest → independent evaluate → Accept/Rollback; evolution forms lineage outside Runtime."
+      alt="Five steps: Target snap, Manifest, Independent eval, Accept?, Lineage."
+    >
+      <ManifestEvaluateFlow />
+    </DiagramFigure>
+    <p>
+      Current: declare a source-backed target surface; export authority-bearing results, trace index,
+      messages, and failure digest from TaskRun projection; validate restricted change manifests.
+      Evidence export CLI is a read-only boundary — it reads existing stores and does not re-run
+      tasks.
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Current vs Target</p>
+      <p>
+        Target: an external AHE controller fully runs snapshot → analyze → candidate patch → evaluate
+        → accept or rollback, forming recoverable lineage. Prompt Optimization Loop and similar in-repo
+        patterns are adjacent implementations — not proof that a general unattended evolution system
+        is complete.
+      </p>
+    </div>
+  </Section>
+
   <div slot="outline">
     <ul class="outline-list">
-      <li>Structure + keystone mirrored from zh; full EN prose pending</li>
-      <li>Do not mark checklist complete</li>
+      <li>Present: keystone + evidence export + manifest/evaluate/rollback flows</li>
+      <li>
+        Aside: <a href="/history/pr/776">maka:pr:776</a>
+      </li>
+      <li>Still open: a11y pass — do not mark checklist complete</li>
     </ul>
   </div>
 </ChapterShell>
 
 <style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
     max-width: 40em;
+  }
+  .outline-list li {
+    margin-bottom: 0.45rem;
   }
 </style>

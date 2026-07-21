@@ -1,0 +1,99 @@
+---
+/**
+ * §04 flow — what TaskRun ledger durably owns vs what it cannot alone guarantee.
+ */
+---
+
+<svg
+  class="db-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="db-kicker db-stage db-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · DURABLE CONTROL PLANE ≠ WHOLE WORLD CHECKPOINT
+  </text>
+  <line
+    class="db-stage db-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="db-col db-stage db-stage--1" transform="translate(8,52)">
+    <rect width="420" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="420" height="2" fill="var(--accent)"></rect>
+    <text class="db-col__idx" x="14" y="28" fill="var(--accent)">CURRENT · TASKRUN LEDGER OWNS</text>
+    <text class="db-col__line" x="14" y="58" fill="var(--ink)">TaskRun identity · Attempts · outcomes</text>
+    <text class="db-col__line" x="14" y="82" fill="var(--ink)">progress / evidence / permission / park</text>
+    <text class="db-col__line" x="14" y="106" fill="var(--ink)">refs → Session · AgentRun · RuntimeEvents</text>
+    <text class="db-col__line" x="14" y="130" fill="var(--mute)">append-only JSONL · projectTaskRun()</text>
+    <text class="db-col__line" x="14" y="154" fill="var(--mute)">control-plane facts are durable</text>
+  </g>
+
+  <g class="db-col db-stage db-stage--2" transform="translate(448,52)">
+    <rect width="412" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="412" height="2" fill="var(--accent)" opacity="0.4"></rect>
+    <text class="db-col__idx" x="14" y="28" fill="var(--accent)">NOT GUARANTEED BY LEDGER ALONE</text>
+    <text class="db-col__line" x="14" y="58" fill="var(--mute)">workspace bytes · live tool handles</text>
+    <text class="db-col__line" x="14" y="82" fill="var(--mute)">in-flight provider stream</text>
+    <text class="db-col__line" x="14" y="106" fill="var(--mute)">memory backends / abort controllers</text>
+    <text class="db-col__line" x="14" y="130" fill="var(--mute)">auto scheduler takeover after crash</text>
+    <text class="db-col__line" x="14" y="154" fill="var(--ink)">Target: unified resume protocol</text>
+  </g>
+</svg>
+
+<style>
+  .db-flow {
+    font-family: var(--sans);
+  }
+  .db-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .db-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .db-col__line {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .db-stage {
+      opacity: 0;
+      animation: db-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .db-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .db-stage--1 {
+      animation-delay: 0.18s;
+    }
+    .db-stage--2 {
+      animation-delay: 0.34s;
+    }
+    @keyframes db-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .db-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

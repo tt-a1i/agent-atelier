@@ -3,6 +3,8 @@ import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import DurableTaskKeystone from "../../components/diagrams/DurableTaskKeystone.astro";
+import AttemptContinueFlow from "../../components/diagrams/AttemptContinueFlow.astro";
+import DurableBoundaryFlow from "../../components/diagrams/DurableBoundaryFlow.astro";
 ---
 
 <ChapterShell chapterId="04">
@@ -91,6 +93,12 @@ Long task progress
     title="Durable 的究竟是什么"
     lede="控制面事实 durable ≠ 整个执行世界已 checkpoint。"
   >
+    <DiagramFigure
+      caption="图 2 · TaskRun ledger 拥有控制面事实；workspace / live stream / 自动接管仍属 Target 缺口。"
+      alt="左列 Current ledger owns，右列 Not guaranteed by ledger alone。"
+    >
+      <DurableBoundaryFlow />
+    </DiagramFigure>
     <p>
       <code>TaskRunStore</code> 以 append-only JSONL 保存 TaskEvent；
       <code>projectTaskRun()</code> 从头投影状态、Attempts、progress、evidence、permission、parked
@@ -118,6 +126,12 @@ Long task progress
     title="Attempt 是进度切片，不是失败的同义词"
     lede="外层 policy 决定 continue / retry / stop / abort；不是复活 immortal Invocation。"
   >
+    <DiagramFigure
+      caption="图 3 · Attempt 结束 → 写入 TaskEvent → policy 门控 → 投影 next-work；继续=新 Attempt。"
+      alt="五步：runTaskOnce、Attempt ends、Append TaskEvt、Policy gate、Next view。"
+    >
+      <AttemptContinueFlow />
+    </DiagramFigure>
     <p>
       Attempt 可因正常停止、执行失败、信息不完整、权限阻塞、预算耗尽、取消或中止而结束。
       <code>AutonomousAgentLoop</code> 每次 <code>runTaskOnce()</code> 创建新
@@ -128,11 +142,11 @@ Long task progress
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>已有：TaskRun envelope 关键图 + 身份层 / durable 边界 / Attempt 叙事</li>
+      <li>已有：关键图 + durable 边界对照 + Attempt 续跑流</li>
       <li>
         已有：演进旁注 <a href="/history/pr/773">maka:pr:773</a>
       </li>
-      <li>待补：Attempt 续跑时间线体量图、预算三层细节图；全文 EN 同船</li>
+      <li>待补：预算三层细节图、全文 EN 同船、a11y 终检</li>
       <li>本页不标 checklist 完成</li>
     </ul>
   </div>
