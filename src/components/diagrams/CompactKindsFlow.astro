@@ -33,8 +33,8 @@
     <text class="ck-col__title" x="14" y="74" fill="var(--ink)">compaction</text>
     <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: old event prefix</text>
     <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: between Turns</text>
-    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: V2 checkpoint</text>
-    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">→ AgentRun ledger event</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Accept: durable append first</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">Fail-open: no false coverage</text>
   </g>
 
   <!-- Column 2: Active prune -->
@@ -46,8 +46,8 @@
     <text class="ck-col__title" x="14" y="74" fill="var(--ink)">Result Prune</text>
     <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: current Turn results</text>
     <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: before next step</text>
-    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: archive + evidence</text>
-    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">→ rewrite messages only</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Accept: archive before omit</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">Fail-open: keep full message</text>
   </g>
 
   <!-- Column 3: semanticCompact -->
@@ -59,8 +59,8 @@
     <text class="ck-col__title" x="14" y="74" fill="var(--ink)">attention shaping</text>
     <text class="ck-col__line" x="14" y="102" fill="var(--mute)">Source: mid-turn span</text>
     <text class="ck-col__line" x="14" y="122" fill="var(--mute)">When: prepareStep</text>
-    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Durable: best-effort block</text>
-    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">≠ V2 history checkpoint</text>
+    <text class="ck-col__line" x="14" y="142" fill="var(--mute)">Accept: invocation-local</text>
+    <text class="ck-col__line" x="14" y="162" fill="var(--ink)">≠ V2 coverage contract</text>
   </g>
 </svg>
 

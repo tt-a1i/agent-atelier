@@ -3,6 +3,9 @@ import ChapterShell from "../../components/ChapterShell.astro";
 import Section from "../../components/Section.astro";
 import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
 import CompactionProjectionKeystone from "../../components/diagrams/CompactionProjectionKeystone.astro";
+import CheckpointSchema from "../../components/diagrams/CheckpointSchema.astro";
+import PriorMessagesPipeline from "../../components/diagrams/PriorMessagesPipeline.astro";
+import SummarizerAuthority from "../../components/diagrams/SummarizerAuthority.astro";
 import CompactKindsFlow from "../../components/diagrams/CompactKindsFlow.astro";
 import HighWaterCompactFlow from "../../components/diagrams/HighWaterCompactFlow.astro";
 import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFlow.astro";
@@ -32,7 +35,7 @@ import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFl
     </p>
     <blockquote class="pull">
       问题不是「怎样把聊天压得更短」，而是：怎样在保留完整事件事实的前提下，为下一次模型决策计算一个更小的
-      continuation view？
+      continuation view？Continuation view ≠ 删除事实。
     </blockquote>
   </Section>
 
@@ -44,7 +47,7 @@ import RollingCheckpointFlow from "../../components/diagrams/RollingCheckpointFl
   >
     <DiagramFigure
       prototype
-      caption="图 1 · 日志投影成 durable checkpoint，再与 raw tail 物化成本次 Provider request；源日志仍可回放与重投影。"
+      caption="图 1 · 源日志不可变：投影成 durable checkpoint，再与 raw tail 物化成本次 Provider request；同一日志仍可回放与重投影。"
       alt="从 Runtime Events Log 分出 HistoryCompactCheckpoint 与 recent raw Events tail，经 Materialize 进入虚线框 Provider request；不变式：Compaction 投影日志，不改写 canonical RuntimeEvents。"
     >
       <CompactionProjectionKeystone />
@@ -77,39 +80,191 @@ Next model context = Materialize(
     title="三个不可互换的对象"
     lede="摘要只是 text；安全的 compaction projection 还必须绑定 coverage。"
   >
-    <ul class="plain-list">
-      <li>
-        <strong>Runtime Events Log</strong> — 用户、模型、工具与 Runtime
-        已发生的语义事实；是事实源；不允许为了省上下文而丢失细节。
-      </li>
-      <li>
-        <strong>History Compact Checkpoint</strong> — 一段已校验事件前缀的 continuation summary
-        与覆盖信息；durable projection，不是第二真相。
-      </li>
-      <li>
-        <strong>Provider Request Messages</strong> — 本次 LLM
-        调用实际消费的工作上下文；ephemeral projection，可因预算重算。
-      </li>
-    </ul>
+    <div class="table-wrap" role="region" aria-label="三层对象" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">对象</th>
+            <th scope="col">保存什么</th>
+            <th scope="col">是否事实源</th>
+            <th scope="col">可否丢细节</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Runtime Events Log</td>
+            <td>用户 / 模型 / 工具 / Runtime 已发生的语义事实</td>
+            <td>是 · canonical</td>
+            <td>否</td>
+          </tr>
+          <tr>
+            <td>HistoryCompactCheckpoint</td>
+            <td>已校验前缀的 continuation summary + coverage</td>
+            <td>否 · durable projection</td>
+            <td>是（有损）</td>
+          </tr>
+          <tr>
+            <td>Provider Request Messages</td>
+            <td>本次 LLM 调用实际消费的工作上下文</td>
+            <td>否 · ephemeral projection</td>
+            <td>是（可重算）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p>
-      普通「摘要」只有文字。安全的 checkpoint 至少还要回答：覆盖哪个 Session、多少有序
-      RuntimeEvents / Turn、前缀结束在哪个 <code>runId / turnId / runtimeEventId</code>、source
-      digest 是什么、是否是上一 checkpoint 的合法 successor、在当前 token policy
-      下是否仍能进入 prompt。没有 coverage 的摘要只是笔记；没有 digest 的摘要无法证明自己仍对应当前日志。
+      Checkpoint ≈ materialized view，不是 WAL truncation。Summary text 是内容；<strong>coverage</strong>
+      才是「有资格替代一段前缀」的资格证明。裸字符串摘要回答不了：覆盖哪个 Session、多少有序
+      RuntimeEvents / Turn、前缀结束在哪个 <code>runId / turnId / runtimeEventId</code>、source digest
+      是什么、是否是上一 checkpoint 的合法 successor、在当前 token policy 下是否仍能进入 prompt。
     </p>
-    <aside class="history-aside">
-      <p class="history-aside__tag">演进旁注</p>
-      <p>
-        LLM compaction 架构章合入：
-        <a href={`${import.meta.env.BASE_URL}history/pr/772`}>maka:pr:772</a>
-        （docs: add LLM compaction architecture chapter）。后续 V2 checkpoint / rolling / replay
-        收紧见
-        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a>、
-        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>、
-        <a href={`${import.meta.env.BASE_URL}history/pr/1090`}>maka:pr:1090</a>
-        等。
-      </p>
-    </aside>
+  </Section>
+
+  <Section
+    id="schema"
+    label="§03 · Schema"
+    title="HistoryCompactCheckpoint 概念 schema"
+    lede="教学字段组，不把 TypeScript 冻结成产品 API；digest ≠ 自然语言正确性。"
+  >
+    <DiagramFigure
+      caption="图 2 · 五组字段：identity / high water / coverage / projection / lineage；sourceDigest 回指 covered prefix。"
+      alt="源日志条带与五个字段组盒子；digest 环路从 coverage 指回 RuntimeEvents 有序前缀。"
+    >
+      <CheckpointSchema />
+    </DiagramFigure>
+
+    <pre class="code-block" aria-label="HistoryCompactCheckpoint 概念 schema">HistoryCompactCheckpoint
+  identity
+    checkpointId, sessionId, createdAt
+  high water
+    highWaterName, highWaterSeq
+  coverage
+    eventCount, turnCount
+    through {'{'} runId, turnId, runtimeEventId {'}'}
+    sourceDigest          # SHA-256 of stable-serialized covered prefix
+  projection
+    summary, limitations, estimatedTokens
+  lineage
+    previousCheckpointId?</pre>
+
+    <div class="table-wrap" role="region" aria-label="字段组证明什么" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">字段组</th>
+            <th scope="col">证明什么</th>
+            <th scope="col">不证明什么</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>coverage.through</code> + counts</td>
+            <td>声称覆盖哪段有序前缀</td>
+            <td>Summary 是否完整</td>
+          </tr>
+          <tr>
+            <td><code>sourceDigest</code></td>
+            <td>构建时与 covered 源事件字节一致</td>
+            <td>自然语言准确性</td>
+          </tr>
+          <tr>
+            <td><code>lineage</code></td>
+            <td>合法 successor / 同 coverage 的 CAS 重写</td>
+            <td>更旧 raw 事件已被删除</td>
+          </tr>
+          <tr>
+            <td><code>limitations</code></td>
+            <td>回放时对模型诚实说明边界</td>
+            <td>权威升级</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Prefix-match 门（心智模型对应 <code>matchHistoryCompactCheckpointPrefix</code>）：(1) event count
+      足够；(2) 最后一条 <code>runId / turnId / runtimeEventId</code> 匹配；(3) digest 精确相等。任一失败 →
+      <code>coverage_miss</code> / <code>source_hash_mismatch</code> 诊断；<strong>禁止模糊复用</strong>。Checkpoint
+      ID 只命名一个 projection；与 canonical log 的关系由 source coverage 建立。
+    </p>
+  </Section>
+
+  <Section
+    id="pipeline"
+    label="§03 · Pipeline"
+    title="buildPriorMessages 投影流水线"
+    lede="每次普通 Send 的 prior history 从 RuntimeEvents 重投影，而不是复用上次拼好的 provider messages。"
+  >
+    <DiagramFigure
+      caption="图 3 · 十步流水线：高亮 04 stale prune、07 LLM rolling、08 synthetic；09 虚线可选。"
+      alt="两列编号 01–10 的 buildPriorMessages 步骤；底部着陆真理：compaction 只在 model-history projection 内。"
+    >
+      <PriorMessagesPipeline />
+    </DiagramFigure>
+
+    <ol class="plain-list numbered">
+      <li>排除当前 <code>turnId</code> → prior Runtime context；</li>
+      <li>准备 context-budget policy；</li>
+      <li>加载最新 V2 checkpoint；仅在必要时回退 V1 blocks；</li>
+      <li>
+        <strong>Stale</strong> oversized tool-result prune（指向
+        <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression`}>§02</a>；不在此重教 archive
+        协议）；
+      </li>
+      <li>计算 high water + 保留的 raw Turn tail；</li>
+      <li>按 counts / through / digest 校验 checkpoint 与 source prefix；</li>
+      <li>若需折叠 → LLM rolling successor；</li>
+      <li>将 checkpoint 物化为 <strong>synthetic</strong> RuntimeEvent，再拼接未覆盖 raw suffix；</li>
+      <li>可选：history search / archive retrieval / synthesis cache（虚线步骤）；</li>
+      <li>建立 provider replay plan → <code>ModelMessage[]</code>。</li>
+    </ol>
+    <p>
+      两条着陆真理：Compaction 发生在 <strong>model-history projection</strong>，不在 RuntimeEvent append
+      path。Checkpoint 还不是 provider message——仍要经过 replay planning 与 capability gates。
+    </p>
+  </Section>
+
+  <Section
+    id="synthetic"
+    label="§03 · Synthetic"
+    title="Checkpoint 如何进入模型历史"
+    lede="Synthetic 只存在于当前投影；不得伪装成原始交互事件写回 RuntimeEvent ledger。"
+  >
+    <p>
+      物化时，checkpoint 通常呈现为 continuation envelope：教学意图上是
+      <code>role=user</code>、<code>author=system</code>（不必在此展开 XML）。它只活在本次投影里。Durable
+      接受一个新 V2 checkpoint，则是另一条事实：AgentRun 上的
+      <code>history_compact_checkpoint_recorded</code>——系统把「接受了这个 projection」记为运行事实，而不是把它写进被覆盖的
+      source。
+    </p>
+    <div class="table-wrap" role="region" aria-label="三种对象与账本" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">对象</th>
+            <th scope="col">账本</th>
+            <th scope="col">含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Covered RuntimeEvents</td>
+            <td>RuntimeEventStore</td>
+            <td>Canonical 交互事实</td>
+          </tr>
+          <tr>
+            <td><code>history_compact_checkpoint_recorded</code></td>
+            <td>AgentRunStore</td>
+            <td>系统接受了这个 projection</td>
+          </tr>
+          <tr>
+            <td>Synthetic checkpoint event</td>
+            <td>Ephemeral projection</td>
+            <td>本次请求里模型看见什么</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </Section>
 
   <Section
@@ -119,7 +274,7 @@ Next model context = Materialize(
     lede="触发语义稳定：越过水位 → 折叠更旧前缀 → 保留 raw tail → 仅在 checkpoint+tail 仍合身时接受。"
   >
     <DiagramFigure
-      caption="图 2 · High water 触发折叠：LLM 只生成 summary value；未 durable 不得作为 replacement replay。"
+      caption="图 4 · High water 触发折叠：LLM 只生成 summary value；默认 token 数字是 Current policy，不是协议常量。"
       alt="五步流水线：Past high water、LLM summary、Durable append、Coverage gate、Replay + raw tail。"
     >
       <HighWaterCompactFlow />
@@ -128,16 +283,62 @@ Next model context = Materialize(
     <p>
       自动 history compaction 由 <code>ContextBudgetPolicy</code>
       驱动：根据模型 context window 计算 prior-history budget，当可 compact 历史越过 high water
-      时进入折叠；默认希望保留有界 raw tail（按完整 Turn 从新到旧选取，避免劈开 tool
-      call/result pair）。具体 token 数字是默认 policy，不是协议常量——真正稳定的是触发语义与失败语义。
+      时进入折叠；默认希望保留有界 raw tail。Current 默认量级（history reserve、highWaterRatio、max
+      checkpoint tokens 等）可被环境变量 / 模型 metadata 覆盖——教学钉死的是语义，不是数字。
     </p>
-    <p>
-      LLM 在这里生成「让另一个 LLM 继续工作」的结构化 continuation summary（Goal / Done / Key
-      Decisions / Next Steps / Critical Context）。但哪些事件属于 covered prefix、digest
-      是什么、能否替代当前日志、保留哪段 raw tail、是否已 durable——全部由 deterministic Runtime
-      code 决定。
-      <strong>LLM 是 projection value 的生成器，不是 projection authority。</strong>
-    </p>
+    <ul class="plain-list">
+      <li>Tail 按完整 Turn 从新到旧选取，避免劈开普通 tool call/result pair。</li>
+      <li>
+        最新 Turn 本身已超 budget → 退而保留该 Turn 内最新完整 function call/response pair；找不到 pair
+        则至少保留最后一条事件。
+      </li>
+      <li>
+        <code>minRecentTurns</code> 是期望；<strong>token cap 优先</strong>——不许用「至少 N 个 Turn」突破上下文上限。
+      </li>
+    </ul>
+  </Section>
+
+  <Section
+    id="llm-role"
+    label="§03 · Authority"
+    title="LLM 写摘要，Runtime 定权威"
+    lede="LLM generates value; Runtime owns authority."
+  >
+    <DiagramFigure
+      caption="图 5 · 失败测试后又跑绿：摘要可以说「tests are green」——仍是有损视图；官方 pass/fail 在 tool results / verifier / terminal（§05）。"
+      alt="两列：LLM summarizer 只生成 continuation 文本；Runtime 决定 coverage、digest、durable 与 replay。"
+    >
+      <SummarizerAuthority />
+    </DiagramFigure>
+
+    <div class="table-wrap" role="region" aria-label="LLM 与 Runtime 权限" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">角色</th>
+            <th scope="col">允许</th>
+            <th scope="col">禁止</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>LLM summarizer</td>
+            <td>产出 Goal / Done / Decisions / Next / Critical Context 文本</td>
+            <td>决定 coverage、digest、durability、是否可替代前缀</td>
+          </tr>
+          <tr>
+            <td>Runtime</td>
+            <td>选 fold 前缀与 tail；算 digest；durable-append 门；current-policy replay 门</td>
+            <td>把 summary 句子当成 verifier / terminal 权威</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ol class="plain-list numbered">
+      <li>Summary 可以说测试已通过——仍是对 source events 的 <strong>lossy view</strong>。</li>
+      <li>官方 pass/fail 仍在 tool results / verifier / terminal facts（见 §05）。</li>
+      <li>Digest 不匹配时，Runtime 丢弃 checkpoint——即便散文「看起来对」。</li>
+    </ol>
   </Section>
 
   <Section
@@ -147,31 +348,136 @@ Next model context = Materialize(
     lede="长期 Session 会多次越过水位；每次从零重压既贵又会反复改写旧事实。"
   >
     <DiagramFigure
-      caption="图 3 · Rolling：只把 prior summary 与 newly folded 送给 summarizer；再重算完整前缀 coverage。"
-      alt="Checkpoint N 与 Newly folded 汇入 Summarizer，再经 Recompute cover 得到 Checkpoint N+1。"
+      caption="图 6 · Rolling：summarizer 只吃 prior S + Δ；重算完整前缀 coverage；durable append 菱形门之后才可进入同一次 request。"
+      alt="Checkpoint N 与 Newly folded 经 Summarizer、Recompute cover，再到 durable append 菱形门；失败则丢弃 candidate。"
     >
       <RollingCheckpointFlow />
     </DiagramFigure>
-    <pre class="code-block" aria-label="Rolling checkpoint">Checkpoint N
-  summary = S(events[0..k])
-
-Newly evicted = events[k+1..m]
-
-Checkpoint N+1
-  summary = S(Checkpoint N.summary, newly evicted)
-  coverage = events[0..m]
-  previousCheckpointId = Checkpoint N.id</pre>
+    <pre class="code-block" aria-label="Rolling checkpoint">Checkpoint N+1 = S(Checkpoint N.summary, newly folded events)
+coverage = full prefix [0..m]
+previousCheckpointId = N
+sourceDigest recomputed over full covered prefix</pre>
     <p>
-      Summarizer 只接收 previous summary 与 newly folded events；已被覆盖的 raw events
-      不会再次送给 LLM。新 checkpoint 则对完整 covered prefix 重算 coverage 与
-      <code>sourceDigest</code>。关键提交点是
-      <code>history_compact_checkpoint_recorded</code>——新 summary 只有在 durable recorder
-      成功之后，才能作为 replacement 进入同一次 provider request。
+      <strong>Durable-before-replace：</strong>candidate 只有在
+      <code>history_compact_checkpoint_recorded</code> append 成功后，才能进入同一次 provider view。同
+      coverage 重写需要显式 successor（<code>previousCheckpointId</code>）且 digest / through / counts
+      完全相同——CAS，不是静默覆盖。Bounded AgentRun projection 在 canonical append
+      <em>之后</em>更新；append 失败 → projection 不得保留 candidate；projection 失败 → 冷启动从 ledgers
+      恢复。
     </p>
     <p>
-      Coverage 必须是<strong>有序前缀</strong>，不是任意事件集合的搜索摘要。前缀约束让 replay
-      变成 <code>checkpoint + uncovered raw suffix</code>，让 high water 单调可比较，也让 rolling
-      能明确 newly folded 是哪些事件。prefix / digest 任一失败 → 拒绝 checkpoint，而不是「看起来像同一段历史」。
+      Coverage 必须是<strong>有序前缀</strong>，不是任意事件集合的搜索摘要。前缀约束让 replay 变成
+      <code>checkpoint + uncovered raw suffix</code>，让 high water 单调可比较，也让 rolling 能明确 newly
+      folded 是哪些事件。
+    </p>
+  </Section>
+
+  <Section
+    id="fail"
+    label="§03 · Fail-open"
+    title="Fail-open 与失败矩阵"
+    lede="Fail open to a safe source-derived context, not to an invented summary."
+  >
+    <p>
+      读者测验：Rolling summarizer 在 newly evicted events 已存在之后失败——怎么办？答案模式：复用仍匹配的旧
+      checkpoint + 能塞下的 raw Turn tail；<strong>绝不</strong>让旧 summary 声称覆盖新折叠事件。
+    </p>
+    <div class="table-wrap" role="region" aria-label="Compaction 失败矩阵" tabindex="0">
+      <table class="proto-table proto-table--fail">
+        <thead>
+          <tr>
+            <th scope="col">Failure</th>
+            <th scope="col">Current 行为</th>
+            <th scope="col">Must not happen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Below high water</td>
+            <td>不发明过早 summary</td>
+            <td>无 scope 的 premature summary</td>
+          </tr>
+          <tr>
+            <td>Empty LLM summary</td>
+            <td>不记新 checkpoint；初次 compact → 安全 raw tail + 可见 fail-open note</td>
+            <td>空投影冒充 covered history</td>
+          </tr>
+          <tr>
+            <td>Rolling summarizer fail</td>
+            <td>旧 checkpoint 仍有效则复用；拼接可容纳 raw Turns</td>
+            <td>旧 summary 声称覆盖新事件</td>
+          </tr>
+          <tr>
+            <td>Durable append fail</td>
+            <td>丢弃 candidate；走 fallback</td>
+            <td>未 durable 的投影先进模型再声称可恢复</td>
+          </tr>
+          <tr>
+            <td>Prefix / digest mismatch</td>
+            <td>拒绝 checkpoint</td>
+            <td>近似匹配继续用</td>
+          </tr>
+          <tr>
+            <td>Over current budget</td>
+            <td>跳过该 checkpoint 的 replay</td>
+            <td>因「昨天能用」而绕过当前门</td>
+          </tr>
+          <tr>
+            <td>Bounded projection corrupt</td>
+            <td>扫描 AgentRun ledgers；best-effort 修复</td>
+            <td>把缓存当唯一真相</td>
+          </tr>
+          <tr>
+            <td>User abort manual compact</td>
+            <td>中止 summarizer / write；不毒化下一 Turn</td>
+            <td>迟到写入复用 abort 状态</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section
+    id="v1-v2"
+    label="§03 · Compatibility"
+    title="V1 block vs V2 ledger"
+    lede="V2 是 Current 首选主路径；V1 仍是诚实的只读兼容，不是假装已消失的 legacy。"
+  >
+    <div class="table-wrap" role="region" aria-label="V1 与 V2" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">V1 <code>HistoryCompactBlock</code></th>
+            <th scope="col">V2 <code>HistoryCompactCheckpoint</code></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Provenance</td>
+            <td>Per-event <code>sourceRefs</code>（+ artifacts）</td>
+            <td>Prefix metadata + digest over ledger</td>
+          </tr>
+          <tr>
+            <td>Size</td>
+            <td>可随 event 数增长（MB 级）</td>
+            <td>有界 checkpoint 身份</td>
+          </tr>
+          <tr>
+            <td>Current 角色</td>
+            <td>只读兼容 fallback</td>
+            <td>首选主路径</td>
+          </tr>
+          <tr>
+            <td>Cleanup</td>
+            <td>当 V2 覆盖同前缀时可 reclaim</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Reclaim-only cleanup 失败不得打断 replay——兼容路径的诚实性优先于「清理干净」的外观。
     </p>
   </Section>
 
@@ -182,46 +488,103 @@ Checkpoint N+1
     lede="它们都缩小 provider messages，但 source、生命周期与 durability 强度不同。"
   >
     <DiagramFigure
-      caption="图 4 · History LLM compaction（本章）≠ Active prune（§02）≠ semanticCompact（注意力整形）。"
-      alt="三列对照：History LLM compaction、Active Tool Result Prune、semanticCompact attention shaping。"
+      caption="图 7 · History LLM compaction（本章）≠ Active prune（§02）≠ semanticCompact——对比 durable acceptance 与 fail-open 姿态。"
+      alt="三列对照：History LLM compaction、Active Tool Result Prune、semanticCompact attention shaping；底部强调 fail-open 差异。"
     >
       <CompactKindsFlow />
     </DiagramFigure>
 
+    <div class="table-wrap" role="region" aria-label="三种 compact 的 durability" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">机制</th>
+            <th scope="col">Durable acceptance</th>
+            <th scope="col">Fail-open 姿态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>History LLM compaction</td>
+            <td>必须 durable-append 后才接受 replacement</td>
+            <td>安全 raw / 旧 checkpoint；无虚假 coverage</td>
+          </tr>
+          <tr>
+            <td>Active tool-result prune（§02）</td>
+            <td>Archive 先于 placeholder；ledger 不动</td>
+            <td>保留完整 provider message</td>
+          </tr>
+          <tr>
+            <td><code>semanticCompact</code></td>
+            <td>Best-effort diagnostic block；invocation-local</td>
+            <td>signed savings / cache miss 是诊断，不是硬拒绝；head/protocol gates 仍硬</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p>
-      承接 §02：active prune 改写的是当前 Turn 的 provider-visible tool result 表示，raw
-      先归档，证据层不删。本章主体是 prior-history LLM compaction——Turn 之间构建 prior history
-      时，用 V2 checkpoint 替代旧事件前缀。
-      <code>semanticCompact</code> 是 mid-turn attention shaping，recorder 多为
-      best-effort，<strong>不等于</strong>「durable append 成功后才进入 replay」的 V2 history
-      checkpoint 协议。
+      不要把三者都叫做「summary」。Mid-turn / capacity 细节见演进旁注（如
+      <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>）。统一「所有 LLM compact
+      共享同一 durable coverage 合同」对 <code>semanticCompact</code> 仍是 Target 方向，不是 Current。
     </p>
   </Section>
 
   <Section
-    id="failure"
-    label="§03 · Failure"
-    title="宁可少看，也不要看一份假历史"
-    lede="Fail open to a safe source-derived context, not to an invented summary."
+    id="cache-pointer"
+    label="§03 · Cache pointer"
+    title="折叠历史会改变 request shape"
+    lede="一句话因果 + 指针；完整 cache / prefixHash 教学不在本章。"
   >
-    <ul class="plain-list">
-      <li>LLM 返回空 summary → 不记录新 checkpoint；初次 compact 只保留安全 raw tail。</li>
+    <p>
+      折叠或替换一段 history 前缀会改变 <code>historyProjectionHash</code>——常见伴随
+      <code>requestShapeChangeReason = history_projection_changed</code>，同时 <code>prefixHash</code>
+      可能仍稳定。更短历史 ≠ 更便宜：cache miss 上升时总成本可能升高。完整归因阶梯、<code>prefixHash</code>
+      非目标、tool-schema 经济性 →
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#request-shape`}>§01 · request-shape</a>
+      （map #34 · #38 teaching plan）；本章只钉这条因果，不重写整篇 request-shape 文章。
+    </p>
+  </Section>
+
+  <Section
+    id="invariants"
+    label="§03 · Invariants"
+    title="必须保护的十条不变量"
+    lede="读完应能默写。追逐 tokens 时不可打破。"
+  >
+    <ol class="plain-list numbered invariants">
       <li>
-        Rolling summarizer 失败 → 若旧 checkpoint 仍匹配且合身，可复用并拼接能容纳的最新完整 raw
-        Turns；<strong>绝不</strong>扩大旧 checkpoint 的 coverage claim。
+        <strong>Source immutability</strong> — Compaction 不改写、不删除 canonical RuntimeEvents。
       </li>
-      <li>Durable append 失败 → 不使用 candidate；未提交 projection 不得进入模型后再声称可恢复。</li>
-      <li>Prefix / digest 不匹配或超出当前 budget → 拒绝 replay；历史上合法 ≠ 当前可用。</li>
-      <li>Bounded projection 损坏 → 从 canonical AgentRun ledger 扫描恢复；缓存不是唯一事实源。</li>
-    </ul>
-    <div class="stub">
-      <p class="stub__tag">Current · V2 优先</p>
-      <p>
-        V2 ledger-backed <code>HistoryCompactCheckpoint</code> 是首选主路径；V1 artifact-backed
-        <code>HistoryCompactBlock</code> 仍作只读兼容。教学以投影不变量为中心，不把默认 token
-        数字写成协议常量。
-      </p>
-    </div>
+      <li>
+        <strong>Projection coverage</strong> — 有序前缀 + through + digest；缺一不得替代。
+      </li>
+      <li>
+        <strong>No durability, no replacement</strong> —
+        <code>history_compact_checkpoint_recorded</code> 成功前不得进入同一次 provider view。
+      </li>
+      <li>
+        <strong>Monotonic high water</strong> — 或显式同 coverage successor（CAS），禁止静默覆盖。
+      </li>
+      <li>
+        <strong>Current-policy validation</strong> — 每次 replay 都重验；历史上合法 ≠ 当前可用。
+      </li>
+      <li>
+        <strong>Raw recent tail within budget</strong> — Turn 完整性优先；token cap 赢过 minRecentTurns。
+      </li>
+      <li>
+        <strong>No false coverage on rolling failure</strong> — 失败时回到安全 source-derived 上下文。
+      </li>
+      <li>
+        <strong>Projection rebuildable</strong> — 可从 canonical ledgers 重建；缓存不是唯一真相。
+      </li>
+      <li>
+        <strong>Failure observable</strong> — <code>coverage_miss</code> / <code>source_hash_mismatch</code>
+        等诊断可见。
+      </li>
+      <li>
+        <strong>Authority preserved</strong> — summary ≠ verifier / terminal 权威升级。
+      </li>
+    </ol>
   </Section>
 
   <Section
@@ -235,16 +598,60 @@ Checkpoint N+1
       <li><strong>不是删除历史</strong> — covered events 只离开本次 working set，不离开 canonical ledger。</li>
       <li><strong>不是语义无损</strong> — digest 证明覆盖哪段 source，不证明 summary 无遗漏。</li>
       <li><strong>不是 bit-exact replay</strong> — 可重建语义来源，不保证逐字相同 summary。</li>
-      <li><strong>不是官方结论</strong> — summary 里的「测试已通过」仍只是概括；authority 在 source / verifier / terminal fact（见 §05）。</li>
+      <li>
+        <strong>不是官方结论</strong> — summary 里的「测试已通过」仍只是概括；authority 在 source /
+        verifier / terminal fact（见 §05）。
+      </li>
     </ul>
+    <div class="stub">
+      <p class="stub__tag">Current · V2 优先 · Target 诚实</p>
+      <p>
+        V2 ledger-backed <code>HistoryCompactCheckpoint</code> 是首选主路径；V1 artifact-backed
+        <code>HistoryCompactBlock</code> 仍作只读兼容。默认 token 阈值是 policy knob。Summary quality gate /
+        summarizer identity in manifest = Target/future——教学不伪装已上线。
+      </p>
+    </div>
+  </Section>
+
+  <Section
+    id="asides"
+    label="§03 · Asides"
+    title="演进旁注：机制优先"
+    lede="主针钉住引入 ledger checkpoint 与 coverage 绑定的 PR；docs-land 次要。"
+  >
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        V2 ledger checkpoints：
+        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a>
+        （replace history compact artifacts with ledger checkpoints）。Coverage 绑定：
+        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>。Deterministic replay /
+        host persistence 地基（可选深针）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/40`}>maka:pr:40</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/43`}>maka:pr:43</a>。Manual
+        <code>/compact</code>：
+        <a href={`${import.meta.env.BASE_URL}history/pr/575`}>maka:pr:575</a>。Replay capacity：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1090`}>maka:pr:1090</a>。Reactive overflow
+        compact-and-retry（高级）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/1017`}>maka:pr:1017</a>。Docs land（次要）：
+        <a href={`${import.meta.env.BASE_URL}history/pr/772`}>maka:pr:772</a>。
+      </p>
+    </aside>
   </Section>
 
   <div slot="outline">
     <ul class="outline-list">
-      <li>关键图 + 高水位 / rolling / 三种 compact 体量流</li>
-      <li>演进旁注 <a href={`${import.meta.env.BASE_URL}history/pr/772`}>maka:pr:772</a></li>
-      <li>Compaction 只改投影、不改 Event Log 的 Current 边界已钉死</li>
-      <li>验收清单硬闸门已过（中英同船）；冷启动细图属可选加深，非硬闸门</li>
+      <li>
+        协议深度：schema · prior-messages 流水线 · synthetic · fail-open 矩阵 · LLM/Runtime 权威 · 十不变量
+      </li>
+      <li>
+        机制旁注
+        <a href={`${import.meta.env.BASE_URL}history/pr/729`}>maka:pr:729</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/955`}>maka:pr:955</a>
+        （docs-land 772 次要）
+      </li>
+      <li>Cache / request-shape 仅 lean pointer → §01；不在本章展开第七章</li>
+      <li>结构硬闸门仍必要；深度以读者能否复述 rolling fail-open 为准——不宣称「清单绿 = 深度完成」</li>
     </ul>
   </div>
 </ChapterShell>
@@ -255,6 +662,11 @@ Checkpoint N+1
     font-family: var(--serif);
     font-size: 1.02rem;
     max-width: 38em;
+  }
+
+  .figure-note strong {
+    font-weight: 600;
+    color: var(--ink);
   }
 
   .code-block {
@@ -279,6 +691,14 @@ Checkpoint N+1
     margin-bottom: 0.45rem;
   }
 
+  .plain-list.numbered {
+    list-style: decimal;
+  }
+
+  .invariants li {
+    margin-bottom: 0.65rem;
+  }
+
   .outline-list {
     margin: 0.75rem 0 0;
     padding-left: 1.2rem;
@@ -297,5 +717,51 @@ Checkpoint N+1
     font-family: var(--serif);
     font-size: 1.05rem;
     max-width: 38em;
+  }
+
+  .table-wrap {
+    margin: 1rem 0 1.35rem;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--hair);
+  }
+
+  .proto-table {
+    width: 100%;
+    min-width: 36rem;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .proto-table th,
+  .proto-table td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--hair);
+    text-align: left;
+    vertical-align: top;
+    max-width: 14em;
+  }
+
+  .proto-table thead th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+    background: var(--soft);
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .proto-table tbody tr:last-child th,
+  .proto-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .proto-table--fail {
+    min-width: 40rem;
+  }
+
+  .proto-table code {
+    font-size: 0.8em;
   }
 </style>

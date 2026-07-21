@@ -1,0 +1,188 @@
+---
+/**
+ * §03 protocol — HistoryCompactCheckpoint field groups + digest loop to log prefix.
+ */
+---
+
+<svg
+  class="cps-schema"
+  viewBox="0 0 868 320"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <defs>
+    <marker
+      id="cps-arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+
+  <text class="cps-kicker cps-stage cps-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · HISTORYCOMPACTCHECKPOINT · FIVE FIELD GROUPS
+  </text>
+  <line
+    class="cps-stage cps-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Source log strip -->
+  <g class="cps-stage cps-stage--1" transform="translate(8,48)">
+    <rect width="852" height="44" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="3" height="44" fill="var(--accent)"></rect>
+    <text class="cps-node__idx" x="16" y="18" fill="var(--accent)">SOURCE · IMMUTABLE</text>
+    <text class="cps-node__name" x="16" y="36" fill="var(--ink)">
+      RuntimeEvents ordered prefix [0..k] — coverage proves eligibility; digests prove same bytes
+    </text>
+  </g>
+
+  <!-- Digest loop arrow -->
+  <g class="cps-stage cps-stage--2" stroke="var(--accent)" stroke-width="1.25" fill="none">
+    <path d="M 434 92 L 434 108" marker-end="url(#cps-arrow)"></path>
+    <path d="M 120 248 C 120 268, 200 278, 434 278 C 668 278, 748 268, 748 248"></path>
+    <path d="M 748 248 L 748 200" marker-end="url(#cps-arrow)"></path>
+  </g>
+  <text class="cps-loop cps-stage cps-stage--2" x="448" y="274" fill="var(--accent)">
+    sourceDigest ← SHA-256(stable-serialized covered prefix)
+  </text>
+
+  <!-- Five boxes -->
+  <g class="cps-node cps-stage cps-stage--2" transform="translate(8,112)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="160" height="2" fill="var(--accent)"></rect>
+    <text class="cps-node__idx" x="12" y="22" fill="var(--accent)">01 · IDENTITY</text>
+    <text class="cps-node__line" x="12" y="44" fill="var(--ink)">checkpointId</text>
+    <text class="cps-node__line" x="12" y="62" fill="var(--mute)">sessionId · createdAt</text>
+    <text class="cps-node__hint" x="12" y="80" fill="var(--mute)">names a view</text>
+  </g>
+
+  <g class="cps-node cps-stage cps-stage--2" transform="translate(180,112)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="160" height="2" fill="var(--accent)"></rect>
+    <text class="cps-node__idx" x="12" y="22" fill="var(--accent)">02 · HIGH WATER</text>
+    <text class="cps-node__line" x="12" y="44" fill="var(--ink)">highWaterName</text>
+    <text class="cps-node__line" x="12" y="62" fill="var(--mute)">highWaterSeq</text>
+    <text class="cps-node__hint" x="12" y="80" fill="var(--mute)">policy trigger</text>
+  </g>
+
+  <g class="cps-node cps-stage cps-stage--3" transform="translate(352,112)">
+    <rect width="176" height="88" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="176" height="2" fill="var(--accent)"></rect>
+    <text class="cps-node__idx" x="12" y="22" fill="var(--accent)">03 · COVERAGE</text>
+    <text class="cps-node__line" x="12" y="44" fill="var(--ink)">counts · through</text>
+    <text class="cps-node__line" x="12" y="62" fill="var(--ink)">sourceDigest</text>
+    <text class="cps-node__hint" x="12" y="80" fill="var(--mute)">≠ summary quality</text>
+  </g>
+
+  <g class="cps-node cps-stage cps-stage--3" transform="translate(540,112)">
+    <rect width="160" height="88" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <rect width="160" height="2" fill="var(--accent)" opacity="0.7"></rect>
+    <text class="cps-node__idx" x="12" y="22" fill="var(--accent)">04 · PROJECTION</text>
+    <text class="cps-node__line" x="12" y="44" fill="var(--ink)">summary</text>
+    <text class="cps-node__line" x="12" y="62" fill="var(--mute)">limitations · tokens</text>
+    <text class="cps-node__hint" x="12" y="80" fill="var(--mute)">lossy value</text>
+  </g>
+
+  <g class="cps-node cps-stage cps-stage--4" transform="translate(712,112)">
+    <rect width="148" height="88" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="148" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="cps-node__idx" x="12" y="22" fill="var(--accent)">05 · LINEAGE</text>
+    <text class="cps-node__line" x="12" y="44" fill="var(--ink)">previousId?</text>
+    <text class="cps-node__line" x="12" y="62" fill="var(--mute)">CAS successor</text>
+    <text class="cps-node__hint" x="12" y="80" fill="var(--mute)">≠ deleted log</text>
+  </g>
+
+  <text class="cps-foot cps-stage cps-stage--4" x="8" y="308" fill="var(--mute)">
+    Prefix gate: eventCount + through boundary + exact digest — any miss → reject (no fuzzy reuse).
+  </text>
+</svg>
+
+<style>
+  .cps-schema {
+    font-family: var(--sans);
+  }
+  .cps-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .cps-node__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .cps-node__name {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .cps-node__line {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .cps-node__hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .cps-loop {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .cps-foot {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cps-stage {
+      opacity: 0;
+      animation: cps-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .cps-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .cps-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .cps-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .cps-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .cps-stage--4 {
+      animation-delay: 0.48s;
+    }
+    @keyframes cps-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cps-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

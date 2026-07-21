@@ -1,0 +1,179 @@
+---
+/**
+ * §03 protocol — buildPriorMessages numbered pipeline; highlight stale / LLM / synthetic.
+ */
+---
+
+<svg
+  class="pmp-flow"
+  viewBox="0 0 868 420"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="pmp-kicker pmp-stage pmp-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · BUILDPRIORMESSAGES · MODEL-HISTORY PROJECTION ONLY
+  </text>
+  <line
+    class="pmp-stage pmp-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <!-- Left column 1–5 -->
+  <g class="pmp-step pmp-stage pmp-stage--1" transform="translate(8,48)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">01</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Exclude current turnId → prior Runtime context</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--1" transform="translate(8,92)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">02</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Prepare context-budget policy</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--1" transform="translate(8,136)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">03</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Load newest V2 checkpoint · V1 fallback only</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--2" transform="translate(8,180)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="3" height="36" fill="var(--accent)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">04</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Stale oversized tool-result prune (§02)</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--2" transform="translate(8,224)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">05</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Compute high water + retained raw Turn tail</text>
+  </g>
+
+  <!-- Right column 6–10 -->
+  <g class="pmp-step pmp-stage pmp-stage--2" transform="translate(440,48)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">06</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Validate checkpoint vs source prefix</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--3" transform="translate(440,92)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="3" height="36" fill="var(--accent)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">07</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">If fold needed → LLM rolling successor</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--3" transform="translate(440,136)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="3" height="36" fill="var(--accent)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">08</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Synthetic RuntimeEvent + uncovered raw suffix</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--4" transform="translate(440,180)">
+    <rect
+      width="420"
+      height="36"
+      rx="1"
+      fill="var(--soft)"
+      stroke="var(--hair)"
+      stroke-dasharray="3.5 2.5"
+    ></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">09</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--mute)">Optional search / archive / synthesis cache</text>
+  </g>
+  <g class="pmp-step pmp-stage pmp-stage--4" transform="translate(440,224)">
+    <rect width="420" height="36" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="pmp-step__idx" x="12" y="23" fill="var(--accent)">10</text>
+    <text class="pmp-step__name" x="44" y="23" fill="var(--ink)">Replay plan → ModelMessage[]</text>
+  </g>
+
+  <!-- Callouts -->
+  <g class="pmp-callout pmp-stage pmp-stage--4" transform="translate(8,280)">
+    <rect width="852" height="112" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="3" height="112" fill="var(--accent)"></rect>
+    <text class="pmp-callout__label" x="18" y="24" fill="var(--accent)">LANDING TRUTHS</text>
+    <text class="pmp-callout__body" x="18" y="48" fill="var(--ink)">
+      Compaction lives in model-history projection — never in the RuntimeEvent append path.
+    </text>
+    <text class="pmp-callout__body" x="18" y="72" fill="var(--ink)">
+      Checkpoint is not yet a provider message; it still passes replay planning + capability gates.
+    </text>
+    <text class="pmp-callout__hint" x="18" y="96" fill="var(--mute)">
+      Highlight: 04 stale · 07 LLM value · 08 synthetic (ephemeral) — 09 dashed optional
+    </text>
+  </g>
+</svg>
+
+<style>
+  .pmp-flow {
+    font-family: var(--sans);
+  }
+  .pmp-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .pmp-step__idx {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .pmp-step__name {
+    font-family: var(--serif);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .pmp-callout__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .pmp-callout__body {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+  .pmp-callout__hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pmp-stage {
+      opacity: 0;
+      animation: pmp-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .pmp-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .pmp-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .pmp-stage--2 {
+      animation-delay: 0.24s;
+    }
+    .pmp-stage--3 {
+      animation-delay: 0.36s;
+    }
+    .pmp-stage--4 {
+      animation-delay: 0.48s;
+    }
+    @keyframes pmp-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pmp-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>
