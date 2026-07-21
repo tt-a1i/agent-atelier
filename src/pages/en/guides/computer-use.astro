@@ -165,6 +165,18 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         See <a href={`${ch01}#permission`}>§01 · PermissionEngine</a> for park/grant control flow — a
         different door.
       </p>
+      <aside class="history-aside" id="cursor-contrast">
+        <p class="history-aside__tag">History contrast · Codex FogCursor</p>
+        <p>
+          Maka’s virtual cursor is a <strong>visual interaction layer</strong>, not a click backend —
+          a successful press still precedes the ordinary synthetic / native event path. Recovered from
+          the Codex Computer Use binary: glyph path, hotspot = hosting-view center, and
+          MotionConfiguration constants. The candidate-path scorer is stripped, so Maka uses a
+          deterministic 20-candidate cubic planner — a <strong>structural reproduction</strong>, not
+          instruction-for-instruction equivalence. Not a Runtime protocol seam; a presentation-boundary
+          contrast. Specimen: <code>docs/codex-cursor-reverse-engineering.md</code>.
+        </p>
+      </aside>
     </Section>
 
     <Section
@@ -250,9 +262,27 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
           the Runtime session.
         </li>
         <li>
-          <strong>Deliberate gaps</strong>: no claim of a global macOS physical-input producer until one
-          exists; raw error-string matching is not an accepted producer; Codex’s signed turn-ended helper
-          is not invoked.
+          <strong>Physical-input guard (host-owned)</strong>: Desktop wires
+          <code>powerMonitor.getSystemIdleTime() &lt; 1</code> as a conservative ~1s quiet window
+          (whole-second granularity). The backend invokes <code>physicalInputRecentlyActive</code> at
+          the last practical boundary before every mouse / keyboard / semantic / scroll / drag / text
+          dispatch; if input is active or idle state cannot be read → <code>user_intervened</code>,
+          <strong>no</strong> cua-driver input tool call, consumed observation invalidated, explicit
+          re-observe required.
+        </li>
+        <li>
+          <strong>Compatibility CGEvent off by default</strong>: PID-bound compatibility delivery can
+          interleave with physical button state, so production keeps
+          <code>allowCompatibilityInputDispatch !== true</code> — coordinate click / scroll / drag /
+          <code>press_key</code> / semantic→pixel fallback blocked. Retained: observation, screenshots,
+          wait, zoom, virtual cursor, native AX, <code>set_value</code>, uniquely targeted Electron CDP
+          semantic / <code>insertText</code>. Controlled tests may opt in explicitly.
+        </li>
+        <li>
+          <strong>Deliberate gaps</strong>: a quiet window is <strong>not</strong> a global
+          physical-input producer claim; raw error-string matching is not an accepted producer; Codex’s
+          signed turn-ended helper is not invoked. Re-enabling coordinate input needs a native executor
+          that proves its event backend does not perturb global physical button state.
         </li>
       </ul>
     </Section>
@@ -350,6 +380,26 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
               <td>Fault-injected intervention</td>
               <td>Regression OK; cannot fill a real cell</td>
             </tr>
+            <tr>
+              <td>Physical input active / idle unreadable (pre-dispatch guard)</td>
+              <td>
+                <code>user_intervened</code>; no cua-driver input call; observation invalidated →
+                re-observe
+              </td>
+            </tr>
+            <tr>
+              <td>Compatibility CGEvent path (production default)</td>
+              <td>
+                <code>unsupported_action</code> / blocked — not “quiet window allows”
+              </td>
+            </tr>
+            <tr>
+              <td>Quiet window alone claimed as safe coordinate input</td>
+              <td>
+                <strong>Teaching error</strong> — can still perturb physical button state (archive
+                physical-input-guard)
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -357,11 +407,12 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         <p class="history-aside__tag">Verification</p>
         <p>
           <code>packages/computer-use/src/__tests__/*</code> ·
-          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · operator commands
-          <code>e2e:computer-use-real</code> / <code>process-restart</code> /
-          <code>real-model</code>. Archive hardening (tombstone, per-session queue, generation release)
-          contributes durable policy only — not PR archaeology. Outline:
-          <code>docs/research/computer-use-six-contracts-deep-outline.md</code>.
+          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · Desktop
+          <code>computer-use-host.test.ts</code> / <code>computer-use-capability.test.ts</code> (idle-time
+          wiring) · operator commands <code>e2e:computer-use-real</code> / <code>process-restart</code> /
+          <code>real-model</code>. Archive hardening +
+          <code>computer-use-physical-input-guard.md</code> contribute durable policy only — not PR
+          archaeology. Outline: <code>docs/research/computer-use-six-contracts-deep-outline.md</code>.
         </p>
       </aside>
     </Section>

@@ -153,6 +153,16 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         <code>readyForInteraction</code> 最多以有界 fail-open 影响时机；<code>finished</code> 不阻塞
         native dispatch。详见 <a href={`${ch01}#permission`}>§01 · PermissionEngine</a> 的控制流 park/grant——那是另一扇门。
       </p>
+      <aside class="history-aside" id="cursor-contrast">
+        <p class="history-aside__tag">历史对照 · Codex FogCursor</p>
+        <p>
+          Maka 的虚拟光标是<strong>视觉交互层</strong>，不是点击后端——成功 press 仍走普通 synthetic /
+          native 路径。从 Codex Computer Use 二进制回收的是 glyph 路径、hotspot=托管视图中心、以及
+          MotionConfiguration 常量；候选路径打分函数已剥离，故用确定性 20-candidate cubic planner
+          做<strong>结构复现</strong>，不声称指令级等价。这不是 Runtime 协议缝，而是 presentation 边界的对照证据：见 specimen
+          <code>docs/codex-cursor-reverse-engineering.md</code>。
+        </p>
+      </aside>
     </Section>
 
     <Section
@@ -234,8 +244,22 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         </li>
         <li>cua-driver service release 清理 executor-local observation / keyboard ownership，并推进 Runtime session。</li>
         <li>
-          <strong>故意缺口</strong>：尚无可靠全局 macOS physical-input producer 时不做声称；不用 raw error
-          string matching 当 producer；不强行套用 Codex 的 signed turn-ended helper。
+          <strong>Physical-input guard（host-owned）</strong>：Desktop 用
+          <code>powerMonitor.getSystemIdleTime() &lt; 1</code> 作为保守约 1s 静默窗（整秒粒度）。Backend 在每次
+          mouse / keyboard / semantic / scroll / drag / text 分发前调用
+          <code>physicalInputRecentlyActive</code>；活跃或 idle 状态不可读 → 返回
+          <code>user_intervened</code>，<strong>不</strong>调用 cua-driver input tool，并使已消费 observation
+          失效、要求显式再观察。
+        </li>
+        <li>
+          <strong>兼容 CGEvent 默认关闭</strong>：PID-bound 兼容路径可与物理按键状态交错，故生产默认
+          <code>allowCompatibilityInputDispatch !== true</code>——坐标点击 / scroll / drag /
+          <code>press_key</code> / semantic→pixel fallback 一律 blocked；保留 observation、截图、wait、zoom、虚拟光标、native
+          AX、<code>set_value</code>、唯一命中的 Electron CDP semantic / <code>insertText</code>。仅受控测试可显式打开。
+        </li>
+        <li>
+          <strong>故意缺口</strong>：静默窗<strong>不是</strong>全局 physical-input producer 声称；不用 raw error
+          string matching 当 producer；不强行套用 Codex 的 signed turn-ended helper。重新打开坐标输入需要能证明事件后端不扰动全局物理按键状态的 native executor。
         </li>
       </ul>
     </Section>
@@ -330,6 +354,24 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
               <td>fault-injected intervention</td>
               <td>可作回归；不可填 real 格</td>
             </tr>
+            <tr>
+              <td>物理输入活跃 / idle 不可读（pre-dispatch guard）</td>
+              <td>
+                <code>user_intervened</code>；无 cua-driver input 调用；observation 失效 → 再观察
+              </td>
+            </tr>
+            <tr>
+              <td>兼容 CGEvent 路径（生产默认）</td>
+              <td>
+                <code>unsupported_action</code> / blocked；非静默窗「放行」
+              </td>
+            </tr>
+            <tr>
+              <td>仅有 quiet window 却声称安全坐标输入</td>
+              <td>
+                <strong>教学错误</strong>——仍可能干扰物理按键状态（archive physical-input-guard）
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -337,10 +379,11 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
         <p class="history-aside__tag">验证</p>
         <p>
           <code>packages/computer-use/src/__tests__/*</code> ·
-          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · 操作命令
-          <code>e2e:computer-use-real</code> / <code>process-restart</code> /
-          <code>real-model</code>。Archive hardening（tombstone、per-session queue、generation
-          release）只取 durable 政策，不复盘 PR 流水账。提纲：
+          <code>packages/runtime/src/__tests__/openai-computer-*.test.ts</code> · Desktop
+          <code>computer-use-host.test.ts</code> / <code>computer-use-capability.test.ts</code>（idle-time
+          wiring）· 操作命令 <code>e2e:computer-use-real</code> / <code>process-restart</code> /
+          <code>real-model</code>。Archive hardening +
+          <code>computer-use-physical-input-guard.md</code> 只取 durable 政策，不复盘 PR 流水账。提纲：
           <code>docs/research/computer-use-six-contracts-deep-outline.md</code>。
         </p>
       </aside>

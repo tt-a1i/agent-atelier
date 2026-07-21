@@ -19,12 +19,12 @@
 
 | taught? | Count |
 | --- | ---: |
-| deep | 50 |
-| thin | 8 |
-| none | 69 |
+| deep | 54 |
+| thin | 5 |
+| none | 68 |
 | **total** | **127** |
 
-**Coverage % (all 127):** deep **39.4%** · thin **6.3%** · none **54.3%**
+**Coverage % (all 127):** deep **42.5%** · thin **3.9%** · none **53.5%**
 
 ### Design-encoding debt still `none`/`thin` (honest — do not close #34)
 
@@ -32,13 +32,9 @@
 | --- | --- | --- |
 | `DESIGN.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
 | `apps/desktop/src/renderer/README.md` | thin | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) deepen or defer |
-| `docs/codex-cursor-reverse-engineering.md` | none | [#88](https://github.com/tt-a1i/agent-atelier/issues/88) history aside or defer |
 | `docs/frontend-css-governance.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
 | `docs/frontend-css-governance.zh-CN.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) same |
-| `docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md` | thin | [#89](https://github.com/tt-a1i/agent-atelier/issues/89) cite-only or deepen |
-| `docs/archive/README.md` | thin | inventory authority only |
-| `docs/archive/computer-use-physical-input-guard.md` | thin | [#87](https://github.com/tt-a1i/agent-atelier/issues/87) mine or defer |
-| `docs/archive/expert-team-implementation.md` | thin | history reverse-eng — optional aside |
+| `docs/archive/README.md` | thin | inventory authority only — not Destination body |
 | `packages/ui/README.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
 | `notes/frontend-architecture-map-2026-07-19.md` | none | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) absorb or defer |
 
@@ -55,11 +51,11 @@ Entry/seam thin (not Destination blockers alone):
 | `ARCHITECTURE.zh-CN.md` | authority | deep | §01–§06 TOC 1:1 | keep; bilingual twin |
 | `README.md` | readme | thin | Entry + package seams | entry honesty only; not Destination body |
 | `README.zh-CN.md` | readme | thin | Entry + package seams | same as EN README |
-| `DESIGN.md` | authority | none | — (Cluster 3 UI) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
+| `DESIGN.md` | authority | deep | /guides/desktop-ui #north-star | mined #86 — agent UX contracts, not CSS dump |
 | `SECURITY.md` | authority | deep | /guides/security-privacy + §01 #trust | keep; failure stories shipped this pass |
 | `CHANGELOG.md` | readme | none | — | changelog only — no teaching debt |
 | `apps/desktop/README.md` | readme | deep | /guides/desktop-host | keep; failure stories this pass |
-| `apps/desktop/src/renderer/README.md` | readme | thin | /guides/desktop-host (lean) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) deepen or defer |
+| `apps/desktop/src/renderer/README.md` | readme | deep | /guides/desktop-ui #layers | mined #86 |
 | `apps/desktop/tests/smoke.md` | readme | none | — | process/smoke — not Destination design body |
 | `apps/desktop/resources/licenses/cua-driver/LICENSE.md` | readme | none | — | license only |
 | `apps/desktop/resources/bundled-skills/brand-guidelines/SKILL.md` | readme | none | §01 #skills (mechanism only) | product content OOS; catalog mechanism deep |
@@ -100,10 +96,10 @@ Entry/seam thin (not Destination blockers alone):
 | `docs/skill-catalog-policy.md` | authority | deep | §01 #skills + #skills-failure | failure matrix shipped this pass |
 | `docs/workspace-privacy-context.md` | authority | deep | /guides/security-privacy | failure stories this pass |
 | `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` | authority | deep | §01 #runtime-dual + #recovery/#t1-t2 | sticky SQLITE + Phase2/3 honesty mined this pass; Phase3 Target remains |
-| `docs/codex-cursor-reverse-engineering.md` | authority | none | history aside only | [#88](https://github.com/tt-a1i/agent-atelier/issues/88) history aside or defer |
-| `docs/frontend-css-governance.md` | authority | none | — (Cluster 3) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
-| `docs/frontend-css-governance.zh-CN.md` | authority | none | — (Cluster 3) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) same |
-| `docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md` | authority | thin | §04 #harbor-trust (score snapshot) | [#89](https://github.com/tt-a1i/agent-atelier/issues/89) cite-only or deepen |
+| `docs/codex-cursor-reverse-engineering.md` | authority | deep | /guides/computer-use #cursor-contrast | history contrast absorbed (#88) |
+| `docs/frontend-css-governance.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 — governance that binds agent chrome |
+| `docs/frontend-css-governance.zh-CN.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 |
+| `docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md` | authority | deep | §04 #terminal-bench-read | cite-only + how-to-read (#89); no new protocol |
 | `docs/computer-use-foundation-contract.md` | authority | deep | /guides/computer-use #six | companion failure matrix already live |
 | `docs/computer-use-model-loop-foundation.md` | authority | deep | /guides/computer-use #model-loop | companion failure matrix already live |
 | `docs/computer-use-evidence-classes.md` | authority | deep | /guides/computer-use #evidence | companion failure matrix already live |
@@ -133,7 +129,7 @@ Entry/seam thin (not Destination blockers alone):
 | `docs/archive/computer-use-delivery-state.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
 | `docs/archive/computer-use-evidence-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
 | `docs/archive/computer-use-executor-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
-| `docs/archive/computer-use-physical-input-guard.md` | archive | thin | /guides/computer-use | [#87](https://github.com/tt-a1i/agent-atelier/issues/87) mine or defer |
+| `docs/archive/computer-use-physical-input-guard.md` | archive | deep | /guides/computer-use #host-events / #failures | mined (#87) |
 | `docs/archive/computer-use-process-restart-e2e.md` | archive | none | — | history-only harness |
 | `docs/archive/computer-use-real-ax-model-e2e.md` | archive | none | — | history-only matrix |
 | `docs/archive/computer-use-runtime-hardening.md` | archive | deep | /guides/computer-use #evidence-hardening | absorbed |
@@ -142,7 +138,7 @@ Entry/seam thin (not Destination blockers alone):
 | `docs/archive/design-system-v0.2-wave-10.md` | archive | none | — | discard; DESIGN.md wins |
 | `docs/archive/desktop-smoke-plan-legacy.md` | archive | none | — | discard superseded |
 | `docs/archive/economic-mechanisms-benchmark.md` | archive | deep | §02 synthesis-cache aside | absorbed batch2 |
-| `docs/archive/expert-team-implementation.md` | archive | thin | §04 #swarm aside | history reverse-eng — optional aside |
+| `docs/archive/expert-team-implementation.md` | archive | deep | §04 #swarm history contrast | competitor RE contrast absorbed |
 | `docs/archive/expert-team-plan.md` | archive | none | — | history-only product research |
 | `docs/archive/frontend-simplification-map-2026-07-13.md` | archive | none | — | discard changelog |
 | `docs/archive/full-product-test-plan-2026-05.md` | archive | none | — | discard delivery contract |
@@ -170,8 +166,8 @@ Entry/seam thin (not Destination blockers alone):
 | `packages/runtime/README.md` | readme | thin | §01 entry / package seam | seam pointer only |
 | `packages/runtime/src/sandbox/README.md` | readme | deep | §01 #sandbox | README lag caveat already taught |
 | `packages/headless/README.md` | readme | deep | §04 #harbor-trust + #harbor-failure | failure matrix this pass |
-| `packages/ui/README.md` | readme | none | — (Cluster 3) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) UI track or defer |
-| `notes/frontend-architecture-map-2026-07-19.md` | authority | none | — (Cluster 3 / scratch) | [#86](https://github.com/tt-a1i/agent-atelier/issues/86) absorb or defer |
+| `packages/ui/README.md` | readme | deep | /guides/desktop-ui #layers | mined #86 |
+| `notes/frontend-architecture-map-2026-07-19.md` | authority | deep | /guides/desktop-ui #boundaries | structure absorbed #86; R1–R8 campaign = history/process |
 | `.github/pull_request_template.md` | readme | none | — | process template |
 | `skills/maka-architecture-docs/SKILL.md` | readme | none | — | meta writing skill OOS |
 | `skills/maka-architecture-docs/assets/article-template.md` | readme | none | — | meta OOS |
@@ -181,12 +177,10 @@ Entry/seam thin (not Destination blockers alone):
 
 ## This pass decisions
 
-1. **Mined into site:** sticky `MAKA_RUNTIME_SQLITE_CANONICAL` + Phase2/3 journal honesty (§01 `#runtime-dual`); failure matrices for skills / MCP / Harbor / swarm; companion `#failure` on bot-im / desktop-host / security-privacy (CN+EN).
-2. **`/guides/cost`:** **not opened** — `usage-cost-telemetry-deep-outline.md` + §01 `#usage-stores` already teach dual-store / pricing / capture; separate home would duplicate.
-3. **Tickets opened** for remaining design-encoding thin/none:
-   - [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI docs (DESIGN / CSS / ui README / notes frontend map / renderer README)
-   - [#87](https://github.com/tt-a1i/agent-atelier/issues/87) CU physical-input-guard archive delta
-   - [#88](https://github.com/tt-a1i/agent-atelier/issues/88) codex/cursor reverse-eng history vs skip
-   - [#89](https://github.com/tt-a1i/agent-atelier/issues/89) Terminal-Bench eval writeup cite-only vs deepen
-4. **Do not close #34** — matrix still shows design-encoding rows at `none`/`thin`.
+1. **Prior verify pass:** sticky SQLITE + Phase2/3 journal honesty; failure matrices; companions; `/guides/cost` not opened; tickets #86–#89.
+2. **#87 mined:** CU physical-input-guard → `/guides/computer-use` `#host-events` + `#failures` (CN+EN); idle-window + CGEvent-off policy + quiet-window-alone teaching error.
+3. **#88 decided + taught:** Codex FogCursor RE → history contrast at `/guides/computer-use` `#cursor-contrast` (visual layer ≠ click backend; structural reproduction). Not a Runtime protocol seam; not silent skip.
+4. **#89 cite-only:** Terminal-Bench writeup → §04 `#terminal-bench-read` how-to-read vs Harbor taxonomy; no score-table import; no new protocol.
+5. **Extra mine:** `expert-team-implementation.md` → §04 `#swarm` competitor RE contrast (CLI-sidecar vs in-Runtime narrow-only Team).
+6. **Still open:** [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI docs. **Do not close #34.**
 

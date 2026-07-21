@@ -634,12 +634,23 @@ cancelled → pending       only explicitReopen</pre>
         </tbody>
       </table>
     </div>
+    <h3 id="terminal-bench-read" class="subhead">如何读 Terminal-Bench 写稿（cite-only）</h3>
+    <p>
+      Specimen <code>docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md</code> 是<strong>冻结 A/B
+      分数快照</strong>与 harness 不对称说明，<strong>不是</strong>第二套 Harbor 失败分类法。读它时：
+      （1）把绝对分当 throughput 压低的下界，不要当模型天花板；（2）相对差距先当 harness 不对称（context-budget
+      prune、system/tools 面），不要当「谁更会想」；（3）WAL 里的
+      <code>operator_authorized_*</code> recovery 与
+      <code>classifyExternalHarborBenchmarkFailure</code> 的 infra / agent_incomplete / budget_exhausted
+      正交——前者是录取层审计，后者是协议级抛/不抛。本页已教协议；写稿只作 cite，不把分数表搬进 Destination。
+    </p>
     <aside class="history-aside">
       <p class="history-aside__tag">验证</p>
       <p>
         <code>packages/headless/README.md</code> · <code>isolation.ts</code> ·
         <code>harbor-failure-policy.ts</code> 与 <code>__tests__/harbor-*.test.ts</code>。提纲：
-        <code>docs/research/headless-harbor-trust-deep-outline.md</code>。
+        <code>docs/research/headless-harbor-trust-deep-outline.md</code>。Eval 写稿：
+        <code>docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md</code>（cite-only）。
       </p>
     </aside>
   </Section>
@@ -776,6 +787,15 @@ cancelled → pending       only explicitReopen</pre>
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">历史对照 · 竞品专家团 RE</p>
+      <p>
+        Archive <code>expert-team-implementation.md</code> 拆的是 WorkBuddy / QoderWork：共性是「Electron 壳
+        + Claude-Code 派生 CLI 引擎 + marketplace 人格 md」。Maka Current 刻意不同——Expert Team 是 Runtime
+        内的 lead persona + archetype <strong>narrow-only</strong> 工具 + team mailbox + Task Ledger
+        claim，不是再起一套 sidecar CLI / 云端数字同事。该 archive 只作对照 cite，Destination 以本节协议为准。
+      </p>
+    </aside>
     <aside class="history-aside">
       <p class="history-aside__tag">验证</p>
       <p>

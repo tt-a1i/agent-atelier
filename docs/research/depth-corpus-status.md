@@ -9,16 +9,15 @@
 
 **Destination is NOT complete.**
 
-Ruthless verify pass regenerated the **full 127-file** doc coverage matrix. Named Cluster 1 fat seams remain **deep** (or failure-story-deepened this pass). Leftovers are **not** “only polish”: the matrix still lists **design-encoding** rows at `none`/`thin` (Cluster-3 UI docs, optional archive deltas, external RE). AHE Target controller / reconciler Phase 3 remain product stubs. **Do not close #34.**
+Named Cluster 1 fat seams remain **deep**. This follow-up absorbed #87–#89 plus the fattest non-UI archive contrast (`expert-team-implementation`). Leftovers that still block closing #34 are mostly **Cluster-3 UI** design-encoding rows (#86) plus AHE Target controller / reconciler Phase 3 product stubs. **Do not close #34.**
 
 ## Method (this pass)
 
-1. Regenerated inventory of all first-party `*.md` in maka-agent (127; excl. `node_modules`).  
-2. Cross-checked each against atelier chapters / guides / research → [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md).  
-3. Mined fattest remaining thin gap in Current contracts: sticky `MAKA_RUNTIME_SQLITE_CANONICAL` + Phase2/3 tool-journal honesty into §01 `#runtime-dual` (code: `runtime-event-transfer.ts`).  
-4. Shipped failure-story matrices: §01 skills/MCP · §04 Harbor/swarm · companions bot-im / desktop-host / security-privacy (CN+EN).  
-5. Evaluated `/guides/cost` → **not opened** (§01 `#usage-stores` already protocol-deep).  
-6. Kept entry chrome honest (Destination not complete).
+1. Mined archive `computer-use-physical-input-guard.md` + Desktop/cua-driver code into `/guides/computer-use` `#host-events` / `#failures` (CN+EN) — #87.  
+2. Decided Codex/FogCursor RE is **history contrast** (not Runtime protocol, not silent skip) → `#cursor-contrast` — #88.  
+3. Terminal-Bench eval writeup → **cite-only** with §04 `#terminal-bench-read` how-to-read vs Harbor taxonomy — #89.  
+4. Extra: Expert Team competitor RE contrast into §04 `#swarm`.  
+5. Regenerated matrix counts + debt list; kept entry honesty.
 
 Depth classes (same as mine-plan):
 
@@ -35,11 +34,11 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 50 | 39.4% |
-| thin | 8 | 6.3% |
-| none | 69 | 54.3% |
+| deep | 54 | 42.5% |
+| thin | 5 | 3.9% |
+| none | 68 | 53.5% |
 
-`none` is dominated by bundled SKILL×29 + discard/history archives + meta/process — **not** all Destination blockers. Design-encoding debt that still blocks closing #34 is listed in the matrix §“Design-encoding debt”.
+`none` is dominated by bundled SKILL×29 + discard/history archives + meta/process — **not** all Destination blockers. Design-encoding debt that still blocks closing #34 is listed in the matrix §“Design-encoding debt” (mostly #86 UI).
 
 ## Cluster scores (mine-plan buckets)
 
@@ -49,10 +48,11 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | --- | --- |
 | §01 log / terminal / permission | **deep** |
 | §01 `#request-shape` / cache | **deep** |
-| §01 `#runtime-dual` sticky SQLITE + journal Phase2/3 | **deep** (this pass) |
+| §01 `#runtime-dual` sticky SQLITE + journal Phase2/3 | **deep** |
 | §02 prune / evidence | **deep** |
 | §03 compaction | **deep** |
 | §04 TaskRun | **deep** |
+| §04 `#harbor-trust` / `#terminal-bench-read` | **deep** (cite-only eval read) |
 | §05 self-check | **deep** |
 | §06 AHE boundary | **deep** on Current protocol surface; Target controller / runner / `validateMakaAheChangeEvaluation` still stub |
 
@@ -61,21 +61,21 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | Seam | Status (honest) |
 | --- | --- |
 | Sandbox | **deep** |
-| Computer-use | **deep** (failure matrix live; was outline+shipped) |
+| Computer-use | **deep** (+ physical-input-guard + FogCursor contrast this pass) |
 | Recovery Phase0/1 + T1/T2 Resolver | **deep** |
-| Tool journal sticky migration / Phase2 vs Phase3 | **deep** (this pass · §01 `#runtime-dual`) |
+| Tool journal sticky migration / Phase2 vs Phase3 | **deep** |
 | AgentRunRecovery vs RuntimeRecovery | **deep** |
 | Execution-evidence spine | **deep** |
 | Session task ledger ≠ TaskRun | **deep** |
-| MCP runtime | **deep** (failure matrix this pass) |
-| Agent swarm + expert team | **deep** (failure matrix this pass) |
-| Skill catalog policy | **deep** (failure matrix this pass) |
-| Headless Harbor trust | **deep** (failure matrix this pass) |
+| MCP runtime | **deep** |
+| Agent swarm + expert team | **deep** (+ competitor RE contrast) |
+| Skill catalog policy | **deep** |
+| Headless Harbor trust | **deep** (+ Terminal-Bench how-to-read) |
 | Shell / PTY / workspace executor | **deep** |
 | Filesystem worker / path containment | **deep** |
-| Desktop main composition | **deep** (+ `#failure`) |
-| Bot / IM onboarding | **deep** (+ `#failure`) |
-| Workspace privacy + SECURITY | **deep** (+ `#failure`) |
+| Desktop main composition | **deep** |
+| Bot / IM onboarding | **deep** |
+| Workspace privacy + SECURITY | **deep** |
 | ContextBudgetPolicy DSL | **deep** |
 | Semantic compact gates | **deep** |
 | Park / remember vs escalation | **deep** |
@@ -88,22 +88,24 @@ Matrix taught classes (doc-level): **deep / thin / none** — see coverage matri
 | Runtime-host gateway | **deep** |
 | Local memory whitebox | **deep** |
 
-**Approx. Cluster 1 named fat list:** all deep for Current teaching claims. Still **not** Destination (matrix design-encoding debt + Target stubs + entry honesty).
+**Approx. Cluster 1 named fat list:** all deep for Current teaching claims. Still **not** Destination (Cluster-3 UI debt + Target stubs + entry honesty).
 
 ### Cluster 2 — Archive that still teaches
 
 | Item | Status |
 | --- | --- |
 | Top-3 + batch-2 mine-delta absorb | **done** |
-| Remaining mine-delta | archive `README.md` inventory · `computer-use-physical-input-guard.md` still **thin** (ticket) · `expert-team-implementation.md` optional aside |
+| `computer-use-physical-input-guard.md` | **deep** (#87) |
+| `expert-team-implementation.md` | **deep** (history contrast) |
+| Remaining | archive `README.md` inventory-only thin |
 
 ### Cluster 3 — Lower priority (still inventoried; blocks close if design-encoding)
 
-Frontend CSS / DESIGN.md / `packages/ui` / notes frontend map / 29 SKILL bodies / eval score writeups — **thin/none** on matrix; tickets ask whether to open UI track or defer with reason.
+Frontend CSS / DESIGN.md / `packages/ui` / notes frontend map / renderer README / 29 SKILL bodies — **thin/none** on matrix; [#86](https://github.com/tt-a1i/agent-atelier/issues/86) asks UI track or defer-with-reason.
 
 ## Remaining (do not close #34)
 
-1. **Design-encoding matrix debt** — see [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md) (DESIGN / frontend-css / ui README / notes frontend map / renderer README / CU physical-input-guard / codex-cursor RE / eval writeup).  
+1. **Design-encoding matrix debt** — primarily Cluster-3 UI (#86); see [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md).  
 2. **AHE Target controller / runner / change-evaluation validator** — product stub; do not invent.  
 3. **Tool journal Phase 3 reconciler** — Target; taught as non-claim.  
 4. **Entry / map copy** — keep saying Destination not complete.
@@ -111,7 +113,8 @@ Frontend CSS / DESIGN.md / `packages/ui` / notes frontend map / 29 SKILL bodies 
 ## Ticket frontier
 
 - Open wayfinder: **#34** (map).  
-- New children (this pass): [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI · [#87](https://github.com/tt-a1i/agent-atelier/issues/87) CU physical-input-guard · [#88](https://github.com/tt-a1i/agent-atelier/issues/88) codex/cursor RE · [#89](https://github.com/tt-a1i/agent-atelier/issues/89) eval writeup.  
+- Closed this pass: [#87](https://github.com/tt-a1i/agent-atelier/issues/87) · [#88](https://github.com/tt-a1i/agent-atelier/issues/88) · [#89](https://github.com/tt-a1i/agent-atelier/issues/89).  
+- Still open child: [#86](https://github.com/tt-a1i/agent-atelier/issues/86) Cluster-3 UI.  
 - Prior children through #85 closed for shipped research/tasks.
 
 ## What would make Destination true

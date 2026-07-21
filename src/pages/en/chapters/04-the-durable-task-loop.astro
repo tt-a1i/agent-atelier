@@ -668,12 +668,25 @@ cancelled → pending       only explicitReopen</pre>
         </tbody>
       </table>
     </div>
+    <h3 id="terminal-bench-read" class="subhead">How to read the Terminal-Bench writeup (cite-only)</h3>
+    <p>
+      Specimen <code>docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md</code> is a
+      <strong>frozen A/B score snapshot</strong> plus harness-asymmetry notes — <strong>not</strong> a
+      second Harbor failure taxonomy. Read it as: (1) absolute scores are throughput-depressed lower
+      bounds, not model ceilings; (2) relative gaps are harness asymmetries first (context-budget prune,
+      system/tool surface), not “who thinks harder”; (3) WAL
+      <code>operator_authorized_*</code> recoveries are orthogonal to
+      <code>classifyExternalHarborBenchmarkFailure</code>’s infra / agent_incomplete / budget_exhausted —
+      admission audit vs throw/no-throw protocol. This page already teaches the protocol; the writeup
+      stays cite-only — Destination does not import the score table.
+    </p>
     <aside class="history-aside">
       <p class="history-aside__tag">Verification</p>
       <p>
         <code>packages/headless/README.md</code> · <code>isolation.ts</code> ·
         <code>harbor-failure-policy.ts</code> and <code>__tests__/harbor-*.test.ts</code>. Outline:
-        <code>docs/research/headless-harbor-trust-deep-outline.md</code>.
+        <code>docs/research/headless-harbor-trust-deep-outline.md</code>. Eval writeup:
+        <code>docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md</code> (cite-only).
       </p>
     </aside>
   </Section>
@@ -815,6 +828,17 @@ cancelled → pending       only explicitReopen</pre>
         </tbody>
       </table>
     </div>
+    <aside class="history-aside">
+      <p class="history-aside__tag">History contrast · competitor Expert-Team RE</p>
+      <p>
+        Archive <code>expert-team-implementation.md</code> reverse-engineers WorkBuddy / QoderWork: shared
+        shape is “Electron shell + Claude-Code-derived CLI engine + marketplace persona md.” Maka Current
+        differs on purpose — Expert Team is an in-Runtime lead persona + archetype
+        <strong>narrow-only</strong> tools + team mailbox + Task Ledger claim, not another sidecar CLI /
+        cloud digital-colleague stack. Cite the archive for contrast; Destination authority stays this
+        section’s protocol.
+      </p>
+    </aside>
     <aside class="history-aside">
       <p class="history-aside__tag">Verification</p>
       <p>
