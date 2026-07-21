@@ -13,29 +13,198 @@ import Section from "../../components/Section.astro";
   </div>
 
   <Section
-    id="spine"
-    label="§01 · Spine"
-    title="事实进 log，状态出投影"
-    lede="先能复述「发生了什么」，再谈智能与策略。"
+    id="scene"
+    label="§01 · Scene"
+    title="从一个看似简单的请求开始"
+    lede="Agent 要解决的不是「怎样调用一次 LLM」，而是开放式循环如何变成可回放的事实历史。"
   >
     <p>
-      Maka 把模型消息、工具调用、权限与终止写入 append-only 事件流。后续章节里的证据保留、Compaction、Headless
-      TaskRun，都站在这条脊柱上。
+      假设用户说：找出失败的测试，修复，再跑一遍。若只是聊天应用，路径只有「发模型 →
+      等回复 → 显示」。真实 Agent 却要经历读项目、调工具、等授权、处理失败/超时、把结果喂回模型、重复多轮，并在完成 / 失败 / 中止之间给出明确终点。
+    </p>
+    <p>
+      界面要实时显示；下一轮模型要读到可信历史；崩溃重启不能永远停在「运行中」；用户按停止后，迟到的
+      provider 事件也不能把状态改写成「完成」。
+    </p>
+    <blockquote class="pull">
+      Runtime 真正解决的是：如何把包含流式输出、工具副作用、用户介入和进程故障的开放式循环，记录成一段可以重新解释和回放的事实历史。
+    </blockquote>
+  </Section>
+
+  <Section
+    id="spine"
+    label="§01 · Spine"
+    title="状态不是一张表，而是日志的函数"
+    lede="Runtime Event Log 才是交互语义的事实源；某一时刻的状态是有序日志经投影后的结果。"
+  >
+    <p>
+      Maka 最核心的判断不是选了哪个模型 SDK，而是：
+      <strong>Event Log 保存事实；Session、Run、UI、模型上下文和恢复逻辑都是这份日志的消费者或投影。</strong>
+    </p>
+    <pre class="code-block" aria-label="状态与投影关系">State(t) = Project(RuntimeEvents[0..t], policy, runtime configuration)</pre>
+    <p>同一段日志可被不同消费者解释成不同状态：</p>
+    <ul class="plain-list">
+      <li>Model History Projector → 下一次模型调用的 messages</li>
+      <li>Runtime Read Model → UI 所需的对话、工具活动与 Turn 状态</li>
+      <li>Terminal Fact Classifier → 一次 Run 的最终结果</li>
+      <li>Recovery → 进程退出前哪些事实已经 durable</li>
+      <li>Context / Compaction → 更小但保留关键语义的工作上下文（见 §03）</li>
+    </ul>
+    <p>
+      这与普通 application log 不同：普通日志多在业务之后描述「代码做过什么」；RuntimeEvent
+      本身就是业务语义。删除这份日志，系统就失去可靠重建交互状态的基础。
     </p>
     <aside class="history-aside">
       <p class="history-aside__tag">演进旁注</p>
       <p>
-        Runtime Event Log 相关架构文档的合入轨迹，见
-        <a href="/history">/history</a>
-        （例如文档章落地 PR）。
+        Runtime Event Log 架构章合入：
+        <a href="/history/pr/768">maka:pr:768</a>
+        （docs: add Runtime Event Log architecture chapter）。
       </p>
     </aside>
+  </Section>
+
+  <Section
+    id="event"
+    label="§01 · Event"
+    title="一条 RuntimeEvent 保存了什么"
+    lede="不是 role + text，而是可投影、可配对、可终止的正交事实。"
+  >
+    <p>一条事实至少要能回答这些正交维度：</p>
+    <ul class="plain-list">
+      <li><strong>Identity</strong> — session / invocation / run / turn / branch</li>
+      <li><strong>Ordering</strong> — id、时间戳与 ledger 顺序</li>
+      <li><strong>Source</strong> — role、author</li>
+      <li><strong>Content</strong> — text、thinking、function call/response、error</li>
+      <li><strong>Actions</strong> — state delta、permission、artifact、usage、end invocation</li>
+      <li><strong>Correlation</strong> — tool call、provider event、step 与 artifact 引用</li>
+      <li><strong>Lifecycle</strong> — partial 流式片段 vs 持久事实 vs 终止事实</li>
+    </ul>
+    <p>
+      因此模型历史不必从 UI transcript 反向解析；UI 也不是事实源。投影器从
+      RuntimeEvent 中选择 non-partial、model-visible 的事件，再按 provider 能力物化。
+    </p>
+  </Section>
+
+  <Section
+    id="replay"
+    label="§01 · Replay"
+    title="「回放状态空间」的三层含义"
+    lede="Current 已成立的是语义回放；不要把 wire-level 确定性偷换成已经兑现的承诺。"
+  >
+    <ol class="plain-list plain-list--ol">
+      <li>
+        <strong>语义回放（Current）</strong>
+        — 给定 ledger，可重建文本、thinking、工具配对、权限、usage 与 terminal
+        fact；下一轮模型历史与 completed Session read model 优先从此构造。
+      </li>
+      <li>
+        <strong>Provider-native 回放（有能力门控）</strong>
+        — 不同 provider 对 tool history / signed thinking
+        要求不同；先做 replay plan，再决定 native、text-only 或显式降级。可回放 ≠ 把
+        JSONL 原样塞给任意模型。
+      </li>
+      <li>
+        <strong>Bit-exact wire replay（Target / 未宣称）</strong>
+        — 当前 Event Log 保存的是 canonical message semantics，不等于完整快照每次
+        HTTP 原始字节。System prompt、tool schema、options、投影策略仍参与 request
+        生成。若未来要承诺 bit-exact，需对配置与 request shape 另做版本化。
+      </li>
+    </ol>
     <div class="stub">
-      <p class="stub__tag">Stub · 待展开</p>
+      <p class="stub__tag">Current vs Target</p>
       <p>
-        计划：事件类型一览 + 一次 Agent Run 的瀑布回放；对照「只有 chat transcript」与「有 Runtime
-        Event Log」的调试差距。
+        本章教学以 Current 语义回放为主。Target 方向会显式标注，避免把愿望写成已落地事实——对齐
+        Maka 架构文的纪律。
       </p>
     </div>
   </Section>
+
+  <Section
+    id="ids"
+    label="§01 · Identity"
+    title="四个不要混在一起的身份"
+    lede="Turn 不是 Run；聊天消息也不是执行状态。"
+  >
+    <ul class="plain-list">
+      <li><strong>Session</strong> — 长期交互归属（sessionId）</li>
+      <li><strong>Turn</strong> — 用户可见的一轮问答（turnId）</li>
+      <li><strong>Run</strong> — 一次可持久化的执行尝试（runId / AgentRun）</li>
+      <li><strong>Invocation</strong> — Runner 规范的一次调用边界（invocationId）</li>
+    </ul>
+    <p>
+      当前默认路径里 runId 与 invocationId 常常相同，但概念上仍应分开：未来重试与多次尝试不必重写整套事件协议。没有执行封套，系统只能看见「出现过一些消息」，却无法可靠回答「这次执行是否真正结束」。
+    </p>
+  </Section>
+
+  <Section
+    id="invariant"
+    label="§01 · Invariant"
+    title="必须守住的边界"
+    lede="Log is the source of truth; state is a materialized view."
+  >
+    <p>
+      思想来源可以粗读为两条：ADK 式「Session history 是事实，working context 是投影」；以及分布式系统里
+      log-first / event sourcing 的直觉——不要把每个下游视图当成独立真相。
+    </p>
+    <p>
+      由此推出后文各章共用的终端不变量：
+      <strong>Run header 不能凭自己宣布完成，它必须得到 terminal RuntimeEvent 的支持。</strong>
+      §02 将在此之上讨论 Tool Result 的证据层；§03 讨论 Compaction 如何只改投影不改事实。
+    </p>
+    <div class="stub">
+      <p class="stub__tag">Stub · 图表待补</p>
+      <p>
+        计划关键图：Event Log 居中、多投影放射。体量图：执行主链（SessionManager → Runner →
+        ToolRuntime）与「事件生产 / 提交 / 消费」责任划分。未达验收清单前保持 WIP。
+      </p>
+    </div>
+  </Section>
+
+  <div slot="outline">
+    <ul class="outline-list">
+      <li>已有：场景 → 脊柱 → Event 维度 → 三层回放 → 身份 → 不变量</li>
+      <li>已有：演进旁注 <a href="/history/pr/768">maka:pr:768</a></li>
+      <li>待补：章首关键图 + ≥3 体量流程图 / 动效</li>
+      <li>待补：主链代码地图与 terminal invariant 对照标本</li>
+      <li>待补：全文 EN 同船（#12 仅壳层）</li>
+    </ul>
+  </div>
 </ChapterShell>
+
+<style>
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+  }
+
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+
+  .plain-list--ol {
+    list-style: decimal;
+  }
+
+  .outline-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.2rem;
+    max-width: 40em;
+  }
+
+  .outline-list li {
+    margin-bottom: 0.45rem;
+  }
+</style>
