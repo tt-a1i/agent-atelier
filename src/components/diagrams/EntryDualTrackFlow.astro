@@ -1,0 +1,105 @@
+---
+/**
+ * Entry figure — dual-track IA: milestone cognitive mainline + /history archive.
+ */
+---
+
+<svg
+  class="edt-flow"
+  viewBox="0 0 868 248"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="edt-kicker edt-stage edt-stage--0" x="8" y="20" fill="var(--accent)">
+    FLOW · DUAL TRACK · MILESTONE + HISTORY
+  </text>
+  <line
+    class="edt-stage edt-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="edt-col edt-stage edt-stage--1" transform="translate(8,52)">
+    <rect width="420" height="168" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <rect width="420" height="2" fill="var(--accent)"></rect>
+    <text class="edt-col__idx" x="14" y="28" fill="var(--accent)">A · COGNITIVE TRACK</text>
+    <text class="edt-col__title" x="14" y="56" fill="var(--ink)">§01 → §06 milestones</text>
+    <text class="edt-col__line" x="14" y="90" fill="var(--mute)">Teach structure · scene-local figures</text>
+    <text class="edt-col__line" x="14" y="114" fill="var(--mute)">Routes = ARCHITECTURE English titles</text>
+    <text class="edt-col__line" x="14" y="138" fill="var(--mute)">Sparse evolution asides → /history</text>
+    <text class="edt-col__line" x="14" y="162" fill="var(--ink)">Not a commit dump TOC</text>
+  </g>
+
+  <g class="edt-col edt-stage edt-stage--2" transform="translate(448,52)">
+    <rect width="412" height="168" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <rect width="412" height="2" fill="var(--accent)" opacity="0.55"></rect>
+    <text class="edt-col__idx" x="14" y="28" fill="var(--accent)">B · HISTORY TRACK</text>
+    <text class="edt-col__title" x="14" y="56" fill="var(--ink)">/history archive</text>
+    <text class="edt-col__line" x="14" y="90" fill="var(--mute)">PR-first · filters · DAG modes</text>
+    <text class="edt-col__line" x="14" y="114" fill="var(--mute)">Pinned NDJSON · maka:pr / commit</text>
+    <text class="edt-col__line" x="14" y="138" fill="var(--mute)">Detail: /history/pr|c/…</text>
+    <text class="edt-col__line" x="14" y="162" fill="var(--ink)">Cross-link back into chapters</text>
+  </g>
+</svg>
+
+<style>
+  .edt-flow {
+    font-family: var(--sans);
+  }
+  .edt-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .edt-col__idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .edt-col__title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .edt-col__line {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .edt-stage {
+      opacity: 0;
+      animation: edt-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .edt-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .edt-stage--1 {
+      animation-delay: 0.18s;
+    }
+    .edt-stage--2 {
+      animation-delay: 0.34s;
+    }
+    @keyframes edt-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .edt-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

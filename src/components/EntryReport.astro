@@ -1,6 +1,8 @@
 ---
 import ReportLayout from "../layouts/ReportLayout.astro";
 import Section from "./Section.astro";
+import DiagramFigure from "./diagrams/DiagramFigure.astro";
+import EntryDualTrackFlow from "./diagrams/EntryDualTrackFlow.astro";
 import {
   ARCHITECTURE_SENTENCE,
   CHAPTERS,
@@ -45,7 +47,7 @@ const copy =
         tocLabel: "Six chapters",
         tocTitle: "Chapter index",
         tocLede:
-          "Routes match Maka ARCHITECTURE English titles 1:1. All chapters are WIP — none marked complete.",
+          "Routes match Maka ARCHITECTURE English titles 1:1. Every chapter stays Draft/WIP until the acceptance checklist hard gates pass — none are marked complete.",
         tracksLabel: "Dual track",
         tracksTitle: "Cognitive track and history track",
         tracksLede:
@@ -56,6 +58,12 @@ const copy =
         pathsLabel: "Reading paths",
         pathsTitle: "Choose a path by problem",
         pathsLede: "Same six chapters; different entry orders. All routes remain WIP.",
+        dualCaption:
+          "Fig. · Dual track: §01–§06 teach structure; /history holds the PR-first lineage with sparse asides bridging back.",
+        dualAlt:
+          "Two columns: Cognitive track §01–§06 milestones versus History track /history archive with PR-first filters and cross-links.",
+        wipNote:
+          "Acceptance checklist is a hard gate (narrative, keystone+flows, asides, a11y, bilingual, chrome). TOC WIP badges mean unfinished — not a completed curriculum.",
         paths: [
           {
             title: "First time in the Runtime",
@@ -87,7 +95,8 @@ const copy =
         layerChapters: "对应章节：",
         tocLabel: "Six chapters",
         tocTitle: "六章索引",
-        tocLede: "路由与 Maka ARCHITECTURE 英文章名 1:1；全部为 WIP，未标完成。",
+        tocLede:
+          "路由与 Maka ARCHITECTURE 英文章名 1:1；每章在验收清单硬闸门通过前保持草稿 / WIP，目录不标完成。",
         tracksLabel: "Dual track",
         tracksTitle: "认知轨与演进轨",
         tracksLede: "里程碑讲透结构；完整 commit/PR 谱系在 /history。",
@@ -97,6 +106,12 @@ const copy =
         pathsLabel: "Reading paths",
         pathsTitle: "按问题选择阅读路径",
         pathsLede: "六章不变，入口顺序可变；全部仍为 WIP。",
+        dualCaption:
+          "图 · 双轨：§01–§06 讲结构；/history 承载 PR-first 谱系，章内旁注稀疏回链。",
+        dualAlt:
+          "两列对照：认知轨 §01–§06 里程碑，与演进轨 /history 档案（PR-first、筛选、交叉引用）。",
+        wipNote:
+          "验收清单是硬闸门（叙事、关键图+体量流、旁注预算、无障碍、双语、chrome）。目录上的 WIP 表示未完成，不是已结业课程。",
         paths: [
           {
             title: "第一次进入 Runtime",
@@ -224,6 +239,9 @@ const copy =
       title={copy.tracksTitle}
       lede={copy.tracksLede}
     >
+      <DiagramFigure caption={copy.dualCaption} alt={copy.dualAlt}>
+        <EntryDualTrackFlow />
+      </DiagramFigure>
       <p>
         {
           locale === "en" ? (
@@ -242,6 +260,7 @@ const copy =
           )
         }
       </p>
+      <p class="entry-wip-note">{copy.wipNote}</p>
       <blockquote class="pull">{copy.pull}</blockquote>
     </Section>
   </article>
@@ -409,6 +428,15 @@ const copy =
     font-size: 0.98rem;
     color: var(--mute);
     max-width: 40em;
+  }
+
+  .entry-wip-note {
+    margin: 1rem 0 0;
+    max-width: 40em;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--mute);
   }
 
   @media (max-width: 640px) {
