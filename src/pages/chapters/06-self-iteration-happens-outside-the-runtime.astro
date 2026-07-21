@@ -159,7 +159,13 @@ Target Snapshot</pre>
       <li><code>harness-results.json</code> — 标准化状态与 score authority</li>
       <li><code>trace-index.json</code> — task → messages / events / transcript / tool results / artifacts</li>
       <li><code>traces/&lt;taskRunId&gt;/task-run.json</code> · <code>task-events.jsonl</code>（payload-safe；绝不再误标成 Runtime Events）</li>
-      <li><code>execution-lineage.json</code> — Target、TaskRun、Attempt、AgentRun 与 Runtime/Task coverage 绑定</li>
+      <li>
+        <code>execution-lineage.json</code> — Target、TaskRun、Attempt、AgentRun 与 Runtime/Task
+        coverage 绑定（<code>maka.ahe.execution_lineage.v1</code>；见
+        <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#execution-evidence`}
+          >§01 · #execution-evidence</a
+        >）
+      </li>
       <li><code>messages.json</code> · AgentRun <code>inspect.json</code>（payload-safe）</li>
       <li><code>runtime-events.jsonl</code> — Canonical Runtime Events，仅 <code>--include-events</code></li>
       <li><code>failure-digest.json</code> — 确定性失败摘要、Self-check 分歧、hygiene、digest-bound debug refs</li>

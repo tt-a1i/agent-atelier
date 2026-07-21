@@ -255,6 +255,35 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="evidence-hardening"
+      label="CU · Evidence hardening"
+      title="真实模型报告如何 fail-closed 成证据"
+      lede="Archive hardening 只取 durable 政策；PR 流水账不复盘。"
+    >
+      <p>
+        统一报告边界：直接或 Desktop 报告经同一 schema sanitizer——只保留已校验 attribution、terminal
+        state、action summaries、synthetic fixture state、assertion 结果与 allowlisted dispatch
+        evidence。Prompt、截图、坐标、键入文本、原始 UI、任意 trace 字符串、provider body 与外层
+        exception message 一律剥离。
+      </p>
+      <ul class="plain-list">
+        <li>
+          Real provider 矩阵格要求：schema v1 + <code>real-runtime</code> evidence；provider / model /
+          scenario / producer / live transport 匹配；launcher <code>pass</code> 且 terminal
+          <code>complete/end_turn</code>；绑定到 owned fixture 的成功允许动作；每动作计数预算 + 期望 /
+          禁止副作用断言；mutation 场景需 AX 或 semantic dispatch evidence。
+        </li>
+        <li><strong>缺证据 = invalid / inconclusive，从不记 pass。</strong></li>
+        <li>
+          Delivery honesty（archive <code>computer-use-delivery-state.md</code>）：已送达但无法验证的写 /
+          semantic 动作用 <code>outcome_unknown</code>，不要把 readback/截图失败误标成
+          <code>capture_failed</code> 从而抹掉「可能已生效」。Observation 仅在截图 normalization
+          成功后进入有界 FIFO。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
       id="failures"
       label="CU · Failures"
       title="Fail-closed 矩阵（教学用）"
@@ -292,6 +321,10 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
             <tr>
               <td>未知 child outcome</td>
               <td>re-observe；禁止自动重放</td>
+            </tr>
+            <tr>
+              <td>已送达但 readback/截图无法验证</td>
+              <td><code>outcome_unknown</code>（保留 delivered；非 <code>capture_failed</code>）</td>
             </tr>
             <tr>
               <td>fault-injected intervention</td>

@@ -273,6 +273,37 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
     </Section>
 
     <Section
+      id="evidence-hardening"
+      label="CU · Evidence hardening"
+      title="How real-model reports fail closed as evidence"
+      lede="Harvest durable policy from archive hardening; do not relitigate PR diaries."
+    >
+      <p>
+        Unified report boundary: every direct or Desktop report passes one schema-driven sanitizer.
+        Only validated attribution, terminal state, action summaries, synthetic fixture state,
+        assertion results, and allowlisted dispatch evidence survive. Prompts, screenshots,
+        coordinates, typed text, raw UI, arbitrary traces, provider bodies, and outer exception
+        messages are stripped.
+      </p>
+      <ul class="plain-list">
+        <li>
+          A real provider matrix cell requires: schema v1 + <code>real-runtime</code> evidence;
+          matching provider / model / scenario / producer / live transport; launcher
+          <code>pass</code> with terminal <code>complete/end_turn</code>; successful allowed actions
+          bound to the owned fixture; per-action count budgets plus expected/forbidden-effect
+          assertions; AX or semantic dispatch evidence for mutation scenarios.
+        </li>
+        <li><strong>Missing evidence is invalid or inconclusive — never a pass.</strong></li>
+        <li>
+          Delivery honesty (archive <code>computer-use-delivery-state.md</code>): delivered but
+          unverifiable writes/semantic actions return <code>outcome_unknown</code> — do not mislabel
+          readback/screenshot failure as <code>capture_failed</code> and erase “may have taken
+          effect.” Observations enter the bounded FIFO only after screenshot normalization succeeds.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
       id="failures"
       label="CU · Failures"
       title="Fail-closed matrix (teaching)"
@@ -310,6 +341,10 @@ const ch02 = chapterHref("02-evidence-before-compression", locale);
             <tr>
               <td>Unknown child outcome</td>
               <td>re-observe; no auto-replay</td>
+            </tr>
+            <tr>
+              <td>Delivered but readback/screenshot unverifiable</td>
+              <td><code>outcome_unknown</code> (keep delivered; not <code>capture_failed</code>)</td>
             </tr>
             <tr>
               <td>Fault-injected intervention</td>

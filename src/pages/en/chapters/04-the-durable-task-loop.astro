@@ -95,6 +95,15 @@ Long task progress
       the log”) and §03 (“checkpoint is a projection”), with a long-task control plane as the consumer.
       The figure intentionally omits workspace: workspace lifecycle is not always as durable as TaskRun.
     </p>
+    <p>
+      After a headless finish, <code>TaskRunProjection.executionLineage</code> (and per-Attempt lineage)
+      is replayed from Task Events such as <code>task_attempt_execution_linked</code>: it points at
+      Session / Invocation / AgentRun and inclusive Runtime coverage without copying Runtime facts into
+      the Task ledger. Inspector and cursor contract:
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#execution-evidence"}
+        >§01 · #execution-evidence</a
+      >.
+    </p>
   </Section>
 
   <Section

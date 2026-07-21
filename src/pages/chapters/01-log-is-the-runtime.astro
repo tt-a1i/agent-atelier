@@ -503,7 +503,11 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         <code>transformCommand</code> 插入沙箱；PTY 与强制沙箱 argv 互斥——spawn / live≠result 见
         <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression#shell-side-effects`}
           >§02 · #shell-side-effects</a
-        >。
+        >。文件工具另有 path containment 叶子与可选 filesystem worker（协议 v2）——见
+        <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression#filesystem-worker`}
+          >§02 · #filesystem-worker</a
+        >；Desktop 如何组装 SessionManager / IPC 见
+        <a href={`${import.meta.env.BASE_URL}guides/desktop-host`}>/guides/desktop-host</a>。
       </p>
     </aside>
   </Section>
@@ -1209,23 +1213,91 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       </table>
     </div>
 
-    <h3 id="tool-economy" class="subhead">Active tools ≠ dispatch registry</h3>
+    <h3 id="tool-economy" class="subhead">providerTools ≠ activeTools</h3>
     <DiagramFigure
-      caption="图 12 · 全量 providerTools 与 wire 上 activeTools；load_tools 改变可见集；PermissionEngine 正交授权。"
+      caption="图 12 · 全量 providerTools（dispatch）与 wire 上 activeTools（advertise）；load_tools 改变可见集；PermissionEngine 正交授权。"
       alt="全量 registry、active wire set、load_tools 箭头与正交 PermissionEngine。"
     >
       <ActiveVsRegistry />
     </DiagramFigure>
+    <p>
+      Cost spine 上有两条<strong>不可互换</strong>的轴，类型就写在
+      <code>canonicalizeToolSet</code> 的返回值里：
+    </p>
+    <div class="table-wrap" role="region" aria-label="dispatch vs advertise" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">轴</th>
+            <th scope="col">载体</th>
+            <th scope="col">何时变</th>
+            <th scope="col">影响什么</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dispatch</td>
+            <td><code>providerTools: MakaTool[]</code></td>
+            <td>Catalog 组成（+ connector + invalid）</td>
+            <td>本地可执行 / repair 目标</td>
+          </tr>
+          <tr>
+            <td>Advertise / wire</td>
+            <td><code>activeTools: string[]</code></td>
+            <td>Economy groups + <code>load_tools</code> + <code>prepareStep</code></td>
+            <td>Provider schemas、<code>toolSchemaHash</code>、<code>prefixHash</code></td>
+          </tr>
+          <tr>
+            <td>Authorize</td>
+            <td>PermissionEngine</td>
+            <td>用户 / 策略授权</td>
+            <td>已广告的调用是否可跑</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre class="code-block" aria-label="canonicalizeToolSet">visibleTools = tools \ {'{'}invalid{'}'} , sorted by name
+activeTools  = filter(visibleTools, activeNames?)   # omit ⇒ full surface
+providerTools = [...visibleTools, invalid]         # invalid 永不广告</pre>
+    <p>
+      <strong>Dispatch 从不依赖广告可见性。</strong>被 gated 且尚未 load 的工具仍留在
+      <code>providerTools</code>——组一旦激活即可执行。AI SDK 序列化的是
+      <code>activeTools</code> 子集；未加载组的 schema 不进 wire。Repair / invalid 工具在
+      <code>providerTools</code> 里存在，但<strong>永不</strong>进入 <code>activeTools</code>。
+    </p>
+    <h4 class="subhead">Economy 何时真的咬合</h4>
     <ul class="plain-list">
-      <li>Economy：未分组可见；分组隐藏直至 <code>load_tools</code>。</li>
-      <li>Load 是显式 Runtime 事实；下一 Turn 可从 ledger 再播种。</li>
-      <li>Execute-boundary：同一步开始时不在 active set 的工具不能调用。</li>
-      <li><strong>Load ≠ permission grant。</strong></li>
       <li>
-        <code>toolSchemaHash</code> 只哈希 <strong>可见</strong> tools——哈希全量 registry
-        会假触发变化并掩盖 load。
+        有效 economy = <code>config.economy === true</code> <strong>且</strong>
+        <code>gatedNames.size &gt; 0</code>。配置打开但无可隐藏分组 → <strong>退回 full
+        surface</strong>（无 connector、无 gating、无 diagnostics）——economy 惰性。
       </li>
+      <li>
+        Economy 模式：step-0 可见 = 未分组工具 ∪ <code>load_tools</code>；组工具隐藏直至 connector
+        激活。同 turn 经 <code>prepareStep</code> 单调扩面；跨 turn 只靠 ledger 再播种。
+      </li>
+      <li>
+        历史 connector 名（<code>load_tool</code> / <code>connect_tool_source</code>）<strong>仅</strong>用于从
+        durable ledger 再播种；同 turn 激活只认 live <code>load_tools</code>。
+      </li>
+      <li>Execute-boundary：同一步开始时不在 active snapshot 的工具不能调用。</li>
+      <li><strong>Load ≠ permission grant。</strong>广告、加载、授权是三件不同的事。</li>
     </ul>
+    <h4 class="subhead"><code>toolSchemaHash</code> 只吃可见子集</h4>
+    <p>
+      <code>computeRequestShapeDiagnostic</code> 对
+      <code>providerVisibleTools(providerTools, activeTools)</code> 做 stableHash——未激活的 deferred
+      工具改 schema <strong>不得</strong>假触发 <code>tool_schema_changed</code>；真正
+      <code>load_tools</code> 激活后 hash <strong>必须</strong>移动，才能与 catalog 抖动区分。Char
+      诊断同理只量可见子集。Mid-turn capacity 触发会把同 turn 的 schema 增长算进下一请求估计（见
+      <a href={`${import.meta.env.BASE_URL}chapters/03-compaction-is-a-projection#capacity-shaping`}
+        >§03 · capacity-shaping</a
+      >）——仍关于出站请求，不是第二套 cache key。
+    </p>
+    <p>
+      标本：<code>request-shape.test.ts</code>（inactive drift 忽略 / activation 改 hash）；
+      <code>tool-availability.test.ts</code>（full / economy / inert / prepareStep / ledger seed）。
+    </p>
 
     <h3 id="usage-stores" class="subhead">Usage 双存储与定价诚实</h3>
     <p>
@@ -1272,9 +1344,12 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
         <a href={`${import.meta.env.BASE_URL}history/pr/21`}>maka:pr:21</a>
         （Add request-shape prefix diagnostics）、
         <a href={`${import.meta.env.BASE_URL}history/pr/23`}>maka:pr:23</a>
-        （Add cache-aware request shape diagnostics）。Tool-economy 统一：
-        <a href={`${import.meta.env.BASE_URL}history/pr/41`}>maka:pr:41</a>。§02 / §03
-        机制 PR（316 / 729）仅作次要交叉链接，不当作 cache 主旁注。
+        （Add cache-aware request shape diagnostics）。Deferred / economy 前史：
+        <a href={`${import.meta.env.BASE_URL}history/pr/30`}>maka:pr:30</a> /
+        <a href={`${import.meta.env.BASE_URL}history/pr/34`}>maka:pr:34</a>；统一为
+        <code>ToolAvailabilityRuntime</code>：
+        <a href={`${import.meta.env.BASE_URL}history/pr/41`}>maka:pr:41</a>。§02 / §03 机制 PR（316 /
+        729 / 996）仅作次要交叉链接，不当作 cache 主旁注。
       </p>
     </aside>
   </Section>

@@ -69,9 +69,9 @@
 
 ## Priority mine-delta queue (atelier)
 
-1. `runtime-mainline-teaching-manual.md` — pedagogical spine deltas  
-2. `deepseek-reasonix-cost-runtime-design.md` — cost narrative (partially mined)  
-3. CU hardening suite (delivery/evidence/executor/physical/runtime) — fold into #47 companion  
+1. ~~`runtime-mainline-teaching-manual.md`~~ — **absorbed 2026-07-21** → §01 deltas + [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md)  
+2. ~~`deepseek-reasonix-cost-runtime-design.md`~~ — **absorbed 2026-07-21** → cost spine honesty + usage outline  
+3. ~~CU hardening suite~~ — **absorbed 2026-07-21** → `/guides/computer-use` `#evidence-hardening`  
 4. `heavy-task-mainline-system-design.md` — §04/§05 cross-check  
 5. `maka-memory-whitebox-contract.md` — if memory enters TOC  
 6. `runtime-v2-architecture-evolution.md` / `runtime-kernel.md` / `maka-core-tech-walkthrough.md` — §01 deltas only  
@@ -79,4 +79,4 @@
 
 ## Acceptance
 
-No silent skip: every archive file classified. Mine-plan Cluster 2 points here. Destination bodies cite Current code; archive labeled archive.
+No silent skip: every archive file classified. Mine-plan Cluster 2 points here. Destination bodies cite Current code; archive labeled archive. Top-3 absorb pass recorded in [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md).

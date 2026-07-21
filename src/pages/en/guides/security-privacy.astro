@@ -1,0 +1,304 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/security-privacy");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="Trust, privacy & SECURITY · Agent Atelier"
+  description="Maka trust model: OS-account boundary, WorkspacePrivacyContext, Seatbelt honesty, and report scope — a companion report, not a seventh worldview chapter."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Trust, privacy &amp; SECURITY</span>
+        <span class="masthead__title-en">Workspace privacy contract</span>
+      </h1>
+      <p class="masthead__sub">
+        Teaching expansion of root <code>SECURITY.md</code> and
+        <code>docs/workspace-privacy-context.md</code>: which layer is load-bearing, which is a UX
+        safety net, and how privacy context fails closed. Orthogonal to §01–§06 — enter from
+        <a href={`${ch01}#trust`}>§01 · #trust</a> /
+        <a href={`${ch01}#sandbox`}>#sandbox</a> /
+        <a href={`${ch01}#permission`}>#permission</a>, then read here.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/security-privacy</span>
+        <span>Research · #59</span>
+        <span>
+          <a href={localePath("zh", "guides/security-privacy")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Trust · Scene"
+      title="Why an honest trust model"
+      lede="Calling PermissionEngine a sandbox is more dangerous than shipping no screen — it teaches the wrong threat story."
+    >
+      <p>
+        Maka is a single-tenant personal desktop assistant; tools run as the user’s OS identity. The
+        only enforcement boundary against an adversarial LLM is the operating system. In-process
+        screens (permission modes, output redaction, URL allowlists, WebSearch fail-closed) are
+        valuable heuristics on attacker-influenced strings. When authorities conflict,
+        <strong>code + contract tests win</strong>. This page tracks <code>SECURITY.md</code> — no
+        security theater.
+      </p>
+      <blockquote class="pull">
+        The only enforcement boundary against an adversarial LLM is the operating system.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="os-boundary"
+      label="Trust · OS"
+      title="Sole load-bearing boundary: the OS user account"
+      lede="Tools inherit the user’s filesystem, network, and OS-permission envelope."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>OS user account</strong> — running non-admin is a user-side expectation, not
+          in-product containment.
+        </li>
+        <li>
+          <strong>credentials.json</strong> — versioned plaintext JSON; dir 0o700 / file 0o600;
+          atomic writes; no symlink/traversal escape. One authority for Desktop / TUI / headless.
+          Electron safeStorage is no longer part of the boundary (#1125 one-shot import then delete).
+        </li>
+        <li>
+          <strong>Renderer ↔ Main</strong> — preload IPC is the trust boundary; semi-trusted
+          renderer may read masked data; <strong>cleartext secrets never flow main→renderer</strong>.
+        </li>
+        <li>
+          <strong>Settings masking</strong> — <code>••••••</code> means keep; empty string means
+          explicit clear (including the Tavily key).
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="heuristics"
+      label="Trust · Heuristics"
+      title="In-process screens are UX safety nets"
+      lede="Useful; not containment guarantees."
+    >
+      <p>
+        PermissionEngine (<code>PERMISSION_MODES</code> / <code>TOOL_CATEGORIES</code> /
+        <code>PERMISSION_POLICY</code>), output redaction, URL allowlists, query normalization, and
+        the WebSearch fail-closed chain are heuristics. Reports that only show their limits belong
+        as <strong>ordinary issues</strong> unless an OS-boundary in §2 is also crossed.
+      </p>
+      <p>
+        Mechanism teaching for permission and sandbox lives in
+        <a href={`${ch01}#permission`}>§01 · #permission</a> /
+        <a href={`${ch01}#sandbox`}>#sandbox</a>; this page only pins threat-model placement.
+      </p>
+    </Section>
+
+    <Section
+      id="seatbelt-honesty"
+      label="Trust · Seatbelt"
+      title="Seatbelt in code ≠ product boundary delivered"
+      lede="Keep “mechanism ready” separate from “boundary shipped”."
+    >
+      <p>
+        Runtime exposes a macOS Seatbelt (and Linux bubblewrap) command transformer, but current
+        product compositions do <strong>not</strong> yet route command execution through it — so
+        <code>SECURITY.md</code> §2.2 states it is <strong>not</strong> a product boundary today.
+        Externally isolated runtimes may supply their own. See the sandbox README and §01
+        <code>#sandbox</code>.
+      </p>
+    </Section>
+
+    <Section
+      id="privacy-context"
+      label="Trust · Privacy"
+      title="WorkspacePrivacyContext: deliberately tiny"
+      lede="Main owns the effective state; renderers must not self-attest."
+    >
+      <pre class="code-block" aria-label="WorkspacePrivacyContext">interface WorkspacePrivacyContext &#123;
+  incognitoActive: boolean;
+&#125;</pre>
+      <ul class="plain-list">
+        <li>
+          Authority path: settings UI requests change → main
+          <code>getWorkspacePrivacyContext()</code> resolves → consumers receive the resolved
+          context.
+        </li>
+        <li>
+          <code>validateWorkspacePrivacyContext()</code> rejects malformed input; it
+          <strong>never</strong> defaults missing/invalid data to <code>false</code>. Unresolvable
+          authoritative context → fail closed.
+        </li>
+        <li>
+          <code>defaultWorkspacePrivacyContext()</code> is for explicit initialization only — not
+          “guess allow”.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="consumer-rule"
+      label="Trust · Consumers"
+      title="false ≠ blanket allow"
+      lede="Incognito did not block ≠ general permission to read, write, search, or transmit."
+    >
+      <p>
+        <code>incognitoActive: false</code> only means incognito mode did not block the operation.
+        Every privacy-sensitive consumer still applies its own settings, permission, and retention
+        rules. When <code>incognitoActive</code> is true, consumers fail closed at their existing
+        main-process boundary.
+      </p>
+      <p>
+        Current inventory (owned by composition + tests; do not freeze the list in prose): WebSearch,
+        thread search, local memory, plan reminders, automation can-fire, memory write validator. Do
+        not invent a parallel incognito flag or let a renderer self-attest.
+      </p>
+      <aside class="history-aside">
+        <p class="history-aside__tag">Verification</p>
+        <p>
+          <code>packages/core/src/incognito.ts</code> ·
+          <code>apps/desktop/src/main/main.ts</code> (<code>getWorkspacePrivacyContext</code>) ·
+          tests <code>incognito.test.ts</code> / <code>thread-search.test.ts</code> /
+          <code>web-search-boundary.test.ts</code> / <code>local-memory-service.test.ts</code> /
+          <code>memory.test.ts</code>.
+        </p>
+      </aside>
+    </Section>
+
+    <Section
+      id="report-scope"
+      label="Trust · Report"
+      title="Report scope: in-scope vs ordinary issues"
+      lede="Read SECURITY §2–§3 before choosing a private channel."
+    >
+      <div class="table-wrap" role="region" aria-label="Report scope" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Situation</th>
+              <th scope="col">Channel</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Crosses OS / credentials / IPC cleartext / masking boundary</td>
+              <td>Private: security@maka.app (or private advisory)</td>
+            </tr>
+            <tr>
+              <td>Limits of PermissionEngine / redact / allowlist heuristics</td>
+              <td>Ordinary issue / PR (out-of-scope as security)</td>
+            </tr>
+            <tr>
+              <td>Malformed privacy context treated as allow</td>
+              <td>In-scope contract defect (must fail closed)</td>
+            </tr>
+            <tr>
+              <td>Marketing unwired Seatbelt as “sandboxed”</td>
+              <td>Docs/product honesty; mechanism in #sandbox</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="honesty"
+      label="Trust · Trilogy"
+      title="Three honest docs, three jobs"
+      lede="Do not treat threat-model archives as Current."
+    >
+      <ul class="plain-list">
+        <li><code>SECURITY.md</code> — trust model + report scope</li>
+        <li><code>docs/workspace-privacy-context.md</code> — tiny privacy contract</li>
+        <li><code>packages/runtime/src/sandbox/README.md</code> — platform transform Current</li>
+      </ul>
+      <p>
+        Threat-model archives (memory/search/voice) are history-only (#60); Current is code + the
+        table above. Outline:
+        <code>docs/research/trust-privacy-security-deep-outline.md</code>.
+      </p>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+  .history-aside {
+    margin: 1.25rem 0 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--hair);
+    background: var(--softer);
+    max-width: 42em;
+  }
+  .history-aside__tag {
+    margin: 0 0 0.35rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .history-aside p {
+    margin: 0;
+  }
+</style>

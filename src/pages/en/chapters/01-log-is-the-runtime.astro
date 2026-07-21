@@ -554,7 +554,12 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         mutually exclusive with mandatory sandbox argv — spawn / live≠result in
         <a href={localePath("en", "chapters/02-evidence-before-compression") + "#shell-side-effects"}
           >§02 · #shell-side-effects</a
-        >.
+        >. File tools add a path-containment leaf plus an optional filesystem worker (protocol v2) —
+        see
+        <a href={localePath("en", "chapters/02-evidence-before-compression") + "#filesystem-worker"}
+          >§02 · #filesystem-worker</a
+        >; Desktop SessionManager / IPC composition lives in
+        <a href={localePath("en", "guides/desktop-host")}>/guides/desktop-host</a>.
       </p>
     </aside>
   </Section>
@@ -1288,23 +1293,99 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       </table>
     </div>
 
-    <h3 id="tool-economy" class="subhead">Active tools ≠ dispatch registry</h3>
+    <h3 id="tool-economy" class="subhead">providerTools ≠ activeTools</h3>
     <DiagramFigure
-      caption="Fig 12 · Full providerTools vs wire-visible activeTools; load_tools changes the visible set; PermissionEngine authorizes orthogonally."
+      caption="Fig 12 · Full providerTools (dispatch) vs wire-visible activeTools (advertise); load_tools changes the visible set; PermissionEngine authorizes orthogonally."
       alt="Full registry, active wire set, load_tools arrow, orthogonal PermissionEngine."
     >
       <ActiveVsRegistry />
     </DiagramFigure>
+    <p>
+      On the cost spine there are two <strong>non-interchangeable</strong> axes — typed in the return
+      value of <code>canonicalizeToolSet</code>:
+    </p>
+    <div class="table-wrap" role="region" aria-label="dispatch vs advertise" tabindex="0">
+      <table class="proto-table">
+        <thead>
+          <tr>
+            <th scope="col">Axis</th>
+            <th scope="col">Carrier</th>
+            <th scope="col">Changes when</th>
+            <th scope="col">Affects</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dispatch</td>
+            <td><code>providerTools: MakaTool[]</code></td>
+            <td>Catalog composition (+ connector + invalid)</td>
+            <td>Local execute / repair targets</td>
+          </tr>
+          <tr>
+            <td>Advertise / wire</td>
+            <td><code>activeTools: string[]</code></td>
+            <td>Economy groups + <code>load_tools</code> + <code>prepareStep</code></td>
+            <td>Provider schemas, <code>toolSchemaHash</code>, <code>prefixHash</code></td>
+          </tr>
+          <tr>
+            <td>Authorize</td>
+            <td>PermissionEngine</td>
+            <td>User / policy grants</td>
+            <td>Whether an advertised call may run</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre class="code-block" aria-label="canonicalizeToolSet">visibleTools = tools \ {'{'}invalid{'}'} , sorted by name
+activeTools  = filter(visibleTools, activeNames?)   # omit ⇒ full surface
+providerTools = [...visibleTools, invalid]         # invalid never advertised</pre>
+    <p>
+      <strong>Dispatch never depends on advertisement visibility.</strong> A gated-and-unloaded tool
+      stays in <code>providerTools</code> so it remains executable once its group loads. The AI SDK
+      serializes the <code>activeTools</code> subset; unloaded group schemas stay off the wire. The
+      repair / invalid tool is present in <code>providerTools</code> but
+      <strong>never</strong> enters <code>activeTools</code>.
+    </p>
+    <h4 class="subhead">When economy actually bites</h4>
     <ul class="plain-list">
-      <li>Economy: ungrouped visible; groups hidden until <code>load_tools</code>.</li>
-      <li>Load is an explicit Runtime fact; the next Turn can reseed from the ledger.</li>
-      <li>Execute-boundary: cannot call a tool in the same step before it is in the step-start active set.</li>
-      <li><strong>Load ≠ permission grant.</strong></li>
       <li>
-        <code>toolSchemaHash</code> must hash <strong>visible</strong> tools only — hashing the full
-        registry would false-fire changes and hide loads.
+        Effective economy = <code>config.economy === true</code> <strong>and</strong>
+        <code>gatedNames.size &gt; 0</code>. Flag on but nothing to hide →
+        <strong>falls back to full surface</strong> (no connector, no gating, no diagnostics) — economy
+        is inert.
       </li>
+      <li>
+        Economy mode: step-0 visible = ungrouped tools ∪ <code>load_tools</code>; group tools stay
+        hidden until the connector activates. Same-turn expansion is monotonic via
+        <code>prepareStep</code>; cross-turn survival is ledger seed only.
+      </li>
+      <li>
+        Historical connector names (<code>load_tool</code> / <code>connect_tool_source</code>) are
+        <strong>seed-only</strong> from the durable ledger; same-turn activation honors only live
+        <code>load_tools</code>.
+      </li>
+      <li>
+        Execute-boundary: a tool absent from the step-start active snapshot cannot be called in that
+        step.
+      </li>
+      <li><strong>Load ≠ permission grant.</strong> Advertise, load, and authorize are three different acts.</li>
     </ul>
+    <h4 class="subhead"><code>toolSchemaHash</code> eats the visible subset only</h4>
+    <p>
+      <code>computeRequestShapeDiagnostic</code> stableHashes
+      <code>providerVisibleTools(providerTools, activeTools)</code> — an inactive deferred tool’s schema
+      edit must <strong>not</strong> false-fire <code>tool_schema_changed</code>; a real
+      <code>load_tools</code> activation <strong>must</strong> move the hash so loads are distinguishable
+      from catalog churn. Char diagnostics measure the same visible subset. Mid-turn capacity triggers
+      may count same-turn schema growth into the next-request estimate (see
+      <a href={localePath("en", "chapters/03-compaction-is-a-projection") + "#capacity-shaping"}
+        >§03 · capacity-shaping</a
+      >) — still about the outgoing request, not a second cache key.
+    </p>
+    <p>
+      Specimens: <code>request-shape.test.ts</code> (inactive drift ignored / activation changes hash);
+      <code>tool-availability.test.ts</code> (full / economy / inert / prepareStep / ledger seed).
+    </p>
 
     <h3 id="usage-stores" class="subhead">Usage dual-store and pricing honesty</h3>
     <p>
@@ -1355,9 +1436,12 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
         <a href={localePath("en", "history/pr/21")}>maka:pr:21</a>
         (Add request-shape prefix diagnostics),
         <a href={localePath("en", "history/pr/23")}>maka:pr:23</a>
-        (Add cache-aware request shape diagnostics). Tool-economy unification:
-        <a href={localePath("en", "history/pr/41")}>maka:pr:41</a>. §02 / §03 mechanism PRs (316 /
-        729) are secondary cross-links — not the primary cache aside.
+        (Add cache-aware request shape diagnostics). Deferred / economy prehistory:
+        <a href={localePath("en", "history/pr/30")}>maka:pr:30</a> /
+        <a href={localePath("en", "history/pr/34")}>maka:pr:34</a>; unified
+        <code>ToolAvailabilityRuntime</code>:
+        <a href={localePath("en", "history/pr/41")}>maka:pr:41</a>. §02 / §03 mechanism PRs (316 / 729 /
+        996) are secondary cross-links — not the primary cache aside.
       </p>
     </aside>
   </Section>

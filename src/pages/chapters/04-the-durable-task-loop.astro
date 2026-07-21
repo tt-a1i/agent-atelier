@@ -87,6 +87,15 @@ Long task progress
       都应从 Task Events 派生——与 §01「状态是日志的函数」、§03「checkpoint 是 projection」同一纪律，只是消费者换成了长程任务控制面。图中刻意不画
       workspace：当前 workspace lifecycle 并不总是与 TaskRun 一样 durable。
     </p>
+    <p>
+      Headless 完成后，<code>TaskRunProjection.executionLineage</code>（及每 Attempt 的 lineage）由
+      <code>task_attempt_execution_linked</code> 等 Task Event 回放得到：指向 Session / Invocation /
+      AgentRun 与 inclusive Runtime coverage，<strong>不</strong>把 Runtime 事实抄进 Task
+      ledger。检视命令与 cursor 合同见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#execution-evidence`}
+        >§01 · #execution-evidence</a
+      >。
+    </p>
   </Section>
 
   <Section

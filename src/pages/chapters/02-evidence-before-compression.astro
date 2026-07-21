@@ -642,6 +642,15 @@ reason = active_current_turn_tool_result_pruned_before_next_step</pre>
       <code>source</code> 中。这对 Headless heavy-task 合适，但不是所有 Runtime surface 的通用
       TurnEvidence。
     </p>
+    <p>
+      Phase 2A 起，compact 工具证据可经
+      <code>heavy_task_evidence_provenance_linked</code> 回指不可变 Runtime
+      <code>function_call</code>/<code>function_response</code> 区间——摘要仍属 Task，事实所有权仍在
+      Runtime。缺 committed response → 不创建 provenance。协议见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#execution-evidence`}
+        >§01 · #execution-evidence</a
+      >。
+    </p>
   </Section>
 
   <Section

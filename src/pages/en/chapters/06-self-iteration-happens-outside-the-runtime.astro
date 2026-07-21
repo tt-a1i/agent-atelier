@@ -172,7 +172,13 @@ Target Snapshot</pre>
       <li><code>harness-results.json</code> — normalized status and score authority</li>
       <li><code>trace-index.json</code> — task → messages / events / transcript / tool results / artifacts</li>
       <li><code>traces/&lt;taskRunId&gt;/task-run.json</code> · <code>task-events.jsonl</code> (payload-safe; never mislabeled as Runtime Events)</li>
-      <li><code>execution-lineage.json</code> — binds Target, TaskRun, Attempt, AgentRun, and Runtime/Task coverage</li>
+      <li>
+        <code>execution-lineage.json</code> — binds Target, TaskRun, Attempt, AgentRun, and
+        Runtime/Task coverage (<code>maka.ahe.execution_lineage.v1</code>; see
+        <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#execution-evidence"}
+          >§01 · #execution-evidence</a
+        >)
+      </li>
       <li><code>messages.json</code> · AgentRun <code>inspect.json</code> (payload-safe)</li>
       <li><code>runtime-events.jsonl</code> — canonical Runtime Events, only with <code>--include-events</code></li>
       <li><code>failure-digest.json</code> — deterministic failure summary, Self-check divergence, hygiene, digest-bound debug refs</li>

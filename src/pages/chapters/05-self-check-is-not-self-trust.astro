@@ -249,6 +249,15 @@ import PlanAuditRiskFlow from "../../components/diagrams/PlanAuditRiskFlow.astro
       check 的明确限制：多个 final artifacts 时，evidence text 命中<strong>至少一个</strong>
       path/basename 即可——尚未 per-check all coverage（Target）。
     </p>
+    <p>
+      Phase 2B：accepted Self-check 的新鲜度由 replay 导出为 <code>current</code> /
+      <code>stale</code> / 兼容 <code>unknown</code>——绑定 Runtime call/result 区间、Task Event 高水位与
+      workspace manifest revision；之后的 mutation 会使绑定失效，直到匹配的 workspace observation
+      再验证。显式 <code>stale</code> 拒绝 completion gate，且不把 legacy 证据假装成 fresh。协议见
+      <a href={`${import.meta.env.BASE_URL}chapters/01-log-is-the-runtime#execution-evidence`}
+        >§01 · #execution-evidence</a
+      >。
+    </p>
   </Section>
 
   <Section

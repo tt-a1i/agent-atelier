@@ -61,7 +61,7 @@
 | --- | --- | --- |
 | Builtin pricing | Snapshot (dated) | Overrides for special tiers |
 | UI usage | Session JSONL path | Dual-store honesty |
-| Archive cost design | Narrative mine-delta | Cross-check §01; not Current authority |
+| Archive cost design | Narrative mine-delta **absorbed 2026-07-21** (`deepseek-reasonix…` → §01 `#request-shape` CostRuntime honesty) | Cross-check §01; not Current authority — see [`archive-mine-delta-absorb-2026-07-21.md`](./archive-mine-delta-absorb-2026-07-21.md) |
 
 ## Acceptance
 

@@ -1,0 +1,293 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/security-privacy");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+---
+
+<ReportLayout
+  title="信任、隐私与 SECURITY · Agent Atelier"
+  description="Maka 信任模型：OS 账户边界、WorkspacePrivacyContext、Seatbelt 诚实声明与报告范围——配套研报，不是第七世界观章。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">信任、隐私与 SECURITY</span>
+        <span class="masthead__title-en">Trust, privacy &amp; SECURITY</span>
+      </h1>
+      <p class="masthead__sub">
+        根文件 <code>SECURITY.md</code> 与 <code>docs/workspace-privacy-context.md</code> 的教学展开：哪一层是
+        load-bearing，哪一层是 UX 安全网，隐身上下文如何 fail-closed。正交于 §01–§06——从
+        <a href={`${ch01}#trust`}>§01 · #trust</a> /
+        <a href={`${ch01}#sandbox`}>#sandbox</a> /
+        <a href={`${ch01}#permission`}>#permission</a> 进入，再读本页。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/security-privacy</span>
+        <span>Research · #59</span>
+        <span>
+          <a href={localePath("en", "guides/security-privacy")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Trust · Scene"
+      title="为什么需要诚实的信任模型"
+      lede="把 PermissionEngine 说成沙箱，比没有筛查更危险——它教会错误的威胁叙事。"
+    >
+      <p>
+        Maka 是单租户个人桌面助手：工具以用户 OS 身份运行。对抗性 LLM 的唯一 enforcement
+        边界是操作系统；进程内筛查（权限模式、输出 redact、URL allowlist、WebSearch fail-closed）有价值，但都在攻击者可影响的字符串上做启发式。权威冲突时
+        <strong>code + contract tests 胜出</strong>；本页对齐
+        <code>SECURITY.md</code>，不演安全剧场。
+      </p>
+      <blockquote class="pull">
+        The only enforcement boundary against an adversarial LLM is the operating system.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="os-boundary"
+      label="Trust · OS"
+      title="唯一 load-bearing 边界：OS 用户账户"
+      lede="工具继承用户的文件系统、网络与 OS 权限信封。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>OS user account</strong> — 非 admin 账户是用户侧期望，不是产品内 containment。
+        </li>
+        <li>
+          <strong>credentials.json</strong> — 版本化明文 JSON；目录 0o700 / 文件 0o600；原子写；禁止
+          symlink/traversal 逃逸。Desktop / TUI / headless 同一权威；Electron safeStorage 不再是边界（#1125
+          一次性导入后删除）。
+        </li>
+        <li>
+          <strong>Renderer ↔ Main</strong> — preload IPC 是信任边界；半信任 renderer 可读 masked
+          数据；<strong>明文 secret 永不 main→renderer</strong>。
+        </li>
+        <li>
+          <strong>Settings masking</strong> — <code>••••••</code> = keep；空串 = 显式清除（含 Tavily
+          key）。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="heuristics"
+      label="Trust · Heuristics"
+      title="进程内筛查是 UX 安全网"
+      lede="有用；不是 containment 保证。"
+    >
+      <p>
+        PermissionEngine（<code>PERMISSION_MODES</code> / <code>TOOL_CATEGORIES</code> /
+        <code>PERMISSION_POLICY</code>）、输出 redact、URL allowlist、query normalization、WebSearch
+        fail-closed 链——全部是启发式。报告它们「被绕过」应走<strong>普通 issue</strong>，除非同时跨越
+        §OS 边界（见报告范围）。
+      </p>
+      <p>
+        权限与沙箱的机制教学在 <a href={`${ch01}#permission`}>§01 · #permission</a> /
+        <a href={`${ch01}#sandbox`}>#sandbox</a>；本页只钉威胁模型位置。
+      </p>
+    </Section>
+
+    <Section
+      id="seatbelt-honesty"
+      label="Trust · Seatbelt"
+      title="Seatbelt 存在于代码 ≠ 产品边界已交付"
+      lede="机制就绪与边界交付必须分开诚实。"
+    >
+      <p>
+        Runtime 暴露 macOS Seatbelt（及 Linux bubblewrap 路径）command transformer，但当前产品
+        composition <strong>尚未</strong>把命令执行统一路由进 transform——因此
+        <code>SECURITY.md</code> §2.2 明确：它<strong>不是</strong>今日产品边界。外部隔离 runtime
+        可自带边界。详见 sandbox README 与 §01 <code>#sandbox</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="privacy-context"
+      label="Trust · Privacy"
+      title="WorkspacePrivacyContext：刻意很小"
+      lede="Main 拥有有效状态；renderer 不可自证。"
+    >
+      <pre class="code-block" aria-label="WorkspacePrivacyContext">interface WorkspacePrivacyContext &#123;
+  incognitoActive: boolean;
+&#125;</pre>
+      <ul class="plain-list">
+        <li>
+          权威路径：settings UI 请求变更 → main <code>getWorkspacePrivacyContext()</code> 解析 →
+          消费者拿已解析上下文。
+        </li>
+        <li>
+          <code>validateWorkspacePrivacyContext()</code> 拒绝畸形输入；<strong>从不</strong>把缺失 /
+          非法默认成 <code>false</code>。无法解析权威上下文 → fail-closed。
+        </li>
+        <li>
+          <code>defaultWorkspacePrivacyContext()</code> 只用于显式初始化，不是「猜允许」。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="consumer-rule"
+      label="Trust · Consumers"
+      title="false ≠ 一律允许"
+      lede="隐身未拦截，不等于通用读写搜索传输许可。"
+    >
+      <p>
+        <code>incognitoActive: false</code> 只表示隐身模式没有挡住该操作。每个隐私敏感消费者仍须应用自己的
+        settings / permission / retention。当 <code>incognitoActive</code> 为 true，消费者在现有
+        main-process 边界 fail-closed。
+      </p>
+      <p>
+        当前 inventory（由 composition + 测试拥有，文档不冻结清单）：WebSearch、thread search、local
+        memory、plan reminders、automation can-fire、memory write validator。不要另起并行
+        incognito 旗标或让 renderer 自证。
+      </p>
+      <aside class="history-aside">
+        <p class="history-aside__tag">验证</p>
+        <p>
+          <code>packages/core/src/incognito.ts</code> ·
+          <code>apps/desktop/src/main/main.ts</code>（<code>getWorkspacePrivacyContext</code>）·
+          测试 <code>incognito.test.ts</code> / <code>thread-search.test.ts</code> /
+          <code>web-search-boundary.test.ts</code> / <code>local-memory-service.test.ts</code> /
+          <code>memory.test.ts</code>。
+        </p>
+      </aside>
+    </Section>
+
+    <Section
+      id="report-scope"
+      label="Trust · Report"
+      title="报告范围：in-scope vs 普通 issue"
+      lede="先读 SECURITY §2–§3，再决定是否走私密渠道。"
+    >
+      <div class="table-wrap" role="region" aria-label="报告范围" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">情形</th>
+              <th scope="col">通道</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>跨越 OS / credentials / IPC cleartext / masking 边界</td>
+              <td>私密：security@maka.app（或 private advisory）</td>
+            </tr>
+            <tr>
+              <td>PermissionEngine / redact / allowlist 启发式极限</td>
+              <td>普通 issue / PR（out-of-scope as security）</td>
+            </tr>
+            <tr>
+              <td>畸形 privacy context 被当成 allow</td>
+              <td>in-scope 契约缺陷（应 fail-closed）</td>
+            </tr>
+            <tr>
+              <td>把 Seatbelt 未接线当作「已沙箱」对外声称</td>
+              <td>文档/产品诚实问题；机制见 #sandbox</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="honesty"
+      label="Trust · Trilogy"
+      title="三份诚实文档各管什么"
+      lede="不要把威胁模型 archive 当成 Current。"
+    >
+      <ul class="plain-list">
+        <li><code>SECURITY.md</code> — 信任模型 + 报告范围</li>
+        <li><code>docs/workspace-privacy-context.md</code> — 极小隐私合同</li>
+        <li><code>packages/runtime/src/sandbox/README.md</code> — 平台 transform Current</li>
+      </ul>
+      <p>
+        Archive 威胁模型快照（memory/search/voice）属 history-only（#60）；Current 以代码与上表为准。提纲：
+        <code>docs/research/trust-privacy-security-deep-outline.md</code>。
+      </p>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .pull {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--softer);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    max-width: 38em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .code-block {
+    margin: 1rem 0 1.25rem;
+    padding: 0.9rem 1.05rem;
+    background: var(--soft);
+    border: 1px solid var(--hair);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    max-width: 42em;
+    white-space: pre;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+  .history-aside {
+    margin: 1.25rem 0 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--hair);
+    background: var(--softer);
+    max-width: 42em;
+  }
+  .history-aside__tag {
+    margin: 0 0 0.35rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .history-aside p {
+    margin: 0;
+  }
+</style>

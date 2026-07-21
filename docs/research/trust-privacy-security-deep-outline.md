@@ -2,8 +2,8 @@
 
 **Ticket:** [#59](https://github.com/tt-a1i/agent-atelier/issues/59) · Map [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
 **Date:** 2026-07-21  
-**Status:** research outline — lean §01 `#trust` callout shipped  
-**Atelier home:** lean §01 `#trust` + optional companion `/guides/trust-and-privacy`  
+**Status:** research outline + companion shipped — lean §01 `#trust` + `/guides/security-privacy` (zh+en)  
+**Atelier home:** lean §01 `#trust` + companion [`/guides/security-privacy`](../../src/pages/guides/security-privacy.astro)  
 **Cross-links:** §01 `#permission` / `#sandbox` · bot IM input surface (#58)
 
 ## Specimen sources (authority order)

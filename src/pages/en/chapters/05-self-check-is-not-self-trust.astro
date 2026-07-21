@@ -256,6 +256,17 @@ import PlanAuditRiskFlow from "../../../components/diagrams/PlanAuditRiskFlow.as
       hitting <strong>at least one</strong> path/basename in evidence text is enough — not yet
       per-check all coverage (Target).
     </p>
+    <p>
+      Phase 2B: freshness of an accepted Self-check is replay-derived as <code>current</code> /
+      <code>stale</code> / backward-compatible <code>unknown</code> — bound to the Runtime call/result
+      range, Task Event high water, and workspace manifest revision. Later mutation evidence
+      invalidates the bind until a matching workspace observation revalidates. Explicit
+      <code>stale</code> rejects the completion gate without pretending legacy evidence is fresh.
+      Protocol:
+      <a href={localePath("en", "chapters/01-log-is-the-runtime") + "#execution-evidence"}
+        >§01 · #execution-evidence</a
+      >.
+    </p>
   </Section>
 
   <Section
