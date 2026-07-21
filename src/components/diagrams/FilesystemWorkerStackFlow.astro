@@ -1,0 +1,161 @@
+---
+/**
+ * §02 protocol — LocalWorkspaceExecutor vs FilesystemWorkerClient + path containment.
+ */
+---
+
+<svg
+  class="fs-flow"
+  viewBox="0 0 868 360"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="fs-kicker fs-stage fs-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · FILE TOOLS · PATH CONTAINMENT LEAF · WORKER ≠ LOCAL FACTS
+  </text>
+  <line
+    class="fs-stage fs-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="fs-stage fs-stage--1" transform="translate(8,52)">
+    <rect width="200" height="96" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="fs-idx" x="12" y="24" fill="var(--accent)">LEAF</text>
+    <text class="fs-title" x="12" y="48" fill="var(--ink)">isPathInside</text>
+    <text class="fs-line" x="12" y="72" fill="var(--mute)">path-containment.ts</text>
+  </g>
+
+  <path
+    class="fs-stage fs-stage--1"
+    d="M216 100 H252"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#fs-arrow)"
+  ></path>
+
+  <g class="fs-stage fs-stage--2" transform="translate(260,52)">
+    <rect width="240" height="96" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="fs-idx" x="12" y="24" fill="var(--accent)">BUILTIN TOOLS</text>
+    <text class="fs-title" x="12" y="48" fill="var(--ink)">filesystemWorker?</text>
+    <text class="fs-line" x="12" y="72" fill="var(--mute)">Read / Write / Edit / Glob</text>
+  </g>
+
+  <path
+    class="fs-stage fs-stage--2"
+    d="M380 156 V188"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#fs-arrow)"
+  ></path>
+  <path
+    class="fs-stage fs-stage--2"
+    d="M500 100 H536"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#fs-arrow)"
+  ></path>
+
+  <g class="fs-stage fs-stage--3" transform="translate(544,52)">
+    <rect width="316" height="96" rx="1" fill="var(--bg)" stroke="var(--hair)"></rect>
+    <text class="fs-idx" x="12" y="24" fill="var(--accent)">A · WORKER (darwin)</text>
+    <text class="fs-line" x="12" y="50" fill="var(--ink)">validate → transform → stdin JSON</text>
+    <text class="fs-line" x="12" y="72" fill="var(--ink)">hash + expectedTarget TOCTOU</text>
+  </g>
+
+  <g class="fs-stage fs-stage--4" transform="translate(8,204)">
+    <rect width="852" height="72" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="fs-idx" x="14" y="26" fill="var(--accent)">B · LOCAL WORKSPACE EXECUTOR</text>
+    <text class="fs-line" x="14" y="52" fill="var(--ink)">
+      resolve*InsideCwd · isolation: none · writesAffectHost: true · no OS sandbox
+    </text>
+  </g>
+
+  <g class="fs-stage fs-stage--5" transform="translate(8,296)">
+    <rect width="852" height="48" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="fs-idx" x="14" y="20" fill="var(--accent)">THREE LAYERS</text>
+    <text class="fs-line" x="14" y="38" fill="var(--ink)">
+      path containment ⟂ PermissionEngine approval ⟂ OS sandbox transform
+    </text>
+  </g>
+
+  <defs>
+    <marker id="fs-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .fs-flow {
+    font-family: var(--sans);
+  }
+  .fs-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .fs-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .fs-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .fs-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fs-stage {
+      opacity: 0;
+      animation: fs-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .fs-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .fs-stage--1 {
+      animation-delay: 0.14s;
+    }
+    .fs-stage--2 {
+      animation-delay: 0.26s;
+    }
+    .fs-stage--3 {
+      animation-delay: 0.38s;
+    }
+    .fs-stage--4 {
+      animation-delay: 0.5s;
+    }
+    .fs-stage--5 {
+      animation-delay: 0.62s;
+    }
+    @keyframes fs-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fs-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

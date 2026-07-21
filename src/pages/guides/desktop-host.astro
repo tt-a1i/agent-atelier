@@ -1,0 +1,247 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import DiagramFigure from "../../components/diagrams/DiagramFigure.astro";
+import DesktopMainCompositionFlow from "../../components/diagrams/DesktopMainCompositionFlow.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/desktop-host");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+---
+
+<ReportLayout
+  title="Desktop main 组合 · Agent Atelier"
+  description="Maka Electron main：stores → tool assembly → BackendRegistry → SessionManager → IPC 集群——配套研报，不是第七世界观章，也不讲 UI chrome。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Desktop main 组合</span>
+        <span class="masthead__title-en">Desktop host composition</span>
+      </h1>
+      <p class="masthead__sub">
+        产品壳如何把 <code>@maka/runtime</code> 的 SessionManager 焊进 Electron main：存储平面、工具组装、后端工厂、IPC
+        登记。正交于 §01–§06——从 <a href={`${ch01}`}>§01 主链</a> /
+        <a href={`${ch01}#sandbox`}>#sandbox</a> 进入机制后，再读本页。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/desktop-host</span>
+        <span>Research · #72 · Task · #73</span>
+        <span>
+          <a href={localePath("en", "guides/desktop-host")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Desktop · Scene"
+      title="为什么组合根在 main，而不是 renderer"
+      lede="单写者进程 + OS 信任边界：Renderer 只 invoke，不拥有 Runtime。"
+    >
+      <p>
+        Desktop main 是产品组合根：打开 persistence、装配工具、注册 Backend、构造
+        <code>SessionManager</code>，再把 typed IPC 暴露给 preload。权威冲突时
+        <strong>code + contract tests 胜出</strong>。本页不讲 CSS、Storybook 或 visual-smoke 场景目录。
+      </p>
+      <blockquote class="pull">
+        Renderer never constructs SessionManager; secrets never cross main→renderer.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="layers"
+      label="Desktop · Layers"
+      title="五层组合契约"
+      lede="顺序有负载：工具与后端必须在 SessionManager 之前就绪；onboarding 等服务在 runtime 之后绑定。"
+    >
+      <DiagramFigure
+        caption="图 · stores → assembleDesktopTools → BackendRegistry → SessionManager → registerIpc 集群；底栏钉 preload 信任边界。"
+        alt="五步水平流：stores、tools、backends、SessionManager，下方 IPC 集群与信任边界条。"
+      >
+        <DesktopMainCompositionFlow />
+      </DiagramFigure>
+
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Stores</strong> — <code>@maka/storage</code> 工厂：session / agent-run / runtime events /
+          shell-run / artifact / settings / MCP config / telemetry…
+        </li>
+        <li>
+          <strong>Tools</strong> — <code>assembleDesktopTools</code>：sandbox manager、darwin filesystem
+          worker、deferred tool economy、CU / browser / skill 绑定。
+        </li>
+        <li>
+          <strong>Backends</strong> — <code>BackendRegistry.register('ai-sdk', createAiSdkBackendFactory(…))</code>；E2E
+          可 last-write-wins 覆盖为 <code>FakeBackend</code>。
+        </li>
+        <li>
+          <strong>Runtime</strong> — <code>new SessionManager(&#123; store, runStore, backends, shellRuns, … &#125;)</code>。
+        </li>
+        <li>
+          <strong>IPC</strong> — <code>registerIpc()</code> 集群（sessions / entry / permissions / settings / mcp
+          / app…），不是单一 mega-handler。
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="session-manager"
+      label="Desktop · SessionManager"
+      title="SessionManager 构造依赖（形状）"
+      lede="产品 façade：sendMessage / stop / recover / listSessions；工具环在 backend 内。"
+    >
+      <div class="table-wrap" role="region" aria-label="SessionManager 依赖" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">依赖</th>
+              <th scope="col">角色</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>store</code> / <code>runStore</code> / <code>runtimeEventStore</code></td>
+              <td>会话 JSONL、AgentRun、事件耐久</td>
+            </tr>
+            <tr>
+              <td><code>shellRuns</code></td>
+              <td>Managed Bash / PTY；推送 <code>shell-runs:update</code></td>
+            </tr>
+            <tr>
+              <td><code>backends</code></td>
+              <td>ai-sdk / fake 工厂注册表</td>
+            </tr>
+            <tr>
+              <td><code>childTools</code></td>
+              <td>子代理工具面（偏文件子集）</td>
+            </tr>
+            <tr>
+              <td>continuation inspectors</td>
+              <td>本地安全探针 + 后台 ops 探测</td>
+            </tr>
+            <tr>
+              <td>artifact / compact hooks</td>
+              <td>按 turn 列产物；历史 compact 清理</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        MCP 工具快照变化时 <code>runtime.refreshIdleBackends()</code>——main 持有 manager，不把密钥交给
+        renderer。
+      </p>
+    </Section>
+
+    <Section
+      id="tool-assembly"
+      label="Desktop · Tools"
+      title="assembleDesktopTools：sandbox 与 worker 入口"
+      lede="工具面在 SessionManager 之前焊死；economy 用 load_tools 推迟 schema。"
+    >
+      <ul class="plain-list">
+        <li>
+          <code>createBuiltinSandboxManager</code> + 可选
+          <code>FilesystemWorkerClient</code>（仅 darwin）——细节见
+          <a href={`${ch02}#filesystem-worker`}>§02 · #filesystem-worker</a> /
+          <a href={`${ch02}#shell-side-effects`}>#shell-side-effects</a>。
+        </li>
+        <li>
+          Deferred groups（Rive / Office / browser / CU / orchestration）默认不上每轮 wire；
+          <code>MAKA_DISABLE_DEFERRED_TOOLS</code> 可退回全量广告。
+        </li>
+        <li>
+          <code>assertProductBindingCatalogClean('desktop', …)</code> +
+          <code>buildHostCapabilitiesFromBinding</code> 钉死产品绑定目录。
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="ipc"
+      label="Desktop · IPC"
+      title="registerIpc 集群（诚实清单）"
+      lede="按域拆 registrar；推送通道永不携带明文 secret。"
+    >
+      <div class="table-wrap" role="region" aria-label="IPC 登记簇" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Registrar</th>
+              <th scope="col">拥有</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>registerSessionsIpc</code></td>
+              <td>会话 CRUD / send / stream / artifacts / CU overlay 钩子</td>
+            </tr>
+            <tr>
+              <td><code>registerSessionEntryIpc</code></td>
+              <td>入口 / quick-chat / onboarding 门控创建</td>
+            </tr>
+            <tr>
+              <td><code>registerPermissionsIpc</code></td>
+              <td>权限模式 / bot / CU capability input</td>
+            </tr>
+            <tr>
+              <td><code>registerSettingsIpc</code></td>
+              <td>settings patch + runtime effects</td>
+            </tr>
+            <tr>
+              <td><code>registerMcpIpcMain</code></td>
+              <td>MCP 配置 + idle backend refresh</td>
+            </tr>
+            <tr>
+              <td>app / project-root / gateway / …</td>
+              <td>窗口、项目根、订阅与连接等卫星面</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Desktop · Boundaries"
+      title="不是 runtime-host，也不是 headless"
+      lede="三条产品组合路径，勿坍缩。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Desktop main</strong> — Electron 产品壳 + preload IPC（本页）。
+        </li>
+        <li>
+          <strong><code>packages/runtime-host</code></strong> — 可选本机 unix-socket 薄主机（四操作）；见 §01
+          <code>#runtime-host</code> lean note。
+        </li>
+        <li>
+          <strong>Headless / Harbor</strong> — 评测 / CLI 组合，无 Electron preload。
+        </li>
+      </ul>
+      <p>
+        Bot / IM 接入层见 <a href={localePath(locale, "guides/bot-im")}>/guides/bot-im</a>；Computer Use
+        六合同见 <a href={localePath(locale, "guides/computer-use")}>/guides/computer-use</a>；信任模型见
+        <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>。
+      </p>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">演进旁注 · 机制</p>
+      <p>
+        验证入口：<code>apps/desktop/src/main/__tests__</code> 下 session lifecycle / task-ledger /
+        single-instance 等 wiring 合同。提纲：
+        <code>docs/research/desktop-main-composition-deep-outline.md</code>（#72 → Task #73）。
+      </p>
+    </aside>
+  </article>
+</ReportLayout>

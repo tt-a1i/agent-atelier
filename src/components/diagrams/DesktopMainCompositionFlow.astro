@@ -1,0 +1,166 @@
+---
+/**
+ * /guides/desktop-host — Electron main composition contracts (not UI chrome).
+ */
+---
+
+<svg
+  class="dm-flow"
+  viewBox="0 0 868 320"
+  xmlns="http://www.w3.org/2000/svg"
+  role="presentation"
+  focusable="false"
+>
+  <text class="dm-kicker dm-stage dm-stage--0" x="8" y="20" fill="var(--accent)">
+    PROTOCOL · DESKTOP MAIN COMPOSITION · CONTRACTS ONLY
+  </text>
+  <line
+    class="dm-stage dm-stage--0"
+    x1="8"
+    y1="34"
+    x2="860"
+    y2="34"
+    stroke="var(--hair)"
+    stroke-width="1"
+  ></line>
+
+  <g class="dm-stage dm-stage--1" transform="translate(8,52)">
+    <rect width="160" height="80" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dm-idx" x="12" y="24" fill="var(--accent)">1 · STORES</text>
+    <text class="dm-line" x="12" y="50" fill="var(--ink)">session / run</text>
+    <text class="dm-line" x="12" y="68" fill="var(--mute)">shell / artifact</text>
+  </g>
+
+  <path
+    class="dm-stage dm-stage--1"
+    d="M176 92 H200"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#dm-arrow)"
+  ></path>
+
+  <g class="dm-stage dm-stage--2" transform="translate(208,52)">
+    <rect width="168" height="80" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dm-idx" x="12" y="24" fill="var(--accent)">2 · TOOLS</text>
+    <text class="dm-line" x="12" y="50" fill="var(--ink)">assembleDesktop</text>
+    <text class="dm-line" x="12" y="68" fill="var(--mute)">sandbox · FS worker</text>
+  </g>
+
+  <path
+    class="dm-stage dm-stage--2"
+    d="M384 92 H408"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#dm-arrow)"
+  ></path>
+
+  <g class="dm-stage dm-stage--3" transform="translate(416,52)">
+    <rect width="168" height="80" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dm-idx" x="12" y="24" fill="var(--accent)">3 · BACKENDS</text>
+    <text class="dm-line" x="12" y="50" fill="var(--ink)">BackendRegistry</text>
+    <text class="dm-line" x="12" y="68" fill="var(--mute)">ai-sdk · fake/E2E</text>
+  </g>
+
+  <path
+    class="dm-stage dm-stage--3"
+    d="M592 92 H616"
+    stroke="var(--accent)"
+    stroke-width="1.5"
+    fill="none"
+    marker-end="url(#dm-arrow)"
+  ></path>
+
+  <g class="dm-stage dm-stage--4" transform="translate(624,52)">
+    <rect width="236" height="80" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dm-idx" x="12" y="24" fill="var(--accent)">4 · RUNTIME</text>
+    <text class="dm-line" x="12" y="50" fill="var(--ink)">SessionManager</text>
+    <text class="dm-line" x="12" y="68" fill="var(--mute)">sendMessage · recover</text>
+  </g>
+
+  <g class="dm-stage dm-stage--5" transform="translate(8,168)">
+    <rect width="852" height="64" rx="1" fill="var(--soft)" stroke="var(--hair)"></rect>
+    <text class="dm-idx" x="14" y="24" fill="var(--accent)">5 · IPC CLUSTER</text>
+    <text class="dm-line" x="14" y="48" fill="var(--ink)">
+      registerSessionsIpc · session-entry · permissions · settings · mcp · app/project-root · …
+    </text>
+  </g>
+
+  <g class="dm-stage dm-stage--6" transform="translate(8,252)">
+    <rect width="852" height="52" rx="1" fill="var(--bg)" stroke="var(--accent)"></rect>
+    <text class="dm-idx" x="14" y="22" fill="var(--accent)">TRUST</text>
+    <text class="dm-line" x="14" y="40" fill="var(--ink)">
+      Renderer invokes preload IPC · secrets stay in main · never constructs SessionManager
+    </text>
+  </g>
+
+  <defs>
+    <marker id="dm-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--accent)" stroke-width="1.2"></path>
+    </marker>
+  </defs>
+</svg>
+
+<style>
+  .dm-flow {
+    font-family: var(--sans);
+  }
+  .dm-kicker {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+  .dm-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .dm-line {
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dm-stage {
+      opacity: 0;
+      animation: dm-fade 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .dm-stage--0 {
+      animation-delay: 0.04s;
+    }
+    .dm-stage--1 {
+      animation-delay: 0.12s;
+    }
+    .dm-stage--2 {
+      animation-delay: 0.22s;
+    }
+    .dm-stage--3 {
+      animation-delay: 0.32s;
+    }
+    .dm-stage--4 {
+      animation-delay: 0.42s;
+    }
+    .dm-stage--5 {
+      animation-delay: 0.52s;
+    }
+    .dm-stage--6 {
+      animation-delay: 0.62s;
+    }
+    @keyframes dm-fade {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dm-stage {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

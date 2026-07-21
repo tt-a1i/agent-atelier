@@ -47,12 +47,12 @@ These are current authority or design-bearing code with **near-zero** atelier te
 - **MCP** runtime architecture  
 - **Agent swarm / expert team**  
 - **Skill catalog** policy  
-- **Shell / PTY / workspace executor**  
-- **Filesystem worker / path containment**  
+- **Shell / PTY / workspace executor** — **shipped** §02 `#shell-side-effects` (#68)  
+- **Filesystem worker / path containment** — **shipped** §02 `#filesystem-worker` (#71)  
 - **Runtime-host / gateway**  
-- **Bot / IM onboarding**  
-- **Workspace privacy / SECURITY** product contracts  
-- Desktop **main composition** ownership map  
+- **Bot / IM onboarding** — **shipped** `/guides/bot-im` (#69)  
+- **Workspace privacy / SECURITY** product contracts — **shipped** `/guides/security-privacy`  
+- Desktop **main composition** ownership map — **shipped** `/guides/desktop-host` (#73)  
 
 ### B. Still thin inside six chapters
 

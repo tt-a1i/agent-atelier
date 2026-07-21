@@ -1,0 +1,252 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import DiagramFigure from "../../../components/diagrams/DiagramFigure.astro";
+import DesktopMainCompositionFlow from "../../../components/diagrams/DesktopMainCompositionFlow.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/desktop-host");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+---
+
+<ReportLayout
+  title="Desktop main composition · Agent Atelier"
+  description="Maka Electron main: stores → tool assembly → BackendRegistry → SessionManager → IPC cluster — companion report, not a seventh worldview chapter, and not UI chrome."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Desktop main 组合</span>
+        <span class="masthead__title-en">Desktop host composition</span>
+      </h1>
+      <p class="masthead__sub">
+        How the product shell welds <code>@maka/runtime</code>’s SessionManager into Electron main: store
+        plane, tool assembly, backend factory, IPC registration. Orthogonal to §01–§06 — enter via
+        <a href={ch01}>§01 spine</a> / <a href={`${ch01}#sandbox`}>#sandbox</a>, then read this page.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/desktop-host</span>
+        <span>Research · #72 · Task · #73</span>
+        <span>
+          <a href={localePath("zh", "guides/desktop-host")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Desktop · Scene"
+      title="Why the composition root is main, not the renderer"
+      lede="Single-writer process + OS trust boundary: the renderer only invokes; it does not own Runtime."
+    >
+      <p>
+        Desktop main is the product composition root: open persistence, assemble tools, register
+        backends, construct <code>SessionManager</code>, then expose typed IPC through preload. When
+        authorities conflict, <strong>code + contract tests win</strong>. This page does not teach CSS,
+        Storybook, or visual-smoke scenario catalogs.
+      </p>
+      <blockquote class="pull">
+        Renderer never constructs SessionManager; secrets never cross main→renderer.
+      </blockquote>
+    </Section>
+
+    <Section
+      id="layers"
+      label="Desktop · Layers"
+      title="Five composition contracts"
+      lede="Order is load-bearing: tools and backends must exist before SessionManager; services like onboarding bind after runtime."
+    >
+      <DiagramFigure
+        caption="Fig. · stores → assembleDesktopTools → BackendRegistry → SessionManager → registerIpc cluster; footer pins the preload trust boundary."
+        alt="Five-step horizontal flow: stores, tools, backends, SessionManager, with IPC cluster and trust bar below."
+      >
+        <DesktopMainCompositionFlow />
+      </DiagramFigure>
+
+      <ol class="plain-list numbered">
+        <li>
+          <strong>Stores</strong> — <code>@maka/storage</code> factories: session / agent-run / runtime
+          events / shell-run / artifact / settings / MCP config / telemetry…
+        </li>
+        <li>
+          <strong>Tools</strong> — <code>assembleDesktopTools</code>: sandbox manager, darwin filesystem
+          worker, deferred tool economy, CU / browser / skill binding.
+        </li>
+        <li>
+          <strong>Backends</strong> —
+          <code>BackendRegistry.register('ai-sdk', createAiSdkBackendFactory(…))</code>; E2E may
+          last-write-wins override to <code>FakeBackend</code>.
+        </li>
+        <li>
+          <strong>Runtime</strong> —
+          <code>new SessionManager(&#123; store, runStore, backends, shellRuns, … &#125;)</code>.
+        </li>
+        <li>
+          <strong>IPC</strong> — <code>registerIpc()</code> cluster (sessions / entry / permissions /
+          settings / mcp / app…), not one mega-handler.
+        </li>
+      </ol>
+    </Section>
+
+    <Section
+      id="session-manager"
+      label="Desktop · SessionManager"
+      title="SessionManager constructor shape"
+      lede="Product façade: sendMessage / stop / recover / listSessions; the tool loop lives inside the backend."
+    >
+      <div class="table-wrap" role="region" aria-label="SessionManager dependencies" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Dep</th>
+              <th scope="col">Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>store</code> / <code>runStore</code> / <code>runtimeEventStore</code></td>
+              <td>Session JSONL, AgentRun, event durability</td>
+            </tr>
+            <tr>
+              <td><code>shellRuns</code></td>
+              <td>Managed Bash / PTY; pushes <code>shell-runs:update</code></td>
+            </tr>
+            <tr>
+              <td><code>backends</code></td>
+              <td>ai-sdk / fake factory registry</td>
+            </tr>
+            <tr>
+              <td><code>childTools</code></td>
+              <td>Child-agent tool surface (file-leaning subset)</td>
+            </tr>
+            <tr>
+              <td>continuation inspectors</td>
+              <td>Local safety probe + background-ops detection</td>
+            </tr>
+            <tr>
+              <td>artifact / compact hooks</td>
+              <td>List artifacts per turn; history-compact cleanup</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        When the MCP tool snapshot changes, <code>runtime.refreshIdleBackends()</code> — main owns the
+        manager; secrets stay off the renderer wire.
+      </p>
+    </Section>
+
+    <Section
+      id="tool-assembly"
+      label="Desktop · Tools"
+      title="assembleDesktopTools: sandbox and worker entry"
+      lede="The tool surface is welded before SessionManager; economy defers schemas via load_tools."
+    >
+      <ul class="plain-list">
+        <li>
+          <code>createBuiltinSandboxManager</code> + optional <code>FilesystemWorkerClient</code> (darwin
+          only) — detail in
+          <a href={`${ch02}#filesystem-worker`}>§02 · #filesystem-worker</a> /
+          <a href={`${ch02}#shell-side-effects`}>#shell-side-effects</a>.
+        </li>
+        <li>
+          Deferred groups (Rive / Office / browser / CU / orchestration) stay off the per-turn wire by
+          default; <code>MAKA_DISABLE_DEFERRED_TOOLS</code> restores full advertisement.
+        </li>
+        <li>
+          <code>assertProductBindingCatalogClean('desktop', …)</code> +
+          <code>buildHostCapabilitiesFromBinding</code> pin the product binding catalog.
+        </li>
+      </ul>
+    </Section>
+
+    <Section
+      id="ipc"
+      label="Desktop · IPC"
+      title="registerIpc cluster (honest inventory)"
+      lede="Registrars split by domain; push channels never carry plaintext secrets."
+    >
+      <div class="table-wrap" role="region" aria-label="IPC registrar cluster" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Registrar</th>
+              <th scope="col">Owns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>registerSessionsIpc</code></td>
+              <td>Session CRUD / send / stream / artifacts / CU overlay hooks</td>
+            </tr>
+            <tr>
+              <td><code>registerSessionEntryIpc</code></td>
+              <td>Entry / quick-chat / onboarding-gated create</td>
+            </tr>
+            <tr>
+              <td><code>registerPermissionsIpc</code></td>
+              <td>Permission mode / bot / CU capability input</td>
+            </tr>
+            <tr>
+              <td><code>registerSettingsIpc</code></td>
+              <td>Settings patch + runtime effects</td>
+            </tr>
+            <tr>
+              <td><code>registerMcpIpcMain</code></td>
+              <td>MCP config + idle backend refresh</td>
+            </tr>
+            <tr>
+              <td>app / project-root / gateway / …</td>
+              <td>Window, project root, subscription &amp; connection satellites</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Desktop · Boundaries"
+      title="Not runtime-host, not headless"
+      lede="Three product composition paths — do not collapse them."
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>Desktop main</strong> — Electron product shell + preload IPC (this page).
+        </li>
+        <li>
+          <strong><code>packages/runtime-host</code></strong> — optional local unix-socket thin host (four
+          ops); see §01 <code>#runtime-host</code> lean note.
+        </li>
+        <li>
+          <strong>Headless / Harbor</strong> — eval / CLI composition without Electron preload.
+        </li>
+      </ul>
+      <p>
+        Bot / IM bridges:
+        <a href={localePath(locale, "guides/bot-im")}>/guides/bot-im</a>. Computer-use suite:
+        <a href={localePath(locale, "guides/computer-use")}>/guides/computer-use</a>. Trust model:
+        <a href={localePath(locale, "guides/security-privacy")}>/guides/security-privacy</a>.
+      </p>
+    </Section>
+
+    <aside class="history-aside">
+      <p class="history-aside__tag">Evolution aside · mechanism</p>
+      <p>
+        Verification entry points: wiring contracts under
+        <code>apps/desktop/src/main/__tests__</code> (session lifecycle / task-ledger / single-instance,
+        …). Outline:
+        <code>docs/research/desktop-main-composition-deep-outline.md</code> (#72 → Task #73).
+      </p>
+    </aside>
+  </article>
+</ReportLayout>
