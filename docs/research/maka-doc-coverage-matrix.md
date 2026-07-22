@@ -1,10 +1,10 @@
 # Maka doc coverage matrix (atelier × maka-agent)
 
 **Date:** 2026-07-22  
-**Map:** [#91](https://github.com/tt-a1i/agent-atelier/issues/91) (dig v4; does not trust closed [#90](https://github.com/tt-a1i/agent-atelier/issues/90) / [#34](https://github.com/tt-a1i/agent-atelier/issues/34) without re-pull)  
-**Specimen:** `/Users/tushaokun/code/maka-agent` @ `7b2f80a303333bc804a39a5d631a9fc8a33631ef` (dig v3 baseline was `42461f2b`)  
-**Inventory:** **128** first-party `*.md` (excludes `node_modules` / `.git`)  
-**Method:** regenerate find inventory → diff vs dig v3 matrix → cross-check live chapters/guides → classify taught depth. **Silent `none`/`thin` forbidden**. Dig v4 additionally forbids trusting prior “deep” without spot-check against current source.
+**Map:** [#92](https://github.com/tt-a1i/agent-atelier/issues/92) (dig v5; does not trust closed [#91](https://github.com/tt-a1i/agent-atelier/issues/91) / [#90](https://github.com/tt-a1i/agent-atelier/issues/90) / [#34](https://github.com/tt-a1i/agent-atelier/issues/34) without re-pull)  
+**Specimen:** `/Users/tushaokun/code/maka-agent` @ `f9e78d17e1ae42e3428390baf9d458cf4f30a00b` (dig v4 baseline was `7b2f80a3`)  
+**Inventory:** **128** first-party `*.md` (excludes `node_modules` / `.git`) — same path count as dig v4  
+**Method:** regenerate find inventory → diff vs dig v4 matrix → cross-check live chapters/guides → classify taught depth. **Silent `none`/`thin` forbidden**. Dig v5 forbids trusting prior “deep” without spot-check against current source (≥15 anchors).
 
 ## Legend
 
@@ -15,13 +15,13 @@
 
 **Design-encoding** = every row whose `taught?` is **not** `discard`/`oos`.
 
-### #91 close gate (corpus dig v4)
+### #92 close gate (corpus dig v5)
 
-Close [#91](https://github.com/tt-a1i/agent-atelier/issues/91) **only if** fresh pull + inventory; every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub`; NEW docs/seams since dig v3 mined or dispositioned; ≥10 prior deep anchors spot-checked; Top seams not slogan-only.
+Close [#92](https://github.com/tt-a1i/agent-atelier/issues/92) **only if** fresh pull + inventory; every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub`; NEW/changed docs/seams since dig v4 mined or dispositioned; ≥15 prior deep anchors spot-checked; Top seams not slogan-only.
 
-This gate is **not** “product Destination complete”. AHE Target controller / Phase3 reconciler remain **product stubs** (re-confirmed absent at dig v4 HEAD); atelier teaches Current honesty (see `depth-corpus-status.md`).
+This gate is **not** “product Destination complete”. AHE Target controller / Phase3 reconciler remain **product stubs** (re-confirmed absent at dig v5 HEAD); atelier teaches Current honesty (see `depth-corpus-status.md`).
 
-## Counts (corpus dig v4)
+## Counts (corpus dig v5)
 
 | taught? | Count | % |
 | --- | ---: | ---: |
@@ -33,7 +33,7 @@ This gate is **not** “product Destination complete”. AHE Target controller /
 | oos | 9 | 7.0% |
 | **total** | **128** | **100%** |
 
-Legacy rollup: deep **90** · thin **0** · none **0**. Dig v3 was 127/deep 89; dig v4 +1 authority doc (`deep-research-durable-workspace.md`).
+Legacy rollup: deep **90** · thin **0** · none **0**. Dig v4 was 128/deep 90; dig v5 adds **no new md path** — deepens `docs/agent-swarm.md` + NEW swarm orchestration code seams in place.
 
 ### Design-encoding debt still `none`/`thin` (honest)
 
@@ -43,7 +43,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 - `docs/ahe-target-protocol.md` + `docs/architecture/ahe-self-iteration-boundary-draft*` — Target controller/runner/`validateMakaAheChangeEvaluation`
 - `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` — Phase3 reconciler
 
-**#91 gate:** MET this session — NEW Deep Research + Plan mode + sandbox diagnostics + harness ops; spot-check prior deep OK; `visual-smoke`→`e2e-fixture` rename fixed. Remaining true blockers for **product Destination** = AHE Target / Phase3 stubs only (not map blockers).
+**#92 gate:** MET this session — Swarm Mode orchestration + host parity + template batches mined; spot-check ≥15 prior deep OK; AHE/Phase3 still absent. Remaining true blockers for **product Destination** = AHE Target / Phase3 stubs only (not map blockers).
 
 ## Full matrix (128)
 
@@ -90,7 +90,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `apps/desktop/resources/bundled-skills/theme-factory/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
 | `apps/desktop/resources/bundled-skills/xhs-card-designer/SKILL.md` | readme | deep | /guides/skills-corpus | dig v3/#90 — agent contracts mined across all 29 bodies (not oos dump) |
 | `docs/README.md` | authority | deep | mine-plan authority rule | keep as authority map |
-| `docs/agent-swarm.md` | authority | deep | §04 #swarm + #swarm-failure | failure matrix shipped this pass |
+| `docs/agent-swarm.md` | authority | deep | §04 #swarm + #swarm-mode + #swarm-template + #swarm-failure | **deepened dig v5/#92** — Swarm Mode auth · host parity · `prompt_template`/`{{item}}` |
 | `docs/expert-team-runtime.md` | authority | deep | §04 #swarm Expert Team | failure matrix shipped this pass |
 | `docs/ahe-target-protocol.md` | authority | deep | §06 validators/identity | deep on validators/identity; Target controller/runner/change-evaluation = product-stub — do not invent |
 | `docs/execution-evidence-spine.md` | authority | deep | §01 #execution-evidence | dig v3/#90 — body shipped (was dangling-link slogan); dig v4 spot-check OK |
@@ -178,19 +178,16 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `skills/maka-architecture-docs/references/quality-gate.md` | readme | oos | — | meta OOS |
 | `skills/maka-architecture-docs/references/writing-standard.md` | readme | oos | — | meta OOS |
 
-## This pass decisions (dig v4 / #91)
+## This pass decisions (dig v5 / #92)
 
-1. **Fresh find = 128** — +1 vs dig v3: `docs/deep-research-durable-workspace.md` only NEW first-class md.
-2. **Do not trust dig v3 closure** — maka advanced `42461f2b → 7b2f80a3` (12 commits) with productized Deep Research + Plan mode + sandbox diagnostics.
-3. Mined `/guides/deep-research` CN+EN from authority doc + `deep-research-run` / tools / store + Desktop handoff.
-4. Mined `/guides/plan-mode` CN+EN from `collaboration` / `plan.ts` / plan-store / plan-mode / plan-tools / panel (no maka authority md — code+tests are authority).
-5. Deepened §01 `#sandbox-diagnostics` (diagnostics snapshot · run-trace projection · turn-tail · SandboxCommandError).
-6. Deepened §04 `#harness-ab-ops` (Codex `xhigh`, `MAKA_HARNESS_AB_TASK_IDS`, pair concurrency / arm execution, vision images).
-7. Spot-checked ≥10 prior deep anchors — protocol OK; hard fix `visual-smoke` → `e2e-fixture` on desktop-ui/host.
-8. AHE Target / Phase3 reconciler still absent — remain product-stub honesty.
-9. Remaining `discard` / `oos` dispositions unchanged in spirit.
-10. Product Destination still stub-gated — **does not block #91 corpus dig close**.
+1. **Fresh find = 128** — same path count as dig v4; **only** content-changed md: `docs/agent-swarm.md` (+19 template batch).
+2. **Do not trust dig v4 closure** — maka advanced `7b2f80a3 → f9e78d17` (4 commits / PRs #1325–#1328) with productized Swarm Mode + host parity + template expansion.
+3. NEW design-bearing code (non-test): `packages/core/src/orchestration.ts` · `swarm-command.ts` · `packages/runtime/src/swarm-mode.ts`; large deltas in `agent-swarm-tools.ts`, session-store, Desktop/CLI/Headless.
+4. Deepened §04 `#swarm` CN+EN: `#swarm-mode` (EffectiveOrchestration / authorization / `/swarm` / IPC / Headless) · `#swarm-template` · failure rows · verification cites.
+5. Spot-checked ≥15 prior deep anchors — protocol OK; AHE/`validateMakaAheChangeEvaluation` + Phase3 reconciler still absent.
+6. Remaining `discard` / `oos` dispositions unchanged in spirit.
+7. Product Destination still stub-gated — **does not block #92 corpus dig close**.
 
-### Dig v3 / #90 decisions (historical; superseded for closure claims)
+### Dig v4 / #91 decisions (historical; superseded for closure claims)
 
-See git history of this file at dig v3 close. Skills corpus ×29, elevated archives, `#execution-evidence` body, CU internals, desktop-ui queue/input, `/guides/cli` remain live teaching — re-verified by dig v4 spot-check, not re-mined wholesale.
+See git history of this file at dig v4 close. Deep Research / Plan mode / sandbox diagnostics / harness ops remain live teaching — re-verified by dig v5 spot-check, not re-mined wholesale.

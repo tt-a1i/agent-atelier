@@ -717,8 +717,64 @@ cancelled → pending       only explicitReopen</pre>
       no <code>SwarmRun</code>, second event ledger, checkpoint, or background owner. Every started item
       is an ordinary child <code>AgentRun</code>; child toolsets exclude <code>agent_swarm</code> (no
       nested batches). Partial failure keeps successful siblings; parent cancel signals active children,
-      prevents queued starts, joins, and returns explicit cancelled rows for never-started items.
+      prevents queued starts, joins, and returns explicit cancelled rows for never-started items. Tool
+      semantics are <code>exclusive_step</code>: it must not share an assistant step with other tools.
     </p>
+    <h3 id="swarm-mode" class="subhead">Swarm Mode: session orchestration and trusted auth (dig v5)</h3>
+    <p>
+      Dig v5 productizes <strong>orchestration mode</strong> (<code>orchestrationMode</code>:
+      <code>default</code> | <code>swarm</code>), separate from “happening to call
+      <code>agent_swarm</code>.” The session header persists the default; a single turn may override via
+      trusted <code>TurnOrchestration</code> (source <code>slash_command</code> / <code>host_api</code>).
+      Runtime resolves
+      <code>resolveEffectiveOrchestration(session, override)</code> into
+      <code>EffectiveOrchestration</code>: <code>mode</code>, <code>source</code> (<code>session</code> |
+      <code>turn_override</code>), and <code>agentSwarmAuthorization</code> (<code>none</code> |
+      <code>session_mode</code> | <code>turn_override</code>). That snapshot rides on the AgentRun /
+      backend send and is the trust boundary for tool admission.
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>Authorization</strong>: when authorization ≠ <code>none</code>, ToolRuntime injects a
+        trusted <code>allow</code> for <code>agent_swarm</code> (no prompt); explicit <code>deny</code>
+        still wins; the envelope does <strong>not</strong> widen unrelated tools.
+      </li>
+      <li>
+        <strong>Mode prompt</strong>: when effective mode is <code>swarm</code>, the backend injects
+        <code>renderSwarmModePrompt()</code> (<code>&lt;orchestration_mode&gt;</code>): split when
+        meaningful, synthesize after settle, no fake parallelism.
+      </li>
+      <li>
+        <strong>Host parity</strong>: Desktop / CLI share <code>parseSwarmCommand</code> —
+        <code>/swarm on|off|status</code> and <code>/swarm &lt;task&gt;</code> (one-shot
+        <code>turn_override</code>, session default unchanged). Composer toggle +
+        <code>sessions:setOrchestrationMode</code> IPC write the header. Headless accepts
+        <code>orchestrationMode</code> plus optional <code>turnOrchestration</code>; evidence returns on
+        the run.
+      </li>
+      <li>
+        <strong>Gates</strong>: mode cannot change while a turn runs or a tool awaits confirmation;
+        during a turn only <code>/swarm status</code> is allowed.
+      </li>
+    </ul>
+    <h3 id="swarm-template" class="subhead">Input shapes: explicit items vs template batches</h3>
+    <p>
+      One call has two <strong>mutually exclusive</strong> input forms. After validation they share the
+      same preflight / execution path — template expansion is input shorthand, not a second scheduler:
+    </p>
+    <ol class="plain-list numbered">
+      <li>
+        <strong>Explicit structured items</strong>: each carries <code>item_id</code> /
+        <code>profile</code> / <code>task</code> (optional write_back / isolation).
+      </li>
+      <li>
+        <strong>Homogeneous template batch</strong>: shared <code>profile</code> +
+        <code>prompt_template</code> containing <code>{'{{item}}'}</code> + string
+        <code>items</code>. Every placeholder occurrence is replaced; duplicate expanded tasks are
+        rejected; stable ordered IDs (<code>item-1</code>…) are generated; expanded task length still
+        hits the same cap.
+      </li>
+    </ol>
     <h3 class="subhead">Choosing an execution model</h3>
     <div class="table-wrap" role="region" aria-label="Fan-out model choice" tabindex="0">
       <table class="proto-table">
@@ -819,6 +875,22 @@ cancelled → pending       only explicitReopen</pre>
             <td>Active signalled; queued never start; cancelled rows</td>
           </tr>
           <tr>
+            <td><code>agent_swarm</code> mixed with other tools in one step</td>
+            <td><code>exclusive_step</code> rejects</td>
+          </tr>
+          <tr>
+            <td>Template missing <code>{'{{item}}'}</code> / duplicate expands / mixed item shapes</td>
+            <td>Whole-batch preflight fail</td>
+          </tr>
+          <tr>
+            <td>Explicit deny on <code>agent_swarm</code></td>
+            <td>Beats Swarm Mode trusted allow</td>
+          </tr>
+          <tr>
+            <td>Change mode / start swarm mid-turn</td>
+            <td>Rejected (status-only readable)</td>
+          </tr>
+          <tr>
             <td>Expert widens tools beyond archetype</td>
             <td>Definition/build rejects (narrow-only)</td>
           </tr>
@@ -838,6 +910,10 @@ cancelled → pending       only explicitReopen</pre>
             <td>Treat swarm as durable TaskRun</td>
             <td><strong>Teaching error</strong> — different identity</td>
           </tr>
+          <tr>
+            <td>Treat Swarm Mode as a second workflow runtime</td>
+            <td><strong>Teaching error</strong> — still auth + prompt over child AgentRuns</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -856,8 +932,13 @@ cancelled → pending       only explicitReopen</pre>
       <p class="history-aside__tag">Verification</p>
       <p>
         <code>bounded-swarm.test.ts</code> · <code>agent-swarm-tools.test.ts</code> ·
+        <code>swarm-orchestration.test.ts</code> · <code>swarm-mode.test.ts</code> ·
+        <code>orchestration.test.ts</code> · Desktop
+        <code>swarm-mode-host-contract.test.ts</code> · CLI
+        <code>pi-tui-runner</code> / <code>session-driver</code> swarm cases ·
         <code>expert-team.test.ts</code>. Outline:
-        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>.
+        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>. Authority:
+        <code>docs/agent-swarm.md</code> (includes template batches).
       </p>
     </aside>
   </Section>

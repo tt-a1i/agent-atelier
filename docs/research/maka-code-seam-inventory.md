@@ -1,9 +1,9 @@
 # Maka code-seam inventory (atelier depth map)
 
 **Date:** 2026-07-22  
-**Specimen root:** `/Users/tushaokun/code/maka-agent` @ `7b2f80a3`  
-**Map:** [#91](https://github.com/tt-a1i/agent-atelier/issues/91) (dig v4; precursors [#90](https://github.com/tt-a1i/agent-atelier/issues/90) · [#34](https://github.com/tt-a1i/agent-atelier/issues/34))  
-**Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Dig v4 adds product seams that did not exist at dig v3 HEAD.
+**Specimen root:** `/Users/tushaokun/code/maka-agent` @ `f9e78d17`  
+**Map:** [#92](https://github.com/tt-a1i/agent-atelier/issues/92) (dig v5; precursors [#91](https://github.com/tt-a1i/agent-atelier/issues/91) · [#90](https://github.com/tt-a1i/agent-atelier/issues/90) · [#34](https://github.com/tt-a1i/agent-atelier/issues/34))  
+**Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Dig v5 adds Swarm Mode / template seams that did not exist at dig v4 HEAD.
 
 ## Method
 
@@ -107,12 +107,12 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | — | ContextBudgetPolicy two-plane DSL | §03 `#budget-dsl` | `context-budget*.ts` · `composePrepareStep` | **shipped** · outline `context-budget-policy-pipeline-deep-outline.md` · [#74](https://github.com/tt-a1i/agent-atelier/issues/74) |
 | — | Semantic compact failedOpen / privacy / savings | §03 `#semantic-gates` | `semantic-compact.ts` | **shipped** · outline `semantic-compact-gates-deep-outline.md` · [#75](https://github.com/tt-a1i/agent-atelier/issues/75) |
 | — | Permission park/remember vs escalation one-shot | §01 `#park-remember` | `permission-engine.ts` · `sandbox-escalation.ts` | **shipped** · outline `permission-park-remember-escalation-deep-outline.md` · [#76](https://github.com/tt-a1i/agent-atelier/issues/76) |
-| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap + diagnostics | §01 `#sandbox` · `#sandbox-diagnostics` | `permission-profile.ts` · `sandbox/**` · `diagnostics.ts` · `errors.ts` · `sandbox-context-prompt.ts` | **deep** dig v4/#91 — diagnostics/turn-tail/structured errors |
+| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap + diagnostics | §01 `#sandbox` · `#sandbox-diagnostics` | `permission-profile.ts` · `sandbox/**` · `diagnostics.ts` · `errors.ts` · `system-prompt/sandbox-context-prompt.ts` | **deep** dig v4/#91 — dig v5 spot-check OK (prompt path under `system-prompt/`) |
 | 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | **shipped** `#ledger` |
 | 8 | Execution evidence spine | §01 `#execution-evidence` (+ cross-cut §02/04/05/06) | `execution-evidence.ts` · `execution-evidence-spine.md` | **deep** dig v3; dig v4 spot-check OK |
 | 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | **shipped** `#mcp` |
 | 10 | Computer-use foundation + package internals | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **deep** dig v3; dig v4 spot-check OK |
-| 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | **shipped** `#swarm` |
+| 11 | Swarm + expert team + Swarm Mode | §04 `#swarm` · `#swarm-mode` · `#swarm-template` | `bounded-swarm.ts` · `agent-swarm-tools.ts` · `orchestration.ts` · `swarm-command.ts` · `swarm-mode.ts` · Desktop/CLI/Headless host | **deep** dig v5/#92 — PRs #1325–#1328 |
 | 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | shipped §02 `#shell-side-effects` |
 | 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
 | 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |

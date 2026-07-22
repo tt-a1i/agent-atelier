@@ -677,8 +677,59 @@ cancelled → pending       only explicitReopen</pre>
       个独立子项，本地 worker-pool 默认并发 3、上限 5，全部校验后再启动；结果按输入顺序投影。它不是
       workflow runtime：没有 <code>SwarmRun</code>、第二套 event ledger、checkpoint 或后台 owner。每个已启动项都是普通
       child <code>AgentRun</code>；子工具集排除 <code>agent_swarm</code>，禁止嵌套批。部分失败不擦掉成功兄弟；父级
-      cancel 会信号活跃子项、阻止队列项启动、join 后为未启动项返回显式 cancelled 行。
+      cancel 会信号活跃子项、阻止队列项启动、join 后为未启动项返回显式 cancelled 行。工具语义为
+      <code>exclusive_step</code>：同一 assistant step 内不得与其它工具同发。
     </p>
+    <h3 id="swarm-mode" class="subhead">Swarm Mode：会话编排与可信授权（dig v5）</h3>
+    <p>
+      dig v5 产品化了<strong>编排模式</strong>（<code>orchestrationMode</code>：<code>default</code> |
+      <code>swarm</code>），与「是否碰巧调用 <code>agent_swarm</code>」分离。会话头持久化默认模式；单 turn
+      可通过可信 <code>TurnOrchestration</code>（来源 <code>slash_command</code> /
+      <code>host_api</code>）覆盖。运行时用
+      <code>resolveEffectiveOrchestration(session, override)</code> 得到
+      <code>EffectiveOrchestration</code>：<code>mode</code>、<code>source</code>（<code>session</code> |
+      <code>turn_override</code>）、以及
+      <code>agentSwarmAuthorization</code>（<code>none</code> | <code>session_mode</code> |
+      <code>turn_override</code>）。该快照写入 AgentRun / backend send，是工具准入的信任边界。
+    </p>
+    <ul class="plain-list">
+      <li>
+        <strong>授权效果</strong>：当 authorization ≠ <code>none</code> 时，工具运行时为
+        <code>agent_swarm</code> 注入可信 <code>allow</code> 规则，可免交互放行；显式
+        <code>deny</code> 仍优先；包络<strong>不</strong>放宽其它工具权限。
+      </li>
+      <li>
+        <strong>模式提示</strong>：effective mode 为 <code>swarm</code> 时，backend 注入
+        <code>renderSwarmModePrompt()</code>（<code>&lt;orchestration_mode&gt;</code>）：要求可拆则批、批后综合、禁止假并行。
+      </li>
+      <li>
+        <strong>宿主对等</strong>：Desktop / CLI 共用 <code>parseSwarmCommand</code>——
+        <code>/swarm on|off|status</code> 与 <code>/swarm &lt;task&gt;</code>（单次
+        <code>turn_override</code>，不改会话默认）。Composer 开关与
+        <code>sessions:setOrchestrationMode</code> IPC 写会话头。Headless 接受
+        <code>orchestrationMode</code> + 可选 <code>turnOrchestration</code>，证据带回 run。
+      </li>
+      <li>
+        <strong>门禁</strong>：turn 运行中或工具等待确认时不得改 mode；运行中仅允许
+        <code>/swarm status</code>。
+      </li>
+    </ul>
+    <h3 id="swarm-template" class="subhead">输入形态：显式项 vs 模板批</h3>
+    <p>
+      一次调用有两种<strong>互斥</strong>输入，校验通过后走同一 preflight / 执行路径——模板只是输入简写，不是第二套调度器：
+    </p>
+    <ol class="plain-list numbered">
+      <li>
+        <strong>显式结构化项</strong>：每项自带 <code>item_id</code> / <code>profile</code> /
+        <code>task</code>（及可选 write_back / isolation）。
+      </li>
+      <li>
+        <strong>齐次模板批</strong>：共享 <code>profile</code> + 含
+        <code>{'{{item}}'}</code> 的 <code>prompt_template</code> + 字符串
+        <code>items</code>。每个占位符出现处都被替换；拒绝重复展开任务；生成稳定有序 ID（
+        <code>item-1</code>…）；展开后任务长度仍受上限约束。
+      </li>
+    </ol>
     <h3 class="subhead">何时用哪种模型</h3>
     <div class="table-wrap" role="region" aria-label="扇出模型选择" tabindex="0">
       <table class="proto-table">
@@ -776,6 +827,22 @@ cancelled → pending       only explicitReopen</pre>
             <td>活跃项信号；队列永不启动；cancelled 行</td>
           </tr>
           <tr>
+            <td>同 step 混发 <code>agent_swarm</code> 与其它工具</td>
+            <td><code>exclusive_step</code> 拒绝</td>
+          </tr>
+          <tr>
+            <td>模板缺 <code>{'{{item}}'}</code> / 展开重复 / 结构化与字符串混用</td>
+            <td>preflight 整批失败</td>
+          </tr>
+          <tr>
+            <td>显式 deny <code>agent_swarm</code></td>
+            <td>胜过 Swarm Mode 可信 allow</td>
+          </tr>
+          <tr>
+            <td>turn 中改 mode / 启动新 swarm</td>
+            <td>拒绝（仅 status 可读）</td>
+          </tr>
+          <tr>
             <td>Expert 放宽超出 archetype 的工具</td>
             <td>定义/构建拒绝（narrow-only）</td>
           </tr>
@@ -795,6 +862,10 @@ cancelled → pending       only explicitReopen</pre>
             <td>把 swarm 当成 durable TaskRun</td>
             <td><strong>教学错误</strong>——身份不同</td>
           </tr>
+          <tr>
+            <td>把 Swarm Mode 当成第二套 workflow runtime</td>
+            <td><strong>教学错误</strong>——仍是 child AgentRun 上的授权 + 提示</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -811,8 +882,13 @@ cancelled → pending       only explicitReopen</pre>
       <p class="history-aside__tag">验证</p>
       <p>
         <code>bounded-swarm.test.ts</code> · <code>agent-swarm-tools.test.ts</code> ·
+        <code>swarm-orchestration.test.ts</code> · <code>swarm-mode.test.ts</code> ·
+        <code>orchestration.test.ts</code> · Desktop
+        <code>swarm-mode-host-contract.test.ts</code> · CLI
+        <code>pi-tui-runner</code> / <code>session-driver</code> swarm 用例 ·
         <code>expert-team.test.ts</code>。提纲：
-        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>。
+        <code>docs/research/agent-swarm-expert-team-deep-outline.md</code>。权威文档：
+        <code>docs/agent-swarm.md</code>（含模板批）。
       </p>
     </aside>
   </Section>
