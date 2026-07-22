@@ -1,0 +1,300 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/deep-research");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="Deep Research 耐久工作区 · Agent Atelier"
+  description="独立 JSONL 研究账本 + Artifact Store：投影不变量、八工具协议、只读 handoff——不是「会搜索的聊天」文案。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v4 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Deep Research 耐久工作区</span>
+        <span class="masthead__title-en">Deep Research durable workspace</span>
+      </h1>
+      <p class="masthead__sub">
+        标本权威：<code>docs/deep-research-durable-workspace.md</code>（PR #1227）+
+        <code>packages/core/src/deep-research-run.ts</code> ·
+        <code>packages/storage/src/deep-research-store.ts</code> ·
+        <code>packages/runtime/src/deep-research-tools.ts</code>。权威冲突时
+        <strong>code + contract tests 胜出</strong>。这是 FS-Researcher 思路的独立复现——不复制论文仓库代码。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/deep-research</span>
+        <span>Map · #91</span>
+        <span>
+          <a href={localePath("en", "guides/deep-research")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="DR · Scene"
+      title="为什么这不是 bundled skill 的同名文案"
+      lede="skills-corpus 里的 deep-research SKILL 是 agent 行为契约；本页是 runtime 耐久工作区协议。"
+    >
+      <p>
+        dig v3 把 bundled <code>deep-research/SKILL.md</code> 挖进
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>（不编造证据）。dig
+        v4 pull 后出现<strong>产品化工作区</strong>：独立事件账本、投影闸门、八个
+        <code>deep_research_*</code> 工具、Desktop 进度投影与只读→实现 handoff。两者同名不同层——SKILL
+        约束写作诚实；本页约束<strong>持久化与权限边界</strong>。
+      </p>
+    </Section>
+
+    <Section
+      id="authority"
+      label="DR · Authority"
+      title="三本账：研究事件 · Artifact · Task Ledger"
+      lede="工作流状态权威在 research JSONL；大正文在 Artifact Store；任务身份仍归 Task Ledger。"
+    >
+      <div class="table-wrap" role="region" aria-label="authority split" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">关切</th>
+              <th scope="col">权威</th>
+              <th scope="col">路径</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>生命周期 / checklist / steps / sections / completion</td>
+              <td>Deep Research store（投影后追加）</td>
+              <td><code>sessions/&lt;id&gt;/deep-research/events.jsonl</code></td>
+            </tr>
+            <tr>
+              <td>source / note / outline / section / report / handoff 正文</td>
+              <td>既有 Artifact Store</td>
+              <td><code>artifacts/</code>（<code>source: deep_research</code>）</td>
+            </tr>
+            <tr>
+              <td>Task identity / TaskRun</td>
+              <td>Session task ledger（不变）</td>
+              <td>checkpoint 只<strong>链接</strong> task id，不另起 Task 真相</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        交叉：<a href={`${ch01}#execution-evidence`}>§01 · #execution-evidence</a>（跨账本 refs）·
+        <a href={`${ch04}#ledger`}>§04 · #ledger</a>（Ledger ≠ TaskRun）·
+        <a href={`${ch02}#shell-side-effects`}>§02</a>（本工作区不开放任意项目路径写）。
+      </p>
+    </Section>
+
+    <Section
+      id="lifecycle"
+      label="DR · Lifecycle"
+      title="阶段单调；completed 近乎终态"
+      lede="not started → knowledge_base → report_writing → completed；round/stage 不可回退。"
+    >
+      <p>
+        投影入口：<code>projectDeepResearchEvents</code>。事件类型六种：
+        <code>research_started</code>（必须首条且唯一）·
+        <code>research_artifact_recorded</code> ·
+        <code>research_checklist_updated</code> ·
+        <code>research_step_recorded</code> ·
+        <code>research_checkpoint_recorded</code> ·
+        <code>research_completed</code>。
+      </p>
+      <p>
+        运行状态 <code>active | blocked | completed</code>；活跃阶段
+        <code>knowledge_base | report_writing</code>。完成后后续变更<strong>拒绝</strong>——唯一例外是同一
+        tool-call id 的<strong>精确重放</strong>（先查 replay，再判终态）。
+      </p>
+      <h3 class="subhead">Artifact roles 与溯源</h3>
+      <div class="table-wrap" role="region" aria-label="artifact roles" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">role</th>
+              <th scope="col">含义</th>
+              <th scope="col">source 引用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>source</code></td>
+              <td>归档的原始材料 / 可检定位器</td>
+              <td>不要求 parent</td>
+            </tr>
+            <tr>
+              <td><code>evidence_note</code> / <code>outline</code> / <code>report_section</code> / <code>report</code> / <code>handoff</code></td>
+              <td>派生内容</td>
+              <td>必须引用已归档 <code>source</code> artifact id</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        五节报告键（完成闸门）：<code>conclusion</code> ·
+        <code>source_evidence</code> · <code>borrow_diverge_risk_gate</code> ·
+        <code>implementation_recommendations</code> · <code>verification</code>。默认 checklist 四项：
+        entrypoints / core_flow / boundaries / verification_evidence。
+      </p>
+    </Section>
+
+    <Section
+      id="tools"
+      label="DR · Tools"
+      title="八工具 + root-session 标签门禁"
+      lede="仅带 mode:deep_research 标签的根会话装配工具；写操作只碰 Maka 自有账本与 artifact。"
+    >
+      <ol class="plain-list">
+        <li><code>deep_research_start</code> — objective + scope (<code>quick|standard|deep</code>)</li>
+        <li><code>deep_research_save_artifact</code> — 先 source，再派生（带 source_artifact_ids）</li>
+        <li><code>deep_research_read_artifact</code> — 分块、SHA-256 完整性校验读</li>
+        <li><code>deep_research_update_checklist</code> — 状态与 evidence/blocker 字段匹配</li>
+        <li><code>deep_research_record_step</code> — local_exploration / web_research；roots/keywords、停止条件、inspected refs、worker ids</li>
+        <li><code>deep_research_checkpoint</code> — 可恢复进度；round/stage 单调</li>
+        <li><code>deep_research_status</code> — 重启后先 status，再按需 read</li>
+        <li><code>deep_research_complete</code> — 封账：sources + settled checklist + 五节 + report + handoff</li>
+      </ol>
+      <p>
+        权限面仍是 <code>explore</code> profile：这八个工具是对 Maka-owned 状态的窄例外，<strong>不是</strong>通用
+        filesystem Write。子 agent / 普通会话不装配。状态与 artifact 文本经 secret-redact，并剥离伪造的
+        workspace / artifact envelope 标签。
+      </p>
+    </Section>
+
+    <Section
+      id="resume"
+      label="DR · Resume / Failure"
+      title="先投影再追加；腐败 fail-closed"
+      lede="toolCallId 幂等；冲突重试拒绝；缺 artifact / hash 失配拒绝读与 complete。"
+    >
+      <div class="table-wrap" role="region" aria-label="resume failures" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">情形</th>
+              <th scope="col">行为</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>进程 / 上下文中断</td>
+              <td>重投影 JSONL → <code>deep_research_status</code> → 只读所需 artifact 块</td>
+            </tr>
+            <tr>
+              <td>同 toolCallId + 同输入</td>
+              <td>返回既有投影；不追加重复事件</td>
+            </tr>
+            <tr>
+              <td>同 toolCallId + 不同输入</td>
+              <td>语义冲突，拒绝</td>
+            </tr>
+            <tr>
+              <td>投影不变量失败</td>
+              <td>追加前校验失败；账本不变</td>
+            </tr>
+            <tr>
+              <td>artifact 已创建但事件被拒</td>
+              <td>回滚新建 artifact</td>
+            </tr>
+            <tr>
+              <td>JSONL 腐败 / 缺行</td>
+              <td>fail-closed；不暴露半投影</td>
+            </tr>
+            <tr>
+              <td>跨 session / 已删 / hash 失配</td>
+              <td>读拒绝；complete 前对 source/section/report/handoff 再检一遍</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        防御上限（非产品目标）：artifacts 2000 · steps 500 · checkpoints 500 · checklist 50 · 单步
+        inspected refs 200 · 工具接受正文 512k chars · 单次 read 返回 64k · status 列出最近 100
+        artifacts。schemaVersion = 1；本切片无原地迁移。
+      </p>
+    </Section>
+
+    <Section
+      id="handoff"
+      label="DR · Handoff"
+      title="完成 ≠ 改权限；handoff 只填新任务草稿"
+      lede="原会话保持 explore / 只读；「在新任务继续」显式开 unlabeled 实现任务。"
+    >
+      <p>
+        Desktop：完成不改变原 session 的 permission mode。Continue-in-new-task：
+        (1) 创建普通无 deep_research 标签任务；(2) 用结构化 handoff + provenance 拼有界 prompt；(3)
+        <strong>填入 composer 但不发送</strong>；(4) 要求实现任务先检代码再改文件。用户仍是模式切换与发送的最终闸门。
+      </p>
+      <p>
+        标本接线：Desktop main/preload IPC ·
+        <code>use-deep-research-run.ts</code> · <code>packages/ui</code> chat-view 进度投影。通用
+        Artifact Pane 删除对 ledger-owned artifact 禁用——UI 不能静默拆完成工作区。
+      </p>
+    </Section>
+
+    <Section
+      id="nongoals"
+      label="DR · Non-goals"
+      title="本切片不宣称什么"
+      lede="搜索 provider、浏览器驱动、自动引用排版、自主 worker 调度、ledger compaction / schema 迁移——另开 seam。"
+    >
+      <p>
+        工作区<strong>记录</strong> local/web 子步与 worker run id，但不静默拓宽其权限。bundled skill
+        的「不编造证据」仍在
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>；与本页叠加，不互相替代。
+      </p>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

@@ -1,0 +1,310 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/deep-research");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch02 = chapterHref("02-evidence-before-compression", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="Deep Research durable workspace · Agent Atelier"
+  description="Independent research JSONL + Artifact Store: projection invariants, eight-tool protocol, read-only handoff — not “chat that searches” copy."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v4 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Deep Research 耐久工作区</span>
+        <span class="masthead__title-en">Deep Research durable workspace</span>
+      </h1>
+      <p class="masthead__sub">
+        Authority: <code>docs/deep-research-durable-workspace.md</code> (PR #1227) +
+        <code>packages/core/src/deep-research-run.ts</code> ·
+        <code>packages/storage/src/deep-research-store.ts</code> ·
+        <code>packages/runtime/src/deep-research-tools.ts</code>. When docs disagree,
+        <strong>code + contract tests win</strong>. Independent reproduction of the FS-Researcher
+        systems idea — no code copied from the paper repo.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/deep-research</span>
+        <span>Map · #91</span>
+        <span>
+          <a href={localePath("zh", "guides/deep-research")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="DR · Scene"
+      title="Not the same layer as the bundled skill"
+      lede="skills-corpus deep-research is an agent honesty contract; this page is the durable workspace protocol."
+    >
+      <p>
+        Dig v3 mined bundled <code>deep-research/SKILL.md</code> into
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a>. Dig v4 pull
+        productizes a <strong>workspace</strong>: independent event ledger, projection gates, eight
+        <code>deep_research_*</code> tools, Desktop progress, and read-only→implementation handoff.
+        Same name, different layers.
+      </p>
+    </Section>
+
+    <Section
+      id="authority"
+      label="DR · Authority"
+      title="Three books: research events · artifacts · task ledger"
+      lede="Workflow authority is research JSONL; large bodies live in Artifact Store; task identity stays on the Task Ledger."
+    >
+      <div class="table-wrap" role="region" aria-label="authority split" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Concern</th>
+              <th scope="col">Authority</th>
+              <th scope="col">Path</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Lifecycle / checklist / steps / sections / completion</td>
+              <td>Deep Research store (project-then-append)</td>
+              <td><code>sessions/&lt;id&gt;/deep-research/events.jsonl</code></td>
+            </tr>
+            <tr>
+              <td>source / note / outline / section / report / handoff bodies</td>
+              <td>Existing Artifact Store</td>
+              <td><code>artifacts/</code> (<code>source: deep_research</code>)</td>
+            </tr>
+            <tr>
+              <td>Task identity / TaskRun</td>
+              <td>Session task ledger (unchanged)</td>
+              <td>Checkpoints only <strong>link</strong> task ids</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Cross-cut: <a href={`${ch01}#execution-evidence`}>§01 · #execution-evidence</a> ·
+        <a href={`${ch04}#ledger`}>§04 · #ledger</a> ·
+        <a href={`${ch02}#shell-side-effects`}>§02</a> (no arbitrary project-path writes from this
+        workspace).
+      </p>
+    </Section>
+
+    <Section
+      id="lifecycle"
+      label="DR · Lifecycle"
+      title="Stages are monotonic; completed is nearly terminal"
+      lede="not started → knowledge_base → report_writing → completed; rounds/stages never regress."
+    >
+      <p>
+        Projection entry: <code>projectDeepResearchEvents</code>. Six event types:
+        <code>research_started</code> (first and unique) ·
+        <code>research_artifact_recorded</code> ·
+        <code>research_checklist_updated</code> ·
+        <code>research_step_recorded</code> ·
+        <code>research_checkpoint_recorded</code> ·
+        <code>research_completed</code>.
+      </p>
+      <p>
+        Run status <code>active | blocked | completed</code>; active stages
+        <code>knowledge_base | report_writing</code>. After completion, mutations are
+        <strong>rejected</strong> except exact tool-call-id replay (replay lookup precedes terminal
+        rejection).
+      </p>
+      <h3 class="subhead">Artifact roles and provenance</h3>
+      <div class="table-wrap" role="region" aria-label="artifact roles" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">role</th>
+              <th scope="col">Meaning</th>
+              <th scope="col">Source refs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>source</code></td>
+              <td>Archived primary material / inspectable locator</td>
+              <td>No parent required</td>
+            </tr>
+            <tr>
+              <td>
+                <code>evidence_note</code> / <code>outline</code> / <code>report_section</code> /
+                <code>report</code> / <code>handoff</code>
+              </td>
+              <td>Derived content</td>
+              <td>Must cite archived <code>source</code> artifact ids</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Five report section keys (completion gate): <code>conclusion</code> ·
+        <code>source_evidence</code> · <code>borrow_diverge_risk_gate</code> ·
+        <code>implementation_recommendations</code> · <code>verification</code>. Default checklist:
+        entrypoints / core_flow / boundaries / verification_evidence.
+      </p>
+    </Section>
+
+    <Section
+      id="tools"
+      label="DR · Tools"
+      title="Eight tools gated by root-session label"
+      lede="Only root sessions labeled mode:deep_research receive the tools; writes touch Maka-owned state only."
+    >
+      <ol class="plain-list">
+        <li><code>deep_research_start</code> — objective + scope (<code>quick|standard|deep</code>)</li>
+        <li><code>deep_research_save_artifact</code> — sources first, then derived with source_artifact_ids</li>
+        <li><code>deep_research_read_artifact</code> — chunked SHA-256 integrity-checked reads</li>
+        <li><code>deep_research_update_checklist</code> — status must match evidence/blocker fields</li>
+        <li><code>deep_research_record_step</code> — local_exploration / web_research with stop condition + inspected refs</li>
+        <li><code>deep_research_checkpoint</code> — resumable progress; monotonic round/stage</li>
+        <li><code>deep_research_status</code> — status first after restart, then selective reads</li>
+        <li><code>deep_research_complete</code> — seals sources + settled checklist + five sections + report + handoff</li>
+      </ol>
+      <p>
+        Permission profile remains <code>explore</code>: these tools are a narrow exception for
+        Maka-owned ledger/artifacts — <strong>not</strong> general filesystem Write. Child agents and
+        ordinary sessions do not receive them. Status/artifact text is secret-redacted and strips
+        forged workspace/artifact envelope tags.
+      </p>
+    </Section>
+
+    <Section
+      id="resume"
+      label="DR · Resume / Failure"
+      title="Project before append; corrupt ledgers fail closed"
+      lede="toolCallId idempotency; conflicting retries reject; missing artifact / hash mismatch reject read and complete."
+    >
+      <div class="table-wrap" role="region" aria-label="resume failures" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Situation</th>
+              <th scope="col">Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Process / context restart</td>
+              <td>Reproject JSONL → <code>deep_research_status</code> → read only needed chunks</td>
+            </tr>
+            <tr>
+              <td>Same toolCallId + same input</td>
+              <td>Return existing projection; no duplicate append</td>
+            </tr>
+            <tr>
+              <td>Same toolCallId + different input</td>
+              <td>Semantic conflict; reject</td>
+            </tr>
+            <tr>
+              <td>Projection invariant failure</td>
+              <td>Validate before append; ledger unchanged</td>
+            </tr>
+            <tr>
+              <td>Artifact created but event rejected</td>
+              <td>Roll back the new artifact</td>
+            </tr>
+            <tr>
+              <td>Corrupt JSONL</td>
+              <td>Fail closed; no partial run surface</td>
+            </tr>
+            <tr>
+              <td>Cross-session / deleted / hash mismatch</td>
+              <td>Reject read; complete re-checks sources/sections/report/handoff</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Defensive caps (not product targets): 2000 artifacts · 500 steps · 500 checkpoints · 50
+        checklist items · 200 inspected refs/step · 512k chars accepted · 64k chars per read ·
+        status lists newest 100 artifacts. schemaVersion = 1; no in-place migration in this slice.
+      </p>
+    </Section>
+
+    <Section
+      id="handoff"
+      label="DR · Handoff"
+      title="Completion does not flip permissions"
+      lede="Original session stays explore/read-only; continue-in-new-task seeds a normal unlabeled task."
+    >
+      <p>
+        Desktop: completion does not change the original permission mode. Continue-in-new-task:
+        (1) create a normal unlabeled task; (2) build a bounded prompt from structured handoff +
+        provenance; (3) <strong>fill the composer without sending</strong>; (4) ask the
+        implementation task to inspect code before edits. The user still owns the mode transition
+        and send gate.
+      </p>
+      <p>
+        Wiring: Desktop main/preload IPC · <code>use-deep-research-run.ts</code> ·
+        <code>packages/ui</code> chat-view progress. Generic Artifact Pane deletion is disabled for
+        ledger-owned artifacts so UI cannot silently invalidate a completed workspace.
+      </p>
+    </Section>
+
+    <Section
+      id="nongoals"
+      label="DR · Non-goals"
+      title="What this slice does not claim"
+      lede="Search providers, browser drivers, citation formatters, autonomous worker schedulers, ledger compaction / schema migration — separate seams."
+    >
+      <p>
+        The workspace <strong>records</strong> local/web substeps and worker run ids without silently
+        broadening their permissions. Bundled-skill “no invented evidence” remains at
+        <a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a> — complementary,
+        not substitutive.
+      </p>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

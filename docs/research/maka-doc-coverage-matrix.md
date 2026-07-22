@@ -1,10 +1,10 @@
 # Maka doc coverage matrix (atelier × maka-agent)
 
-**Date:** 2026-07-21
-**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3; supersedes closed [#34](https://github.com/tt-a1i/agent-atelier/issues/34) complacency reading)
-**Specimen:** `/Users/tushaokun/code/maka-agent`
-**Inventory:** **127** first-party `*.md` (excludes `node_modules` / `.git`)
-**Method:** regenerate find inventory → cross-check live chapters/guides/research → classify taught depth. **Silent `none`/`thin` forbidden** for design-encoding rows — use explicit disposition. Dig v3 additionally forbids **silent oos** for design-encoding skill bodies and **silent discard** when archive still teaches.
+**Date:** 2026-07-22  
+**Map:** [#91](https://github.com/tt-a1i/agent-atelier/issues/91) (dig v4; does not trust closed [#90](https://github.com/tt-a1i/agent-atelier/issues/90) / [#34](https://github.com/tt-a1i/agent-atelier/issues/34) without re-pull)  
+**Specimen:** `/Users/tushaokun/code/maka-agent` @ `7b2f80a303333bc804a39a5d631a9fc8a33631ef` (dig v3 baseline was `42461f2b`)  
+**Inventory:** **128** first-party `*.md` (excludes `node_modules` / `.git`)  
+**Method:** regenerate find inventory → diff vs dig v3 matrix → cross-check live chapters/guides → classify taught depth. **Silent `none`/`thin` forbidden**. Dig v4 additionally forbids trusting prior “deep” without spot-check against current source.
 
 ## Legend
 
@@ -15,37 +15,37 @@
 
 **Design-encoding** = every row whose `taught?` is **not** `discard`/`oos`.
 
-### #90 close gate (corpus dig v3)
+### #91 close gate (corpus dig v4)
 
-Close [#90](https://github.com/tt-a1i/agent-atelier/issues/90) **only if** every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub` — **never** silent `none`/`thin` — **and** bundled SKILL×29 have a readable Skills corpus teaching surface (not matrix-footnote oos).
+Close [#91](https://github.com/tt-a1i/agent-atelier/issues/91) **only if** fresh pull + inventory; every design-encoding row is `deep` | `cite-only` | `history-only` | `product-stub`; NEW docs/seams since dig v3 mined or dispositioned; ≥10 prior deep anchors spot-checked; Top seams not slogan-only.
 
-This gate is **not** “product Destination complete”. AHE Target controller / Phase3 reconciler remain **product stubs**; atelier teaches Current honesty (see `depth-corpus-status.md`). Do not invent Target to green a product Destination.
+This gate is **not** “product Destination complete”. AHE Target controller / Phase3 reconciler remain **product stubs** (re-confirmed absent at dig v4 HEAD); atelier teaches Current honesty (see `depth-corpus-status.md`).
 
-## Counts (corpus dig v3)
+## Counts (corpus dig v4)
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 89 | 70.1% |
+| deep | 90 | 70.3% |
 | cite-only | 5 | 3.9% |
-| history-only | 18 | 14.2% |
+| history-only | 18 | 14.1% |
 | product-stub | 0 | 0.0% |
 | discard | 6 | 4.7% |
-| oos | 9 | 7.1% |
-| **total** | **127** | **100%** |
+| oos | 9 | 7.0% |
+| **total** | **128** | **100%** |
 
-Legacy rollup (for trend): deep **89** · thin **0** · none **0**. Dig v2 had deep 57 / oos 38 (SKILL dump); dig v3 mines Skills corpus + elevates teaching archives.
+Legacy rollup: deep **90** · thin **0** · none **0**. Dig v3 was 127/deep 89; dig v4 +1 authority doc (`deep-research-durable-workspace.md`).
 
 ### Design-encoding debt still `none`/`thin` (honest)
 
-**Empty.** Design-encoding rows = **112** → all terminal dispositions.
+**Empty.** Design-encoding rows = **113** → all terminal dispositions.
 
 Product-stub honesty (Current deep + Target non-claim, not a separate taught class):
 - `docs/ahe-target-protocol.md` + `docs/architecture/ahe-self-iteration-boundary-draft*` — Target controller/runner/`validateMakaAheChangeEvaluation`
 - `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` — Phase3 reconciler
 
-**#90 gate:** MET this session — Skills corpus + elevated archives + Top-15+ seam deepenings (incl. `#execution-evidence` body, CU internals, desktop-ui queue/input, `/guides/cli`). Remaining true blockers for **product Destination** = AHE Target / Phase3 stubs only (not map blockers).
+**#91 gate:** MET this session — NEW Deep Research + Plan mode + sandbox diagnostics + harness ops; spot-check prior deep OK; `visual-smoke`→`e2e-fixture` rename fixed. Remaining true blockers for **product Destination** = AHE Target / Phase3 stubs only (not map blockers).
 
-## Full matrix (127)
+## Full matrix (128)
 
 | path | authority\|archive\|readme | taught? | atelier anchor | disposition / next |
 | --- | --- | --- | --- | --- |
@@ -93,14 +93,15 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/agent-swarm.md` | authority | deep | §04 #swarm + #swarm-failure | failure matrix shipped this pass |
 | `docs/expert-team-runtime.md` | authority | deep | §04 #swarm Expert Team | failure matrix shipped this pass |
 | `docs/ahe-target-protocol.md` | authority | deep | §06 validators/identity | deep on validators/identity; Target controller/runner/change-evaluation = product-stub — do not invent |
-| `docs/execution-evidence-spine.md` | authority | deep | §01 #execution-evidence | dig v3/#90 — body shipped (was dangling-link slogan) |
+| `docs/execution-evidence-spine.md` | authority | deep | §01 #execution-evidence | dig v3/#90 — body shipped (was dangling-link slogan); dig v4 spot-check OK |
+| `docs/deep-research-durable-workspace.md` | authority | deep | /guides/deep-research | **NEW dig v4/#91** — PR #1227 durable workspace; projection + eight tools + handoff |
 | `docs/session-task-ledger-lifecycle.md` | authority | deep | §04 #ledger | keep |
 | `docs/skill-catalog-policy.md` | authority | deep | §01 #skills + #skills-failure | failure matrix shipped this pass |
 | `docs/workspace-privacy-context.md` | authority | deep | /guides/security-privacy | failure stories this pass |
 | `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` | authority | deep | §01 #runtime-dual + #recovery/#t1-t2 | deep on sticky SQLITE + Phase2; Phase3 reconciler = product-stub Target — taught as non-claim |
 | `docs/codex-cursor-reverse-engineering.md` | authority | history-only | /guides/computer-use #cursor-contrast | external RE provenance; contrast mined (#88); not Runtime protocol |
-| `docs/frontend-css-governance.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 — governance that binds agent chrome |
-| `docs/frontend-css-governance.zh-CN.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86 |
+| `docs/frontend-css-governance.md` | authority | deep | /guides/desktop-ui #css-contracts | mined #86; dig v4 rename visual-smoke→e2e-fixture absorbed |
+| `docs/frontend-css-governance.zh-CN.md` | authority | deep | /guides/desktop-ui #css-contracts | same |
 | `docs/eval/terminal-bench-2.1-maka-vs-kimi-code-v11.md` | authority | cite-only | §04 #terminal-bench-read | cite-only how-to-read vs Harbor taxonomy (#89); no new protocol |
 | `docs/computer-use-foundation-contract.md` | authority | deep | /guides/computer-use #six | companion + package internals (#backend-selection etc.) dig v3 |
 | `docs/computer-use-model-loop-foundation.md` | authority | deep | /guides/computer-use #model-loop | companion failure matrix already live |
@@ -167,7 +168,7 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `docs/archive/voice-threat-model-pr-voice-0.md` | archive | history-only | — | snapshot; voice.ts owns Current |
 | `packages/runtime/README.md` | readme | cite-only | §01 entry / package seam | public-seam pointer; SessionManager/permission/recovery contracts taught in §01 + sandbox README |
 | `packages/runtime/src/sandbox/README.md` | readme | deep | §01 #sandbox | README lag caveat already taught |
-| `packages/headless/README.md` | readme | deep | §04 #harbor-trust + #harbor-failure | failure matrix this pass |
+| `packages/headless/README.md` | readme | deep | §04 #harbor-trust + #harbor-failure + #harness-ab-ops | dig v4 — TASK_IDS / xhigh / concurrency / vision |
 | `packages/ui/README.md` | readme | deep | /guides/desktop-ui #layers · #interaction-queue · #composer-input | mined #86; dig v3 queue/input contracts |
 | `notes/frontend-architecture-map-2026-07-19.md` | authority | deep | /guides/desktop-ui #boundaries | structure absorbed #86; R1–R8 campaign = history/process |
 | `.github/pull_request_template.md` | readme | oos | — | process template |
@@ -177,17 +178,19 @@ Product-stub honesty (Current deep + Target non-claim, not a separate taught cla
 | `skills/maka-architecture-docs/references/quality-gate.md` | readme | oos | — | meta OOS |
 | `skills/maka-architecture-docs/references/writing-standard.md` | readme | oos | — | meta OOS |
 
-## This pass decisions (dig v3 / #90)
+## This pass decisions (dig v4 / #91)
 
-1. **Fresh find = 127** — matches matrix; no missing/extra first-party md.
-2. **Bundled SKILL×29** reclassified `oos` → `deep` via `/guides/skills-corpus` (patterns from ALL bodies).
-3. Elevated archives with leftover teaching: composer-mentions · design-refinement D1–D4 · full-product PR five questions; ui-skills deep-reads → `history-only`.
-4. Desktop host deepened: `#skills-governance` + `#pr-five` from `skills.ts` / `managed-skill-sources.ts` + archive delivery contract.
-5. §01 `#skills` stub updated — no longer claims “bodies are not Destination.”
-6. **Seam re-audit (ruthless):** `#execution-evidence` was a dangling site-wide link with zero body — inventory “shipped” was false; body + phases table shipped CN+EN.
-7. **CU internals** beyond six-doc companion: `#backend-selection` · `#cua-driver-lifecycle` · `#snapshot-coordinates` · `#presentation-overlay`.
-8. **Desktop UI gaps:** `#interaction-queue` · `#composer-input` from `packages/ui`.
-9. **CLI companion** `/guides/cli` CN+EN — session-driver / runtime-bootstrap / inspect (was slogan-level package gap).
-10. Remaining `discard` = zero-teaching campaign/smoke/superseded CSS wave / stale capability audit.
-11. Remaining `oos` = changelog, license, smoke, PR template, meta architecture-docs writing skill.
-12. Product Destination still stub-gated (AHE Target / Phase3) — not invented; **does not block #90 corpus dig close**.
+1. **Fresh find = 128** — +1 vs dig v3: `docs/deep-research-durable-workspace.md` only NEW first-class md.
+2. **Do not trust dig v3 closure** — maka advanced `42461f2b → 7b2f80a3` (12 commits) with productized Deep Research + Plan mode + sandbox diagnostics.
+3. Mined `/guides/deep-research` CN+EN from authority doc + `deep-research-run` / tools / store + Desktop handoff.
+4. Mined `/guides/plan-mode` CN+EN from `collaboration` / `plan.ts` / plan-store / plan-mode / plan-tools / panel (no maka authority md — code+tests are authority).
+5. Deepened §01 `#sandbox-diagnostics` (diagnostics snapshot · run-trace projection · turn-tail · SandboxCommandError).
+6. Deepened §04 `#harness-ab-ops` (Codex `xhigh`, `MAKA_HARNESS_AB_TASK_IDS`, pair concurrency / arm execution, vision images).
+7. Spot-checked ≥10 prior deep anchors — protocol OK; hard fix `visual-smoke` → `e2e-fixture` on desktop-ui/host.
+8. AHE Target / Phase3 reconciler still absent — remain product-stub honesty.
+9. Remaining `discard` / `oos` dispositions unchanged in spirit.
+10. Product Destination still stub-gated — **does not block #91 corpus dig close**.
+
+### Dig v3 / #90 decisions (historical; superseded for closure claims)
+
+See git history of this file at dig v3 close. Skills corpus ×29, elevated archives, `#execution-evidence` body, CU internals, desktop-ui queue/input, `/guides/cli` remain live teaching — re-verified by dig v4 spot-check, not re-mined wholesale.

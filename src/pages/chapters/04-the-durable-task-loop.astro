@@ -578,6 +578,17 @@ cancelled → pending       only explicitReopen</pre>
       host 跑完整 TaskRun 控制器，把工具执行桥进任务容器，容器不安装 agent。续跑语义仍见
       <a href="#continue">#continue</a>——信任边界 ≠ resume 协议。
     </p>
+    <h3 id="harness-ab-ops" class="subhead">Harness A/B 运维面（dig v4）</h3>
+    <p>
+      信任协议仍是 fake-only + RealBackendIsolation；headless README 运维细节在 dig v4 加深：Codex A/B
+      profile 的 reasoning effort 现文为 <code>xhigh</code>（不是旧文 <code>max</code>）。可用
+      <code>MAKA_HARNESS_AB_TASK_IDS</code>（逗号分隔的冻结 Terminal-Bench 2.1 id）+ 显式
+      <code>MAKA_HARNESS_AB_RUN_ID</code> 跑可续跑子集；执行策略独立于 competitor profile——
+      <code>MAKA_HARNESS_AB_PAIR_CONCURRENCY</code>（1–4）与
+      <code>MAKA_HARNESS_AB_ARM_EXECUTION</code>（<code>sequential|parallel</code>），默认安全为单
+      pair + 顺序 arm；immutable manifest 冻结生效值，续跑时拒绝变更。隔离容器可向模型暴露 isolated
+      images（vision）——仍不把 host 凭证送进容器。
+    </p>
     <p>
       <code>classifyExternalHarborBenchmarkFailure</code> 区分：infra（应抛 / 非零）·
       agent_incomplete（计分数据，不抛）· budget_exhausted（预算耗尽，不抛）。Agent 验证失败是合法

@@ -1,0 +1,269 @@
+---
+import ReportLayout from "../../../layouts/ReportLayout.astro";
+import Section from "../../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../../lib/chapters";
+import { chrome, localePath } from "../../../lib/i18n";
+
+const locale = "en" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/plan-mode");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="Plan collaboration mode · Agent Atelier"
+  description="CollaborationMode plan|agent: tool-surface shaping, proposal/approve/execution ledger, interrupt replan — not a TODO-list skin."
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v4 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Plan collaboration 模式</span>
+        <span class="masthead__title-en">Plan collaboration mode</span>
+      </h1>
+      <p class="masthead__sub">
+        Specimens: <code>packages/core/src/collaboration.ts</code> · <code>plan.ts</code> ·
+        <code>packages/storage/src/plan-store.ts</code> ·
+        <code>packages/runtime/src/plan-mode.ts</code> · <code>plan-tools.ts</code> · Desktop
+        <code>plan-mode-panel.tsx</code>. When docs disagree, <strong>code + contract tests win</strong>.
+        PR #1305.
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/plan-mode</span>
+        <span>Map · #91</span>
+        <span>
+          <a href={localePath("zh", "guides/plan-mode")}>中文</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Plan · Scene"
+      title="Plan ≠ Agent; no side effects before approval"
+      lede="CollaborationMode is a session collaboration stance, not another TaskRun type."
+    >
+      <p>
+        <code>COLLABORATION_MODES = ['agent', 'plan']</code>. Plan mode inspects the repo, discusses
+        tradeoffs, and submits a proposal — <strong>no</strong> file writes, side effects, or
+        subagents. After approval, the agent execution surface returns with
+        <code>&lt;plan_execution_context&gt;</code>. Unlike
+        <a href={localePath(locale, "guides/deep-research")}>/guides/deep-research</a>, Plan is a
+        same-session collaboration gate + <code>plan-events.jsonl</code>, not an independent research
+        workspace.
+      </p>
+    </Section>
+
+    <Section
+      id="tool-surface"
+      label="Plan · Tool surface"
+      title="selectCollaborationTools: reads open, writes closed"
+      lede="Plan keeps Read/web_read + AskUserQuestion + SubmitPlan. Agent+active execution keeps update_plan/cancel_plan; drops SubmitPlan and subagents."
+    >
+      <div class="table-wrap" role="region" aria-label="tool surface" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Mode</th>
+              <th scope="col">Kept</th>
+              <th scope="col">Removed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>plan</code></th>
+              <td>
+                category <code>read</code> / <code>web_read</code>, <code>AskUserQuestion</code>,
+                <code>SubmitPlan</code>
+              </td>
+              <td>
+                Write-like tools, <code>update_plan</code>/<code>cancel_plan</code>, subagents
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agent</code>, no active execution</th>
+              <td>Normal tool surface</td>
+              <td><code>SubmitPlan</code></td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agent</code> + active execution</th>
+              <td><code>update_plan</code> / <code>cancel_plan</code> + implementation tools</td>
+              <td><code>SubmitPlan</code>; <code>categoryHint: subagent</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Classification uses <code>classifyToolUse</code> (<code>@maka/core/permission</code>), not a
+        hard-coded name whitelist (except SubmitPlan / AskUserQuestion / plan controls).
+        <code>renderPlanModePrompt</code> requires plain-text step titles (≤30) and descriptions —
+        no Markdown — and forbids claiming implementation has started.
+      </p>
+    </Section>
+
+    <Section
+      id="ledger"
+      label="Plan · Ledger"
+      title="Proposal → approve → execution with storeVersion CAS"
+      lede="sessions/&lt;id&gt;/plan-events.jsonl; conflicts throw PlanConflictError."
+    >
+      <p>Event family:</p>
+      <ul class="plain-list">
+        <li><code>plan_submitted</code> — pending_approval; blocked while an execution is active</li>
+        <li><code>plan_revision_requested</code> / <code>plan_abandoned</code> — latest pending only</li>
+        <li>
+          <code>plan_approved</code> — creates active execution (all steps pending); revision /
+          optional storeVersion must match; exact approve replay is idempotent
+        </li>
+        <li>
+          <code>plan_progress_updated</code> — full step set; <strong>at most one</strong>
+          <code>in_progress</code>; all completed|skipped → <code>plan_execution_completed</code>
+        </li>
+        <li><code>plan_execution_cancelled</code> — explicit user abandon</li>
+        <li>
+          <code>plan_execution_interrupted</code> / <code>plan_execution_resumed</code> — interrupt
+          enables replan
+        </li>
+      </ul>
+      <p>
+        Proposal statuses: <code>pending_approval | stale | approved</code>. Revising the latest
+        bumps <code>revision</code>, sets <code>supersedesProposalId</code>, keeps
+        <code>planId</code>; prior pending becomes stale. Execution statuses:
+        <code>active | completed | cancelled | interrupted</code>.
+      </p>
+      <p>
+        Interrupt replan: only an <code>interrupted</code> execution may be
+        <code>sourceExecutionId</code>; on approve it must still be interrupted.
+        <code>renderInterruptedPlanContext</code> reminds Plan mode not to resume or edit files.
+      </p>
+    </Section>
+
+    <Section
+      id="tools"
+      label="Plan · Tools"
+      title="SubmitPlan / update_plan / cancel_plan"
+      lede="Zod rejects Markdown in step fields; updates must include every step."
+    >
+      <div class="table-wrap" role="region" aria-label="plan tools" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">Tool</th>
+              <th scope="col">Contract</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>SubmitPlan</code></td>
+              <td>
+                title + steps[1..50] (plain title ≤30, plain description) + optional overview/risks;
+                ends the planning turn — call only when ready
+              </td>
+            </tr>
+            <tr>
+              <td><code>update_plan</code></td>
+              <td>
+                Bound to executionId; include every step status; ≤1 in_progress; all terminal →
+                completed projection
+              </td>
+            </tr>
+            <tr>
+              <td><code>cancel_plan</code></td>
+              <td>Cancel active execution when the user explicitly abandons; reason required</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        During execution, <code>renderPlanExecutionPrompt</code> requires marking the first actionable
+        step in_progress before implementation, updating immediately after each step, and closing
+        finished/skipped before the final reply — no subagent delegation while active.
+      </p>
+    </Section>
+
+    <Section
+      id="desktop"
+      label="Plan · Desktop"
+      title="Supervision projection, not a second ledger"
+      lede="plan-mode-panel renders proposals/steps; approve goes through PlanStore with revision CAS."
+    >
+      <p>
+        Panel/style contracts are pinned by Desktop tests (new-chat / panel-style). IPC exposes store
+        projections and human controls (approve / request revision / abandon) — not a model-private
+        second state machine. Cross-cut:
+        <a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a> ·
+        <a href={`${ch01}#park-remember`}>§01 · #park-remember</a> ·
+        <a href={`${ch04}#ledger`}>§04 · #ledger</a> (Plan ledger ≠ Task Ledger).
+      </p>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Plan · Boundaries"
+      title="Not create-plan skill, not Deep Research"
+      lede="Three layers, three truths."
+    >
+      <ul class="plain-list">
+        <li><strong>This page</strong> — CollaborationMode + PlanStore protocol.</li>
+        <li>
+          <strong
+            ><a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a> ·
+            create-plan</strong
+          >
+          — bundled skill writing contract; does not own approve/CAS.
+        </li>
+        <li>
+          <strong
+            ><a href={localePath(locale, "guides/deep-research")}>/guides/deep-research</a></strong
+          >
+          — independent research workspace with explore-narrow writes; completion handoff opens a
+          new implementation task.
+        </li>
+      </ul>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

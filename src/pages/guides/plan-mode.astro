@@ -1,0 +1,265 @@
+---
+import ReportLayout from "../../layouts/ReportLayout.astro";
+import Section from "../../components/Section.astro";
+import { chapterHref, chapterNavItems } from "../../lib/chapters";
+import { chrome, localePath } from "../../lib/i18n";
+
+const locale = "zh" as const;
+const nav = chapterNavItems(locale);
+const t = chrome(locale);
+const selfHref = localePath(locale, "guides/plan-mode");
+const ch01 = chapterHref("01-log-is-the-runtime", locale);
+const ch04 = chapterHref("04-the-durable-task-loop", locale);
+---
+
+<ReportLayout
+  title="Plan collaboration 模式 · Agent Atelier"
+  description="CollaborationMode plan|agent：工具面裁剪、提案/批准/执行账本、中断重规划——不是 TODO 列表皮肤。"
+  nav={nav}
+  activeHref={selfHref}
+  locale={locale}
+>
+  <article class="report">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Companion guide · Specimen: maka-agent · dig v4 · {t.doneLabel}</p>
+      <h1>
+        <span class="masthead__title-zh">Plan collaboration 模式</span>
+        <span class="masthead__title-en">Plan collaboration mode</span>
+      </h1>
+      <p class="masthead__sub">
+        标本：<code>packages/core/src/collaboration.ts</code> · <code>plan.ts</code> ·
+        <code>packages/storage/src/plan-store.ts</code> ·
+        <code>packages/runtime/src/plan-mode.ts</code> · <code>plan-tools.ts</code> · Desktop
+        <code>plan-mode-panel.tsx</code>。权威冲突时 <strong>code + contract tests 胜出</strong>。PR
+        #1305。
+      </p>
+      <div class="masthead__meta">
+        <span>Home · /guides/plan-mode</span>
+        <span>Map · #91</span>
+        <span>
+          <a href={localePath("en", "guides/plan-mode")}>EN</a>
+        </span>
+      </div>
+    </header>
+
+    <Section
+      id="scene"
+      label="Plan · Scene"
+      title="Plan ≠ Agent；批准前禁止副作用"
+      lede="CollaborationMode 是 session 级协作姿态，不是又一个 TaskRun 类型。"
+    >
+      <p>
+        <code>COLLABORATION_MODES = ['agent', 'plan']</code>。Plan 模式只检仓库、谈取舍、提交提案；
+        <strong>不</strong>改文件、不跑副作用、不启 subagent。批准后切回 agent 执行面，并注入
+        <code>&lt;plan_execution_context&gt;</code>。与
+        <a href={localePath(locale, "guides/deep-research")}>/guides/deep-research</a> 不同：Deep
+        Research 是独立研究账本 + explore 窄写；Plan 是同一会话上的协作闸门 +
+        <code>plan-events.jsonl</code>。
+      </p>
+    </Section>
+
+    <Section
+      id="tool-surface"
+      label="Plan · Tool surface"
+      title="selectCollaborationTools：读开放，写关闭"
+      lede="Plan：Read/web_read + AskUserQuestion + SubmitPlan。Agent+active execution：update_plan/cancel_plan；禁 SubmitPlan 与 subagent。"
+    >
+      <div class="table-wrap" role="region" aria-label="tool surface" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">模式</th>
+              <th scope="col">保留</th>
+              <th scope="col">剔除</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>plan</code></th>
+              <td>
+                category <code>read</code> / <code>web_read</code>、<code>AskUserQuestion</code>、
+                <code>SubmitPlan</code>
+              </td>
+              <td>
+                Write 等副作用、<code>update_plan</code>/<code>cancel_plan</code>、subagent（含
+                ExploreAgent）
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agent</code> + 无活跃执行</th>
+              <td>普通工具面</td>
+              <td><code>SubmitPlan</code></td>
+            </tr>
+            <tr>
+              <th scope="row"><code>agent</code> + active execution</th>
+              <td><code>update_plan</code> / <code>cancel_plan</code> + 实现工具</td>
+              <td><code>SubmitPlan</code>；<code>categoryHint: subagent</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        分类经 <code>classifyToolUse</code>（<code>@maka/core/permission</code>），不是工具名硬编码白名单（除
+        SubmitPlan / AskUserQuestion / plan controls）。提示词
+        <code>renderPlanModePrompt</code> 明确：plain-text step title（≤30）与 description，禁止
+        Markdown；不得宣称实现已开始。
+      </p>
+    </Section>
+
+    <Section
+      id="ledger"
+      label="Plan · Ledger"
+      title="提案 → 批准 → 执行：storeVersion CAS"
+      lede="sessions/&lt;id&gt;/plan-events.jsonl；冲突抛 PlanConflictError。"
+    >
+      <p>事件族：</p>
+      <ul class="plain-list">
+        <li><code>plan_submitted</code> — pending_approval；有活跃执行时禁止提交</li>
+        <li><code>plan_revision_requested</code> / <code>plan_abandoned</code> — 仅 latest pending</li>
+        <li>
+          <code>plan_approved</code> — 创建 active execution（全步 pending）；revision /
+          optional storeVersion 必须匹配；已批准精确重放幂等
+        </li>
+        <li>
+          <code>plan_progress_updated</code> — 全量 steps；<strong>至多一个</strong>
+          <code>in_progress</code>；全部 completed|skipped → <code>plan_execution_completed</code>
+        </li>
+        <li><code>plan_execution_cancelled</code> — 用户显式放弃</li>
+        <li>
+          <code>plan_execution_interrupted</code> / <code>plan_execution_resumed</code> — 中断可重规划
+        </li>
+      </ul>
+      <p>
+        提案状态：<code>pending_approval | stale | approved</code>。新提交若修订 latest，则
+        <code>revision++</code>、<code>supersedesProposalId</code>、共享 <code>planId</code>；旧
+        pending 变 stale。执行状态：
+        <code>active | completed | cancelled | interrupted</code>。
+      </p>
+      <p>
+        中断重规划：仅 <code>interrupted</code> 执行可作 <code>sourceExecutionId</code>；批准新提案时源执行须仍为
+        interrupted；注入 <code>renderInterruptedPlanContext</code>——Plan 模式仍禁恢复执行与改文件。
+      </p>
+    </Section>
+
+    <Section
+      id="tools"
+      label="Plan · Tools"
+      title="SubmitPlan / update_plan / cancel_plan"
+      lede="Zod 拒绝 Markdown step 字段；update 必须带齐每一步。"
+    >
+      <div class="table-wrap" role="region" aria-label="plan tools" tabindex="0">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th scope="col">工具</th>
+              <th scope="col">合同</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>SubmitPlan</code></td>
+              <td>
+                title + steps[1..50]（title plain ≤30、description plain）+ optional overview/risks；结束规划
+                turn——就绪才调用
+              </td>
+            </tr>
+            <tr>
+              <td><code>update_plan</code></td>
+              <td>
+                绑定 executionId；包含每个 step 的 status；最多一个 in_progress；全部终态则投影 completed
+              </td>
+            </tr>
+            <tr>
+              <td><code>cancel_plan</code></td>
+              <td>用户明确放弃时取消活跃执行；reason 必填</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        执行期 system 注入 <code>renderPlanExecutionPrompt</code>：先把第一步标
+        in_progress，步完立即 update，终答前关闭所有 finished/skipped；活跃执行期间禁止委派 subagent。
+      </p>
+    </Section>
+
+    <Section
+      id="desktop"
+      label="Plan · Desktop"
+      title="监督面投影，不是第二套账本"
+      lede="plan-mode-panel 渲染提案/步骤；批准走 PlanStore approve（revision CAS）。"
+    >
+      <p>
+        面板与样式合同由 Desktop contract tests 钉住（new-chat / panel-style）。IPC 暴露的是 store
+        投影与人控动作（approve / request revision / abandon），不是模型私写第二条状态机。交叉：
+        <a href={localePath(locale, "guides/desktop-ui")}>/guides/desktop-ui</a> ·
+        <a href={`${ch01}#park-remember`}>§01 · #park-remember</a>（AskUserQuestion 仍走权限/交互队列）·
+        <a href={`${ch04}#ledger`}>§04 · #ledger</a>（Plan ledger ≠ Task Ledger）。
+      </p>
+    </Section>
+
+    <Section
+      id="boundaries"
+      label="Plan · Boundaries"
+      title="不是 create-plan skill，也不是 Deep Research"
+      lede="三层各有一份真相。"
+    >
+      <ul class="plain-list">
+        <li>
+          <strong>本页</strong> — CollaborationMode + PlanStore 协议。
+        </li>
+        <li>
+          <strong
+            ><a href={localePath(locale, "guides/skills-corpus")}>/guides/skills-corpus</a> ·
+            create-plan</strong
+          >
+          — bundled skill 写作契约（如何写计划文），不拥有 approve/CAS。
+        </li>
+        <li>
+          <strong
+            ><a href={localePath(locale, "guides/deep-research")}>/guides/deep-research</a></strong
+          >
+          — 独立研究工作区与 explore 窄写；完成 handoff 另开实现任务。
+        </li>
+      </ul>
+    </Section>
+  </article>
+</ReportLayout>
+
+<style>
+  .subhead {
+    margin: 1.25rem 0 0.5rem;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    max-width: 40em;
+  }
+  .plain-list {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.2rem;
+    max-width: 42em;
+  }
+  .plain-list li {
+    margin-bottom: 0.45rem;
+  }
+  .table-wrap {
+    margin: 1rem 0 1.25rem;
+    max-width: 46em;
+    overflow-x: auto;
+  }
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--hair);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .proto-table thead th {
+    background: var(--soft);
+    font-weight: 600;
+  }
+</style>

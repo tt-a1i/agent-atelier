@@ -612,6 +612,19 @@ cancelled → pending       only explicitReopen</pre>
       tool execution into the task container (container installs nothing). Resume semantics remain in
       <a href="#continue">#continue</a> — trust boundary ≠ resume protocol.
     </p>
+    <h3 id="harness-ab-ops" class="subhead">Harness A/B ops surface (dig v4)</h3>
+    <p>
+      Trust protocol remains fake-only + RealBackendIsolation; dig v4 deepens headless README ops: Codex
+      A/B profile reasoning effort is now <code>xhigh</code> (not legacy <code>max</code>). Use
+      <code>MAKA_HARNESS_AB_TASK_IDS</code> (comma-separated frozen Terminal-Bench 2.1 ids) with an
+      explicit <code>MAKA_HARNESS_AB_RUN_ID</code> for a resumable subset. Execution policy is
+      independent of the competitor profile —
+      <code>MAKA_HARNESS_AB_PAIR_CONCURRENCY</code> (1–4) and
+      <code>MAKA_HARNESS_AB_ARM_EXECUTION</code> (<code>sequential|parallel</code>), defaulting safely
+      to one pair + sequential arms; the immutable manifest freezes effective values and rejects
+      changes on resume. Isolated containers may expose images to model vision — still without host
+      credentials.
+    </p>
     <p>
       <code>classifyExternalHarborBenchmarkFailure</code> separates infra (should throw / non-zero),
       agent_incomplete (scored data, no throw), and budget_exhausted (no throw). Failed verification is

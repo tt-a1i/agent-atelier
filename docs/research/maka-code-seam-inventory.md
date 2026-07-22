@@ -1,9 +1,9 @@
-# Maka code-seam inventory (atelier depth map #34)
+# Maka code-seam inventory (atelier depth map)
 
-**Date:** 2026-07-21  
-**Specimen root:** `/Users/tushaokun/code/maka-agent`  
-**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3; precursor [#34](https://github.com/tt-a1i/agent-atelier/issues/34))  
-**Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Do not duplicate the corpus plan’s bucket counts; link it.
+**Date:** 2026-07-22  
+**Specimen root:** `/Users/tushaokun/code/maka-agent` @ `7b2f80a3`  
+**Map:** [#91](https://github.com/tt-a1i/agent-atelier/issues/91) (dig v4; precursors [#90](https://github.com/tt-a1i/agent-atelier/issues/90) · [#34](https://github.com/tt-a1i/agent-atelier/issues/34))  
+**Companion:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) — corpus classification + priority queue. **This file** goes one layer deeper: Top 15 seams ranked from **source + tests** (docs secondary). Dig v4 adds product seams that did not exist at dig v3 HEAD.
 
 ## Method
 
@@ -107,26 +107,29 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | — | ContextBudgetPolicy two-plane DSL | §03 `#budget-dsl` | `context-budget*.ts` · `composePrepareStep` | **shipped** · outline `context-budget-policy-pipeline-deep-outline.md` · [#74](https://github.com/tt-a1i/agent-atelier/issues/74) |
 | — | Semantic compact failedOpen / privacy / savings | §03 `#semantic-gates` | `semantic-compact.ts` | **shipped** · outline `semantic-compact-gates-deep-outline.md` · [#75](https://github.com/tt-a1i/agent-atelier/issues/75) |
 | — | Permission park/remember vs escalation one-shot | §01 `#park-remember` | `permission-engine.ts` · `sandbox-escalation.ts` | **shipped** · outline `permission-park-remember-escalation-deep-outline.md` · [#76](https://github.com/tt-a1i/agent-atelier/issues/76) |
-| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap | §01 `#sandbox` | `permission-profile.ts` · `sandbox/**` | **deep** (no separate `/guides/sandbox`) |
+| 6 | Sandbox PermissionProfile↔Seatbelt/bwrap + diagnostics | §01 `#sandbox` · `#sandbox-diagnostics` | `permission-profile.ts` · `sandbox/**` · `diagnostics.ts` · `errors.ts` · `sandbox-context-prompt.ts` | **deep** dig v4/#91 — diagnostics/turn-tail/structured errors |
 | 7 | Session task ledger ≠ TaskRun | §04 identity | `task-ledger.ts` · `session-task-ledger-lifecycle.md` | **shipped** `#ledger` |
-| 8 | Execution evidence spine | §01 `#execution-evidence` (+ cross-cut §02/04/05/06) | `execution-evidence.ts` · `execution-evidence-spine.md` | **deep** dig v3/#90 — was dangling-link slogan; body shipped |
+| 8 | Execution evidence spine | §01 `#execution-evidence` (+ cross-cut §02/04/05/06) | `execution-evidence.ts` · `execution-evidence-spine.md` | **deep** dig v3; dig v4 spot-check OK |
 | 9 | MCP runtime | companion | `mcp-tools.ts` · mcp package | **shipped** `#mcp` |
-| 10 | Computer-use foundation + package internals | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **deep** dig v3/#90 — `#backend-selection` · `#cua-driver-lifecycle` · `#snapshot-coordinates` · `#presentation-overlay` |
+| 10 | Computer-use foundation + package internals | `/guides/computer-use` | `packages/computer-use` + 6 CU docs | **deep** dig v3; dig v4 spot-check OK |
 | 11 | Swarm + expert team | companion / §04 | `bounded-swarm.ts` · swarm/team/expert tools | **shipped** `#swarm` |
 | 12 | Shell / PTY / workspace executor | §01/§02 | `shell-run-manager.ts` · `pty-*.ts` | shipped §02 `#shell-side-effects` |
 | 12b | Filesystem worker / path containment | §02 | `filesystem-worker/**` · `path-containment.ts` | shipped §02 `#filesystem-worker` |
 | 12c | Desktop main composition | `/guides/desktop-host` | `apps/desktop/src/main/**` | shipped companion |
-| 12d | Desktop UI supervision contracts | `/guides/desktop-ui` | `packages/ui` interaction-queue · chat-input-behavior · composer | **deep** dig v3/#90 — `#interaction-queue` · `#composer-input` + prior streaming/mentions |
-| 12e | CLI session / bootstrap / inspect | `/guides/cli` | `packages/cli` session-driver · runtime-bootstrap · inspect-command | **deep** dig v3/#90 — new companion |
+| 12d | Desktop UI supervision contracts | `/guides/desktop-ui` | `packages/ui` interaction-queue · chat-input-behavior · composer | **deep** dig v3; dig v4 e2e-fixture rename |
+| 12e | CLI session / bootstrap / inspect | `/guides/cli` | `packages/cli` session-driver · runtime-bootstrap · inspect-command | **deep** dig v3; dig v4 spot-check OK |
+| 12f | Deep Research durable workspace | `/guides/deep-research` | `deep-research-run.ts` · `deep-research-tools.ts` · `deep-research-store.ts` · Desktop IPC/UI | **NEW deep** dig v4/#91 — PR #1227 |
+| 12g | Plan collaboration mode | `/guides/plan-mode` | `collaboration.ts` · `plan.ts` · `plan-store.ts` · `plan-mode.ts` · `plan-tools.ts` · `plan-mode-panel.tsx` | **NEW deep** dig v4/#91 — PR #1305 |
 | 13 | Storage ledgers (JSONL+SQLite) | §01 stores | `sqlite-runtime-store.ts` · write-queue | **deep** (#81) |
-| 14 | Skill catalog policy + bundled corpus | §01 `#skills` + `/guides/skills-corpus` | runtime `skills.ts` · desktop `skills.ts` / `managed-skill-sources.ts` · SKILL×29 | **deep** dig v3/#90 — mechanism + cross-body contracts |
-| 15 | Headless trust / Harbor | §04 | headless README + Harbor bridge | **shipped** `#harbor-trust` |
+| 14 | Skill catalog policy + bundled corpus | §01 `#skills` + `/guides/skills-corpus` | runtime `skills.ts` · desktop `skills.ts` / `managed-skill-sources.ts` · SKILL×29 | **deep** dig v3; dig v4 spot-check ×29 OK |
+| 15 | Headless trust / Harbor / harness A/B ops | §04 `#harbor-trust` · `#harness-ab-ops` | headless README + Harbor bridge + harness-ab-* | **deep** dig v4 — TASK_IDS / xhigh / concurrency |
 | — | Usage / cost telemetry dual-store | §01 `#usage-stores` | `telemetry/*` · `usage-stats-store.ts` · capture | **deep** (#81) |
 | — | Runtime-host four-op gateway | §01 `#runtime-host` | `HOST_OPERATION_SPECS` · dependency-boundary | **deep** (#81) |
 | — | AgentRunRecovery vs RuntimeRecovery | §01 `#agent-run-recovery` | `agent-run-recovery.ts` | **shipped** |
 | — | Autonomous budget × projection | §04 `#budget` | `autonomous-agent-loop.ts` | **shipped** |
 | — | Heavy-task gate triad | §05 `#repair` | `heavy-task-self-check-gate.ts` | **shipped** |
-| — | AHE scoreAuthority + forbidden patch | §06 | `ahe-evidence-export.ts` · protocol | **shipped** |
+| — | AHE scoreAuthority + forbidden patch | §06 | `ahe-evidence-export.ts` · protocol | **shipped** (Target controller still stub) |
+| — | e2e-fixture (ex visual-smoke) | process / desktop contracts | `e2e-fixture.ts` · desktop e2e-fixture/** | **oos/process** — rename fixed on site; not Destination protocol |
 
 ---
 
@@ -139,6 +142,7 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | `docs/archive/runtime-resume-phase1-safe-boundary-contract.md` | Continuation gate + feature flag |
 | `docs/runtime-resume-tool-journal-design-draft.zh-CN.md` (and/or architecture sibling) | Journal as projection |
 | `docs/execution-evidence-spine.md` | Cross-ledger refs (current) |
+| `docs/deep-research-durable-workspace.md` | Deep Research workspace authority (current; dig v4) |
 | `docs/session-task-ledger-lifecycle.md` | Ledger ≠ TaskRun (current) |
 | Archive teaching manuals | `runtime-mainline-teaching-manual.md` · `runtime-kernel.md` · `runtime-v2-architecture-evolution.md` · cost design — harvest **deltas** vs Current §01 only |
 
@@ -162,9 +166,11 @@ Dispatch never depends on advertisement visibility. `toolSchemaHash` over **acti
 | `shell-run-manager.ts` / pty | 12 | §01/§02 |
 | `packages/ui` interaction-queue / chat-input | 12d | `/guides/desktop-ui` |
 | `packages/cli` session-driver / inspect | 12e | `/guides/cli` |
+| `deep-research-*.ts` + Desktop DR wiring | 12f | `/guides/deep-research` |
+| `plan*.ts` / `collaboration.ts` / plan-mode-panel | 12g | `/guides/plan-mode` |
 | storage write-queue / jsonl | 13 | §01 stores |
 | skills / skill-invocation | 14 | §01 + `/guides/skills-corpus` |
-| `packages/headless/**` | 15 | §04 |
+| `packages/headless/**` | 15 | §04 `#harbor-trust` · `#harness-ab-ops` |
 
 ---
 

@@ -1,89 +1,91 @@
 # Corpus depth status (honest)
 
-**Date:** 2026-07-21  
-**Map:** [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3) · closed precursor [#34](https://github.com/tt-a1i/agent-atelier/issues/34)  
+**Date:** 2026-07-22  
+**Map:** [#91](https://github.com/tt-a1i/agent-atelier/issues/91) (dig v4) · closed precursors [#90](https://github.com/tt-a1i/agent-atelier/issues/90) (dig v3) · [#34](https://github.com/tt-a1i/agent-atelier/issues/34) (dig v2)  
 **Against:** [`maka-corpus-mine-plan.md`](./maka-corpus-mine-plan.md) · [`maka-code-seam-inventory.md`](./maka-code-seam-inventory.md) · [`maka-doc-coverage-matrix.md`](./maka-doc-coverage-matrix.md) · [`skills-corpus-mine-outline.md`](./skills-corpus-mine-outline.md)  
 **Live:** https://tt-a1i.github.io/agent-atelier/
 
+## Specimen baseline (dig v4)
+
+| Field | Value |
+| --- | --- |
+| Specimen | `/Users/tushaokun/code/maka-agent` |
+| Dig v3 HEAD (do not trust closure) | `42461f2b261da71ab2551a86d9c15bd64896d13c` |
+| Dig v4 HEAD after `fetch` + `pull --ff-only` | `7b2f80a303333bc804a39a5d631a9fc8a33631ef` |
+| Pull | ff-only ok (`42461f2b..7b2f80a3`, 12 commits); tracked tree clean; untracked local `docs/maka-architecture.*` ignored |
+
 ## Verdict
 
-**Corpus dig v3 gate MET for map #90.** Product Destination remains stub-gated — do not equate map close with Target invention.
+**Corpus dig v4 gate MET for map #91** — after fresh pull, inventory delta, mining NEW seams, and spot-checking ≥10 prior “deep” anchors. Product Destination remains stub-gated — do not equate map close with Target invention.
 
-Dig v2 closed #34 while parking SKILL×29 as `oos` and leaving archive teaching as matrix footnotes. Dig v3 mines Skills corpus, elevates leftover archives, and re-audits Top-15+ seams against live anchors — including a previously **dangling** `#execution-evidence` link that inventory falsely called shipped.
+Dig v3/#90 closed while maka HEAD sat at `42461f2b`. User rejected complacent “already done” without re-pull proof. Dig v4 found **real product seams absent from dig v3 teaching**: durable Deep Research workspace, Plan collaboration mode, sandbox diagnostics/errors/context prompt, headless harness ops deltas, and `visual-smoke`→`e2e-fixture` rename drift on site.
 
-## Destination gate vs #90 close gate
+## Destination gate vs #91 close gate
 
 | Gate | Question | Criteria | Result |
 | --- | --- | --- | --- |
-| **#90 / corpus dig v3** | Can the map close? | Every design-encoding matrix row is `deep` \| `cite-only` \| `history-only` \| `product-stub`; bundled SKILL×29 have a readable Skills corpus teaching surface; elevated archives that still teach; Top-15+ seams protocol-deep (no slogan / dangling anchors). | **MET** |
-| **Product Destination** | Is Maka’s Target surface Current? | AHE controller / runner / `validateMakaAheChangeEvaluation` + tool-journal Phase3 reconciler exist as product Current. | **NOT MET** — product stubs |
+| **#91 / corpus dig v4** | Can the map close? | Fresh pull + inventory; every design-encoding matrix row `deep` \| `cite-only` \| `history-only` \| `product-stub` \| explicit `discard`/`oos`; NEW docs/seams mined or dispositioned; ≥10 prior deep anchors spot-checked; Top seams not slogan-only. | **MET** |
+| **Product Destination** | Is Maka’s Target surface Current? | AHE controller / runner / `validateMakaAheChangeEvaluation` + tool-journal Phase3 reconciler exist as product Current. | **NOT MET** — product stubs (re-confirmed: symbols still absent) |
 
-## What dig v3 mined
+## 中文状态：NEW / shallow → mined
+
+| 类别 | 内容 | 处置 |
+| --- | --- | --- |
+| **NEW 文档** | `docs/deep-research-durable-workspace.md` | **deep** → `/guides/deep-research` CN+EN |
+| **NEW 代码 seam** | Deep Research run/tools/store + Desktop progress/handoff | **deep** → 同上 |
+| **NEW 代码 seam** | Plan `collaboration` / `plan.ts` / plan-store / plan-mode / plan-tools / panel | **deep** → `/guides/plan-mode` CN+EN |
+| **NEW 代码 seam** | Sandbox `diagnostics` / `errors` / `sandbox-context-prompt` | **deep** → §01 `#sandbox-diagnostics` CN+EN |
+| **Changed ops** | Headless harness TASK_IDS / pair concurrency / Codex `xhigh` / vision images | **deep** → §04 `#harness-ab-ops` |
+| **Rename drift** | site still said `visual-smoke` | **fixed** → `e2e-fixture` (desktop-ui / desktop-host CN+EN) |
+| **Spot-check OK** | recovery/T1T2 · execution-evidence · sandbox select · skills · active/stale · mid-turn · capacity · CU · interaction-queue · composer · CLI · skills×29 · AHE/Phase3 stubs | no protocol DRIFT |
+| **仍 stub** | AHE Target controller / Phase3 reconciler | 诚实非宣称 — 未发明 |
+
+## What dig v4 mined
 
 | Deliverable | Anchor |
 | --- | --- |
-| Skills corpus companion (CN+EN) | `/guides/skills-corpus` — patterns from **all 29** bodies |
-| Research outline | `docs/research/skills-corpus-mine-outline.md` |
-| Desktop skills governance | `/guides/desktop-host#skills-governance` |
-| PR five questions elevation | `/guides/desktop-host#pr-five` |
-| Composer mentions | `/guides/desktop-ui#composer-mentions` |
-| Motion/spacing D1–D4 | `/guides/desktop-ui#motion-spacing` |
-| Interaction queue + composer input | `/guides/desktop-ui#interaction-queue` · `#composer-input` |
-| §01 `#skills` stub rewrite | points at Skills corpus + host governance |
-| §01 `#execution-evidence` body | was dangling-link slogan; protocol + phases shipped |
-| CU package internals | `/guides/computer-use#backend-selection` · `#cua-driver-lifecycle` · `#snapshot-coordinates` · `#presentation-overlay` |
-| CLI companion (CN+EN) | `/guides/cli` — session-driver / bootstrap / inspect |
-| Matrix honesty | deep **89** · cite-only **5** · history-only **18** · discard **6** · oos **9** |
+| Deep Research companion (CN+EN) | `/guides/deep-research` — authority split · lifecycle · eight tools · resume/fail-closed · handoff |
+| Plan collaboration companion (CN+EN) | `/guides/plan-mode` — tool surface · ledger CAS · SubmitPlan/update/cancel · Desktop projection |
+| Sandbox diagnostics deepen | §01 `#sandbox-diagnostics` |
+| Harness A/B ops deepen | §04 `#harness-ab-ops` |
+| e2e-fixture rename | desktop-ui / desktop-host |
+| Entry chrome retarget | dig v4 / map #91 + new companion links |
 
-## Doc coverage snapshot (127)
+## Doc coverage snapshot (128)
 
 | taught? | Count | % |
 | --- | ---: | ---: |
-| deep | 89 | 70.1% |
+| deep | 90 | 70.3% |
 | cite-only | 5 | 3.9% |
-| history-only | 18 | 14.2% |
+| history-only | 18 | 14.1% |
 | product-stub | 0 | 0% |
 | discard | 6 | 4.7% |
-| oos | 9 | 7.1% |
+| oos | 9 | 7.0% |
 
-Legacy rollup: deep **89** · thin **0** · none **0**. Design-encoding debt `none`/`thin`: **empty**.
+Legacy rollup: deep **90** · thin **0** · none **0**. Design-encoding debt `none`/`thin`: **empty**.
 
-Remaining `oos`: changelog, license, smoke, PR template, meta `skills/maka-architecture-docs/**` (writing process — not agent runtime contracts).
+Remaining `oos` / `discard` unchanged in spirit (changelog, license, smoke, PR template, meta architecture-docs skill; superseded campaigns).
 
-Remaining `discard`: superseded CSS wave / smoke legacy / knip campaign / stale capability audit / ui-convergence / ui-quality month-one — **zero leftover teaching** after DESIGN.md + desktop-ui absorption.
-
-Product-stub honesty (taught as Current deep + Target non-claim, not a separate taught class):
-- AHE Target controller / runner / `validateMakaAheChangeEvaluation`
-- Tool-journal Phase3 reconciler
-
-## Code seams (Top 15+ re-audit dig v3)
+## Code seams (Top 15+ re-audit dig v4)
 
 | Seam family | Verdict |
 | --- | --- |
-| T1/T2 + RecoveryResolver | protocol-deep §01 `#recovery` / `#t1-t2` |
-| Three prune lifecycles | protocol-deep §02 `#active` / `#stale` |
-| Checkpoint / mid-turn / capacity | protocol-deep §03 |
-| providerTools≠activeTools / park-remember / sandbox | protocol-deep §01 |
-| Execution evidence spine | **was slogan (dangling `#execution-evidence`)** → **deep** body shipped |
-| Skill catalog + corpus | §01 `#skills` + `/guides/skills-corpus` |
-| Computer-use package internals | deepened beyond six-doc companion |
-| Desktop UI queue / input contracts | `/guides/desktop-ui` `#interaction-queue` / `#composer-input` |
-| CLI session / bootstrap / inspect | **new** `/guides/cli` |
-| CU / swarm / MCP / Harbor / memory | companions remain protocol-deep |
-
-## Remaining true blockers (product only — not #90 matrix blockers)
-
-1. **AHE Target controller / runner / change-evaluation validator** — product stub; do not invent.  
-2. **Tool journal Phase 3 reconciler** — Target; taught as non-claim.
+| Prior Top-15 dig v3 anchors (spot-check sample ≥10) | **OK** — no protocol DRIFT at `7b2f80a3` |
+| Deep Research durable workspace | **NEW deep** `/guides/deep-research` |
+| Plan collaboration mode | **NEW deep** `/guides/plan-mode` |
+| Sandbox diagnostics / structured errors / turn-tail | **deepened** §01 `#sandbox-diagnostics` |
+| Headless harness ops (TASK_IDS / xhigh / concurrency) | **deepened** §04 `#harness-ab-ops` |
+| e2e-fixture (ex visual-smoke) | disposition: process harness — site rename fixed; not Destination protocol |
+| AHE Target / Phase3 | **still product stubs** |
 
 ## Ticket frontier
 
-- Map **#90**: corpus dig v3 — **close** (corpus dig ≠ product Destination).  
-- Closed precursor: [#34](https://github.com/tt-a1i/agent-atelier/issues/34) (dig v2).  
-- Prior children through [#89](https://github.com/tt-a1i/agent-atelier/issues/89) remain historical. No open child tickets under #90.
+- Map **#91**: corpus dig v4 — **close** (corpus dig ≠ product Destination).  
+- Closed precursors: [#90](https://github.com/tt-a1i/agent-atelier/issues/90), [#34](https://github.com/tt-a1i/agent-atelier/issues/34).
 
-## What “done” means (three levels)
+## What “done” means (four levels)
 
 1. **Corpus dig v2 / #34** — silent none eliminated — **closed; user rejected as complacent**.  
-2. **Corpus dig v3 / #90** — every doc taught or dispositioned with teaching surface; SKILL×29 corpus; Top-15+ seams protocol-deep (no dangling slogan anchors) — **MET**.  
-3. **Product Destination** — Target stubs become product Current — **open**, owned by maka-agent product.
+2. **Corpus dig v3 / #90** — Skills corpus + elevated archives + Top-15+ deepenings — **closed; user rejected without re-pull proof**.  
+3. **Corpus dig v4 / #91** — re-pull · inventory delta · mine NEW · spot-check prior deep — **MET**.  
+4. **Product Destination** — Target stubs become product Current — **open**, owned by maka-agent product.

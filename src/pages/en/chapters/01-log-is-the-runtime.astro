@@ -603,6 +603,21 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       protected-metadata exposure.
     </p>
 
+    <h3 id="sandbox-diagnostics" class="subhead">Diagnostics projection ≠ approval (dig v4)</h3>
+    <p>
+      Beyond the transform matrix, runtime keeps a <strong>probeable, traceable, turn-tail</strong>
+      sandbox snapshot: <code>createSandboxDiagnosticsProvider</code>
+      (<code>packages/runtime/src/sandbox/diagnostics.ts</code>) probes <code>command</code> and
+      <code>filesystem</code> capabilities after profile resolve (status
+      <code>available | unavailable | not_required | external</code>; failures carry
+      <code>stage</code>/<code>reason</code>). <code>toSandboxRunTraceProjection</code> strips cwd /
+      workspaceRoots for run-trace/telemetry; the full snapshot becomes
+      <code>&lt;sandbox_context&gt;</code> via <code>renderSandboxTurnTailPrompt</code> — authoritative
+      “enforced by the runtime,” not model self-report. Path rendering caps at 1024 chars and rejects
+      newlines. Structured failures use <code>SandboxCommandError</code> (domain / stage / reason /
+      recoverable / backend) serialized into tool results via <code>serializeSandboxError</code>.
+    </p>
+
     <h3 class="subhead">Three “sandboxes” that must not collapse</h3>
     <ul class="plain-list">
       <li>
@@ -623,11 +638,12 @@ import ActiveVsRegistry from "../../../components/diagrams/ActiveVsRegistry.astr
       <p class="history-aside__tag">History · verification</p>
       <p>
         Contracts live in code + tests: <code>sandbox-manager.test.ts</code>,
-        <code>macos-seatbelt*.test.ts</code>, <code>sandbox-escalation.test.ts</code>. Remaining
-        enforcement: maka #843. If the local sandbox README still claims Linux
-        <code>backend_not_implemented</code>, prefer the <code>LinuxBubblewrapBackend</code> registered by
-        the default manager. Managed Bash inserts sandbox via <code>transformCommand</code>; PTY is
-        mutually exclusive with mandatory sandbox argv — spawn / live≠result in
+        <code>macos-seatbelt*.test.ts</code>, <code>sandbox-escalation.test.ts</code>,
+        <code>sandbox-diagnostics.test.ts</code>. Remaining enforcement: maka #843. If the local
+        sandbox README still claims Linux <code>backend_not_implemented</code>, prefer the
+        <code>LinuxBubblewrapBackend</code> registered by the default manager. Managed Bash inserts
+        sandbox via <code>transformCommand</code>; PTY is mutually exclusive with mandatory sandbox
+        argv — spawn / live≠result in
         <a href={localePath("en", "chapters/02-evidence-before-compression") + "#shell-side-effects"}
           >§02 · #shell-side-effects</a
         >. File tools add a path-containment leaf plus an optional filesystem worker (protocol v2) —

@@ -552,6 +552,21 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       unsandboxed 模式；proposal 的 risk 摘要诚实标出 unrestricted FS/network 与 protected metadata 暴露。
     </p>
 
+    <h3 id="sandbox-diagnostics" class="subhead">Diagnostics 投影 ≠ 批准（dig v4）</h3>
+    <p>
+      除 transform 矩阵外，runtime 还维护一份<strong>可探测、可入 trace、可注入 turn-tail</strong>的沙箱快照：
+      <code>createSandboxDiagnosticsProvider</code>（<code>packages/runtime/src/sandbox/diagnostics.ts</code>）解析
+      profile 后分别 probe <code>command</code> 与 <code>filesystem</code> capability（status：
+      <code>available | unavailable | not_required | external</code>；失败带
+      <code>stage</code>/<code>reason</code>）。<code>toSandboxRunTraceProjection</code> 去掉 cwd /
+      workspaceRoots 路径，供 run-trace / telemetry；完整快照经
+      <code>renderSandboxTurnTailPrompt</code> 写入
+      <code>&lt;sandbox_context&gt;</code>——权威声明「由 runtime 强制」，不是模型自述。路径渲染限 1024
+      chars、禁换行；超限 fail-closed。结构化失败用 <code>SandboxCommandError</code>（domain /
+      stage / reason / recoverable / backend），经 <code>serializeSandboxError</code> 进入工具结果，而不是散落
+      字符串。
+    </p>
+
     <h3 class="subhead">三个「sandbox」不要混</h3>
     <ul class="plain-list">
       <li>
@@ -570,8 +585,9 @@ import ActiveVsRegistry from "../../components/diagrams/ActiveVsRegistry.astro";
       <p class="history-aside__tag">演进旁注 · 验证</p>
       <p>
         合同以代码与测试为准：<code>sandbox-manager.test.ts</code>、<code>macos-seatbelt*.test.ts</code>、
-        <code>sandbox-escalation.test.ts</code>。剩余 enforcement 跟踪 maka #843；本地 sandbox README
-        若仍写 Linux <code>backend_not_implemented</code>，以 default manager 注册的
+        <code>sandbox-escalation.test.ts</code>、<code>sandbox-diagnostics.test.ts</code>。剩余
+        enforcement 跟踪 maka #843；本地 sandbox README 若仍写 Linux
+        <code>backend_not_implemented</code>，以 default manager 注册的
         <code>LinuxBubblewrapBackend</code> 为准。Managed Bash 经
         <code>transformCommand</code> 插入沙箱；PTY 与强制沙箱 argv 互斥——spawn / live≠result 见
         <a href={`${import.meta.env.BASE_URL}chapters/02-evidence-before-compression#shell-side-effects`}
